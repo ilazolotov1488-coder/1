@@ -7,11 +7,11 @@
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/zenith/icons/avatar.png",
+  "icon": "assets/space/icons/avatar.png",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "zenith.zov.ZenithInitializer"
+      "space.visuals.ZenithInitializer"
     ]
   },
   "mixins": [
