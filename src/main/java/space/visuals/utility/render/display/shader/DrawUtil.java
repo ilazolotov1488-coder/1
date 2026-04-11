@@ -38,6 +38,9 @@ public class DrawUtil implements IWindow {
     private final CustomRenderTarget buffer = new CustomRenderTarget(false);
 
     public void initializeShaders() {
+        // Очищаем список перед повторной инициализацией
+        GlProgram.clearPrograms();
+        
         rectangleProgram = new GlProgram(Zenith.id("rectangle/data"), VertexFormats.POSITION_COLOR);
         squircleProgram = new GlProgram(Zenith.id("squircle/data"), VertexFormats.POSITION_COLOR);
         squircleTextureProgram = new GlProgram(Zenith.id("squircle_texture/data"), VertexFormats.POSITION_TEXTURE_COLOR);

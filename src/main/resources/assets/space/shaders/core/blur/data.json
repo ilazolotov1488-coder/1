@@ -1,6 +1,6 @@
-{
-    "vertex": "zenith:core/blur/vertex",
-    "fragment": "zenith:core/blur/fragment",
+﻿{
+    "vertex": "space:core/blur/vertex",
+    "fragment": "space:core/blur/fragment",
     "samplers": [
         { "name": "Sampler0" }
     ],

@@ -1,7 +1,6 @@
 package space.visuals;
 
 import by.saskkeee.annotations.CompileToNative;
-import by.saskkeee.annotations.Entrypoint;
 import by.saskkeee.annotations.vmprotect.CompileType;
 import by.saskkeee.annotations.vmprotect.VMProtect;
 import lombok.Getter;
@@ -40,7 +39,6 @@ import java.io.File;
  */
 
 @Getter
-@Entrypoint
 public enum Zenith {
     INSTANCE;
 

@@ -11,8 +11,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.profiler.Profiler;
-import org.joml.Matrix4f;
+import net.minecraft.util.profiler.Profiler;import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import space.visuals.base.events.impl.render.*;
 import space.visuals.client.modules.impl.render.Interface;
+import space.visuals.client.modules.impl.render.NoRender;
 import space.visuals.utility.render.display.base.CustomDrawContext;
 import space.visuals.utility.render.display.base.UIContext;
 import space.visuals.utility.render.level.Render3DUtil;
@@ -43,8 +43,7 @@ public abstract class MixinGameRenderer {
     @Shadow public abstract float getFarPlaneDistance();
 
     @Inject(method = "getBasicProjectionMatrix", at = @At("TAIL"), cancellable = true)
-    public void getBasicProjectionMatrixHook(float fovDegrees, CallbackInfoReturnable<Matrix4f> cir) {
-        EventAspectRatio eventAspectRatio = new EventAspectRatio();
+    public void getBasicProjectionMatrixHook(float fovDegrees, CallbackInfoReturnable<Matrix4f> cir) {        EventAspectRatio eventAspectRatio = new EventAspectRatio();
         EventManager.call(eventAspectRatio);
         if (eventAspectRatio.isCancelled()) {
             Matrix4f matrix4f = new Matrix4f();
@@ -63,6 +62,11 @@ public abstract class MixinGameRenderer {
         EventManager.call(event);
         if (event.isCancelled()) return event.getFov();
         return original;
+    }
+
+    @Inject(method = "tiltViewWhenHurt", at = @At("HEAD"), cancellable = true)
+    private void removeHurtCam(MatrixStack matrices, float tickDelta, CallbackInfo ci) {
+        if (NoRender.INSTANCE.isRemoveHurtCam()) ci.cancel();
     }
 
     @Inject(method = "renderWorld", at = @At(value = "FIELD", target = "Lnet/minecraft/client/render/GameRenderer;renderHand:Z", opcode = Opcodes.GETFIELD, ordinal = 0))
@@ -103,9 +107,17 @@ public abstract class MixinGameRenderer {
     }
     @Unique
     private void triggerHudRenderEvent(RenderTickCounter tickCounter) {
+        // Не рендерим если мир не загружен
+        if (mc.world == null || mc.player == null) return;
+        
         CustomDrawContext customDrawContext = new CustomDrawContext(mc.getBufferBuilders().getEntityVertexConsumers());
         double saveScale = MinecraftClient.getInstance().getWindow().getScaleFactor();
-       setScaleFactorOutAllMods(Interface.INSTANCE.getCustomScale());
+        
+        try {
+            setScaleFactorOutAllMods(Interface.INSTANCE.getCustomScale());
+        } catch (Exception e) {
+            return;
+        }
 
 
         RenderSystem.setProjectionMatrix(

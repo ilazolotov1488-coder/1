@@ -31,7 +31,7 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient$1;<init>(Lnet/minecraft/client/MinecraftClient;Lnet/minecraft/client/RunArgs;)V"))
     public void init(RunArgs args, CallbackInfo ci) {
-        Zenith.getInstance().init();
+        // init() is now called via ZenithInitializer (ClientModInitializer)
     }
     @Inject(method = "onResolutionChanged", at = @At("TAIL"))
     private void captureResize(CallbackInfo ci) {

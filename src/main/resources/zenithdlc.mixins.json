@@ -32,6 +32,7 @@
     "client.LightmapTextureManagerMixin",
     "client.MinecraftClientMixin",
     "client.MouseMixin",
+    "client.ParticleManagerMixin",
     "client.render.LivingEntityRendererMixin",
     "client.render.ScreenMixin",
     "client.render.WindowMixin",

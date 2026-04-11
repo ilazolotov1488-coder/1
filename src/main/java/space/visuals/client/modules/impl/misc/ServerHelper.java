@@ -74,68 +74,50 @@ public final class ServerHelper extends Module {
         initialize();
     }
 
-    private final BooleanSetting consumablesSetting = new BooleanSetting("Таймер расходников", true,()->Zenith.getInstance().getServerHandler().isCopyTime()||Zenith.getInstance().getServerHandler().isHolyWorld());
+    private final BooleanSetting consumablesSetting = new BooleanSetting("Таймер расходников", true);
 
-    private final BooleanSetting autoPointSetting = new BooleanSetting("Авто точка", true, Zenith.getInstance().getServerHandler()::isFunTime);
+    private final BooleanSetting autoPointSetting = new BooleanSetting("Авто точка", true);
 
 
     public void initialize() {
-
-
         keyBindings.add(new KeyBind(Items.FIREWORK_STAR,
-                new KeySetting("Анти флай", Zenith.getInstance().getServerHandler()::isReallyWorld),
-                0, new BooleanSettable()));
+                new KeySetting("Анти флай"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.FLOWER_BANNER_PATTERN,
-                new KeySetting("Опыт прокрутки", Zenith.getInstance().getServerHandler()::isReallyWorld),
-                0, new BooleanSettable()));
+                new KeySetting("Опыт прокрутки"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.PRISMARINE_SHARD,
-                new KeySetting("Взрывная трапка", Zenith.getInstance().getServerHandler()::isHolyWorld),
-                5, new BooleanSettable()));
+                new KeySetting("Взрывная трапка"), 5, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.POPPED_CHORUS_FRUIT,
-                new KeySetting("Обыч трапка", Zenith.getInstance().getServerHandler()::isHolyWorld),
-                0, new BooleanSettable()));
+                new KeySetting("Обыч трапка"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.NETHER_STAR,
-                new KeySetting("Стан", Zenith.getInstance().getServerHandler()::isHolyWorld),
-                30, new BooleanSettable()));
+                new KeySetting("Стан"), 30, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.FIRE_CHARGE,
-                new KeySetting("Взрывная штука", Zenith.getInstance().getServerHandler()::isHolyWorld),
-                0, new BooleanSettable()));
+                new KeySetting("Взрывная штука"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.SNOWBALL,
-                new KeySetting("Снежок", () -> Zenith.getInstance().getServerHandler().isCopyTime()
-                        || Zenith.getInstance().getServerHandler().isHolyWorld()),
-                0, new BooleanSettable()));
+                new KeySetting("Снежок"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.PHANTOM_MEMBRANE,
-                new KeySetting("Божья аура", Zenith.getInstance().getServerHandler()::isCopyTime),
-                0, new BooleanSettable()));
+                new KeySetting("Божья аура"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.NETHERITE_SCRAP,
-                new KeySetting("Трапка", Zenith.getInstance().getServerHandler()::isCopyTime),
-                0, new BooleanSettable()));
+                new KeySetting("Трапка"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.DRIED_KELP,
-                new KeySetting("Пласт", Zenith.getInstance().getServerHandler()::isCopyTime),
-                0, new BooleanSettable()));
+                new KeySetting("Пласт"), 0, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.SUGAR,
-                new KeySetting("Явная пыль", Zenith.getInstance().getServerHandler()::isCopyTime),
-                10, new BooleanSettable()));
+                new KeySetting("Явная пыль"), 10, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.FIRE_CHARGE,
-                new KeySetting("Огненный смерч", Zenith.getInstance().getServerHandler()::isCopyTime),
-                10, new BooleanSettable()));
+                new KeySetting("Огненный смерч"), 10, new BooleanSettable()));
 
         keyBindings.add(new KeyBind(Items.ENDER_EYE,
-                new KeySetting("Дезорент", Zenith.getInstance().getServerHandler()::isCopyTime),
-                10, new BooleanSettable()));
-
-
+                new KeySetting("Дезорент"), 10, new BooleanSettable()));
     }
 
 

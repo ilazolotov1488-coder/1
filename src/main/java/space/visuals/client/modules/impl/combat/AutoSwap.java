@@ -27,6 +27,7 @@ public final class AutoSwap extends Module {
     private final ModeSetting swapType = new ModeSetting("Свапать на", "Щит", "Геплы", "Тотем", "Шар");
 
     private final KeySetting keyToSwap = new KeySetting("Кнопка", -1);
+    private int cooldownTicks = 0;
 
     private AutoSwap() {
     }
@@ -35,6 +36,7 @@ public final class AutoSwap extends Module {
     public void onKey(EventKey event) {
         if (mc.currentScreen != null) return;
         if (event.getAction() != 1) return;
+        if (cooldownTicks > 0) return;
 
         if (event.is(keyToSwap.getKeyCode())) {
             Slot first = PlayerInventoryUtil.getSlot(getItemByType(itemType.get()), Comparator.comparing(s -> s.getStack().hasEnchantments()), s -> s.id != 46 && s.id != 45);
@@ -44,7 +46,13 @@ public final class AutoSwap extends Module {
                 PlayerInventoryUtil.swapHand(validSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
             });
+            cooldownTicks = 4;
         }
+    }
+
+    @EventTarget
+    public void onTick(space.visuals.base.events.impl.player.EventUpdate event) {
+        if (cooldownTicks > 0) cooldownTicks--;
     }
 
 

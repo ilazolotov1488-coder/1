@@ -3,24 +3,17 @@ package space.visuals.client.modules.impl.combat;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-
-
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Hand;
-import space.visuals.base.events.impl.player.EventRotate;
 import space.visuals.base.events.impl.player.EventUpdate;
-import space.visuals.base.request.ScriptManager;
-import space.visuals.client.hud.elements.component.InventoryComponent;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
-import space.visuals.utility.game.other.InventoryUtil;
-import space.visuals.utility.game.other.MessageUtil;
-import space.visuals.utility.game.player.MovingUtil;
 import space.visuals.utility.game.player.PlayerInventoryComponent;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
+import space.visuals.client.modules.impl.misc.ElytraHelper;
 
 import static net.minecraft.item.Items.TOTEM_OF_UNDYING;
 
@@ -55,12 +48,14 @@ public final class AutoTotem extends Module {
             return;
         }
 
+        // Не мешаем свапу элитры
+        if (ElytraHelper.INSTANCE.isSwapping()) return;
+
         final Item current = mc.player.getOffHandStack().isEmpty()
                 ? null : mc.player.getOffHandStack().getItem();
 
         if (shouldUseTotem()) {
             if (current != TOTEM_OF_UNDYING) {
-
                 Slot slot = PlayerInventoryUtil.getSlot(TOTEM_OF_UNDYING);
                 if (slot != null) {
                     swapToOffhand(slot);
@@ -77,12 +72,11 @@ public final class AutoTotem extends Module {
     }
 
     private void swapToOffhand(Slot slot) {
-        PlayerInventoryComponent.addTask( ()-> {
-            PlayerInventoryUtil.swapHand(slot, Hand.OFF_HAND,false);
+        PlayerInventoryComponent.addTask(() -> {
+            PlayerInventoryUtil.swapHand(slot, Hand.OFF_HAND, false);
             PlayerInventoryUtil.closeScreen(true);
         });
         cooldownTicks = 0;
-
     }
 
     private boolean shouldUseTotem() {

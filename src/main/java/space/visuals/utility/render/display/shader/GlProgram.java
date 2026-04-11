@@ -73,4 +73,9 @@ public class GlProgram implements IMinecraft {
     public static void loadAndSetupPrograms() {
         REGISTERED_PROGRAMS.forEach(Runnable::run);
     }
+
+    @ApiStatus.Internal
+    public static void clearPrograms() {
+        REGISTERED_PROGRAMS.clear();
+    }
 }

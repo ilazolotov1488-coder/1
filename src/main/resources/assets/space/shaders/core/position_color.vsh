@@ -1,6 +1,6 @@
-#version 150
+﻿#version 150
 
-#moj_import <zenith:common.glsl>
+#moj_import <space:common.glsl>
 
 in vec3 Position; // POSITION_COLOR vertex attributes
 in vec4 Color;

@@ -45,8 +45,8 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AntiBot.INSTANCE);
         registerModule(Aura.INSTANCE);
         registerModule(AutoSwap.INSTANCE);
-
         registerModule(AutoTotem.INSTANCE);
+        registerModule(SwapPlus.INSTANCE);
     }
 
     private void registerMovement() {

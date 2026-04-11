@@ -15,8 +15,6 @@ public class GameOverlayRendererMixin {
 
     @Inject(method = "renderFireOverlay", at = @At("HEAD"), cancellable = true)
     private static void removeFireOverlay(MatrixStack matrices, VertexConsumerProvider vertexConsumers, CallbackInfo ci) {
-        if (NoRender.INSTANCE.isRemoveFire()) {
-            ci.cancel();
-        }
+        if (NoRender.INSTANCE.isRemoveFire()) ci.cancel();
     }
 }
