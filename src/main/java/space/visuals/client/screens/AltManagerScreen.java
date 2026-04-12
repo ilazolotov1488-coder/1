@@ -69,10 +69,10 @@ public class AltManagerScreen extends Screen {
     private static final ColorRGBA GLOW     = new ColorRGBA(68, 62,175,255);
 
     // Компактные размеры
-    private static final int PW   = 280; // уже
-    private static final int IH   = 44;  // ниже
-    private static final int IG   = 4;
-    private static final int BH   = 30;  // кнопки ниже
+    private static final int PW   = 280;
+    private static final int IH   = 36;  // было 44 — компактнее
+    private static final int IG   = 3;   // было 4
+    private static final int BH   = 30;
     private static final int ROWS = 4;
 
     private static final String[] NAMES = {"Player","Shadow","Storm","Dark","Wolf","Fox","Eagle","Tiger","Dragon","Frost","Nova","Apex"};
@@ -182,9 +182,9 @@ public class AltManagerScreen extends Screen {
             drawT(ctx, ef, em, lx+PW/2f-ef.width(em)/2f, ly+lh/2f-ef.height()/2f, DIM.mulAlpha(a*ps));
         } else {
             for (int i = 0; i < accounts.size(); i++) {
-                float iy = ly+3+i*(IH+IG)-scrollOffset;
+                float iy = ly+4+i*(IH+IG)-scrollOffset;
                 if (iy+IH < ly || iy > ly+lh) continue;
-                boolean hov = mx>=lx+3 && mx<=lx+PW-3 && my>=iy && my<=iy+IH;
+                boolean hov = mx>=lx+4 && mx<=lx+PW-4 && my>=iy && my<=iy+IH;
                 itemA.get(i).animateTo(hov?1:0);
                 float hv = (float)itemA.get(i).update();
                 // Анимация появления слева
@@ -194,27 +194,27 @@ public class AltManagerScreen extends Screen {
                 float fa2 = a * ps * sl * delV;
                 boolean sel = i == selectedIndex;
 
-                DrawUtil.drawRoundedRect(ctx.getMatrices(), lx+3+slideX, iy, PW-6, IH, BorderRadius.all(8),
+                DrawUtil.drawRoundedRect(ctx.getMatrices(), lx+4+slideX, iy, PW-8, IH, BorderRadius.all(7),
                     (sel ? IT_S : IT.mix(IT_H,hv)).mulAlpha(fa2));
-                if (hov||sel) DrawUtil.drawRoundedBorder(ctx.getMatrices(), lx+3+slideX, iy, PW-6, IH, -0.1f, BorderRadius.all(8),
+                if (hov||sel) DrawUtil.drawRoundedBorder(ctx.getMatrices(), lx+4+slideX, iy, PW-8, IH, -0.1f, BorderRadius.all(7),
                     (sel ? new ColorRGBA(100,92,200,60) : BR_H).mulAlpha(fa2));
 
                 // Голова
                 UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:"+accounts.get(i)).getBytes());
                 Identifier skin = DefaultSkinHelper.getSkinTextures(uuid).texture();
-                float hs = 24;
+                float hs = 22; // чуть меньше
                 DrawUtil.drawRoundedTextureWithUV(ctx.getMatrices(), skin, lx+9+slideX, iy+(IH-hs)/2f, hs, hs,
                     BorderRadius.all(4), ColorRGBA.WHITE.mulAlpha(fa2), 8f/64f, 8f/64f, 16f/64f, 16f/64f);
 
                 Font nf = Fonts.MEDIUM.getFont(7f);
-                drawT(ctx, nf, accounts.get(i), lx+40+slideX, iy+8, TXT.mulAlpha(fa2));
+                drawT(ctx, nf, accounts.get(i), lx+38+slideX, iy+6, TXT.mulAlpha(fa2));
                 Font sf = Fonts.MEDIUM.getFont(5f);
                 boolean active = client.getSession().getUsername().equals(accounts.get(i));
-                drawT(ctx, sf, active?"● активен":"○ не выбран", lx+40+slideX, iy+21, (active?GRN:SUB).mulAlpha(fa2));
+                drawT(ctx, sf, active?"● активен":"○ не выбран", lx+38+slideX, iy+18, (active?GRN:SUB).mulAlpha(fa2));
 
                 // Удалить
                 Font df = Fonts.MEDIUM.getFont(5.5f);
-                drawT(ctx, df, "✕", lx+PW-17+slideX, iy+(IH-df.height())/2f, DIM.mulAlpha(fa2*(0.25f+0.75f*hv)));
+                drawT(ctx, df, "✕", lx+PW-16+slideX, iy+(IH-df.height())/2f, DIM.mulAlpha(fa2*(0.25f+0.75f*hv)));
             }
         }
         ctx.disableScissor();
@@ -275,8 +275,7 @@ public class AltManagerScreen extends Screen {
             for (int i = 0; i < accounts.size(); i++) {
                 float iy = ly+3+i*(IH+IG)-scrollOffset;
                 if (my>=iy && my<=iy+IH) {
-                    if (mx>=lx+PW-22 && btn==0) { removeAcc(i); return true; }
-                    if (btn==0) { loginAs(accounts.get(i), true); return true; }
+                    if (mx>=lx+PW-22 && btn==0) { removeAcc(i); return true; }                    if (btn==0) { loginAs(accounts.get(i), true); return true; }
                     if (btn==1) { removeAcc(i); return true; }
                 }
             }
@@ -336,28 +335,17 @@ public class AltManagerScreen extends Screen {
     }
 
     private void removeAcc(int i) {
-        // Запускаем анимацию удаления (слайд вправо + fade out)
-        if (i < itemDel.size()) {
-            itemDel.get(i).animateTo(0);
-            // Удаляем через небольшую задержку после анимации
-            final int idx = i;
-            new Thread(() -> {
-                try { Thread.sleep(220); } catch (Exception ignored) {}
-                client.execute(() -> {
-                    if (idx < accounts.size()) {
-                        accounts.remove(idx);
-                        if (selectedIndex >= accounts.size()) selectedIndex = -1;
-                        syncA();
-                        saveAccounts();
-                    }
-                });
-            }).start();
-        } else {
-            accounts.remove(i);
-            if (selectedIndex >= accounts.size()) selectedIndex = -1;
-            syncA();
-            saveAccounts();
-        }
+        // Убираем анимацию удаления через Thread - она вызывает баги с индексами
+        // Просто удаляем сразу
+        accounts.remove(i);
+        if (selectedIndex >= accounts.size()) selectedIndex = -1;
+        else if (selectedIndex == i) selectedIndex = -1;
+        syncA();
+        saveAccounts();
+        // Сбрасываем скролл чтобы не было пустого места сверху
+        int maxOff = Math.max(0, accounts.size()*(IH+IG)-listH()+6);
+        targetScrollOffset = Math.max(0, Math.min(targetScrollOffset, maxOff));
+        scrollOffset = Math.min(scrollOffset, targetScrollOffset);
     }
 
     private void loginAs(String name, boolean save) {
@@ -376,7 +364,38 @@ public class AltManagerScreen extends Screen {
 
     private String genName() {
         Random r = new Random();
-        return NAMES[r.nextInt(NAMES.length)]+(100+r.nextInt(900));
+        String[][] combos = {
+            // прилагательное + существительное
+            {"Dark","Shadow","Void","Neon","Frost","Storm","Blaze","Phantom","Silent","Crimson","Azure","Lunar"},
+            {"Wolf","Fox","Eagle","Raven","Viper","Hawk","Ghost","Blade","Reaper","Knight","Hunter","Specter"}
+        };
+        // Варианты генерации
+        int style = r.nextInt(4);
+        switch (style) {
+            case 0: {
+                // Прилагательное + Существительное
+                String adj = combos[0][r.nextInt(combos[0].length)];
+                String noun = combos[1][r.nextInt(combos[1].length)];
+                return adj + noun;
+            }
+            case 1: {
+                // Существительное + число
+                String noun = combos[1][r.nextInt(combos[1].length)];
+                return noun + (r.nextInt(9000) + 1000);
+            }
+            case 2: {
+                // x + Прилагательное + Существительное
+                String adj = combos[0][r.nextInt(combos[0].length)];
+                String noun = combos[1][r.nextInt(combos[1].length)];
+                return "x" + adj + noun;
+            }
+            default: {
+                // Прилагательное + Существительное + число
+                String adj = combos[0][r.nextInt(combos[0].length)];
+                String noun = combos[1][r.nextInt(combos[1].length)];
+                return adj + noun + (r.nextInt(99) + 1);
+            }
+        }
     }
 
     private void drawT(DrawContext ctx, Font f, String t, float x, float y, ColorRGBA c) {

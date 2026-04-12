@@ -17,6 +17,7 @@ import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
+import space.visuals.client.modules.api.setting.impl.ColorSetting;
 import space.visuals.client.modules.api.setting.impl.MultiBooleanSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.utility.game.other.TextUtil;
@@ -45,7 +46,8 @@ public final class Interface extends Module {
             "Музыка",        // 9
             "Хотбар",        // 10
             "Скрореборд",    // 11
-            "Таб"            // 12
+            "Таб",           // 12
+            "Статус бары"    // 13
     ));
 
     private final List<DraggableHudElement> elements = new ArrayList<>();
@@ -64,6 +66,13 @@ public final class Interface extends Module {
     private BooleanSetting blur = new BooleanSetting("Блюр", false);
     private BooleanSetting glow = new BooleanSetting("Свечение", false);
 
+    // Настройки статус-баров (делегируются в StatusBarsComponent)
+    private StatusBarsComponent statusBarsComponent;
+    private NumberSetting statusBarHeight;
+    private NumberSetting statusBarWidth;
+    private BooleanSetting statusBarCustomColors;
+    private ColorSetting statusBarHpColor;
+    private ColorSetting statusBarFoodColor;
 
     private Interface() {
 
@@ -86,6 +95,16 @@ public final class Interface extends Module {
         addElement(new HootBarComponent("Hotbar", 116.5f, 265.0f, 960.0f, 495.5f, 0.0f, -16.5f, DraggableHudElement.Align.BOTTOM_CENTER));      // 10 - Hotbar
         addElement(new ScoreBoardComponent("Скрореборд",0, 0.0f, 960.0f, 495.5f, -10, 10, DraggableHudElement.Align.CENTER_RIGHT));               // 11 - Скрореборд
         addElement(new PlayerListComponent("Таб"));                                                                                                 // 12 - Таб
+
+        statusBarsComponent = new StatusBarsComponent("StatusBars", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, -60.0f, DraggableHudElement.Align.BOTTOM_LEFT); // 13 - Статус бары
+        addElement(statusBarsComponent);
+
+        // Привязываем настройки компонента как поля модуля (для отображения в меню)
+        statusBarHeight       = statusBarsComponent.barHeight;
+        statusBarWidth        = statusBarsComponent.barWidth;
+        statusBarCustomColors = statusBarsComponent.customColors;
+        statusBarHpColor      = statusBarsComponent.hpColor;
+        statusBarFoodColor    = statusBarsComponent.foodColor;
 
     }
 
@@ -295,6 +314,9 @@ public final class Interface extends Module {
     }
     public boolean isEnableTab() {
         return elementsSetting.isEnable(12); //12 - tab (PlayerList)
+    }
+    public boolean isEnableStatusBars() {
+        return elementsSetting.isEnable(13); //13 - статус бары
     }
 
     @EventTarget

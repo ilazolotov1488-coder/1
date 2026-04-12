@@ -25,6 +25,7 @@ public class CustomTitleScreen extends Screen {
 
     private static final Identifier BG_TEX   = Zenith.id("icons/menu_bg.png");
     private static final Identifier LOGO_TEX = Zenith.id("icons/logo_s.png");
+    private static final Identifier MC_ICON  = Zenith.id("icons/mc_icon.png");
 
     private final Animation fadeIn    = new Animation(900, 0, Easing.QUAD_IN_OUT);
     private final Animation logoAnim  = new Animation(1100, 0, Easing.BAKEK_SIZE);
@@ -119,15 +120,23 @@ public class CustomTitleScreen extends Screen {
             25f, BorderRadius.all(22),
             new ColorRGBA(200, 185, 255, 255).mulAlpha((0.35f + 0.20f * pulse) * a * la));
 
-        // === ЛОГО ===
+        // === ЛОГО — рисуем ярче ===
         float scaledSz = LOGO_SZ * (0.6f + 0.4f * la);
         float off = (LOGO_SZ - scaledSz) / 2f;
+        // Основной слой
         DrawUtil.drawRoundedTexture(ctx.getMatrices(),
             LOGO_TEX,
             logoX + off, logoY + off,
             scaledSz, scaledSz,
             BorderRadius.all(14),
             ColorRGBA.WHITE.mulAlpha(a * la));
+        // Второй слой поверх — осветляет
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(),
+            LOGO_TEX,
+            logoX + off, logoY + off,
+            scaledSz, scaledSz,
+            BorderRadius.all(14),
+            new ColorRGBA(200, 210, 255, 180).mulAlpha(a * la));
 
         // Кнопки
         for (Btn b : btns) b.render(ctx, mx, my, a);
@@ -136,10 +145,37 @@ public class CustomTitleScreen extends Screen {
         Font vf = Fonts.MEDIUM.getFont(5f);
         String v = "Space Visuals 2.0";
         drawT(ctx, vf, v, cx - vf.width(v)/2f, height - 13, DIM.mulAlpha(a));
+
+        // Кнопка переключения на ванильное меню — правый нижний угол
+        float btnSz = 28;
+        float btnX = width - btnSz - 10;
+        float btnY = height - btnSz - 10;
+        boolean switchHov = mx >= btnX && mx <= btnX+btnSz && my >= btnY && my <= btnY+btnSz;
+        ColorRGBA switchBg = new ColorRGBA(255,255,255, switchHov ? 20 : 10);
+        DrawUtil.drawRoundedRect(ctx.getMatrices(), btnX, btnY, btnSz, btnSz, BorderRadius.all(7), switchBg.mulAlpha(a));
+        DrawUtil.drawRoundedBorder(ctx.getMatrices(), btnX, btnY, btnSz, btnSz, -0.1f, BorderRadius.all(7),
+            new ColorRGBA(255,255,255, switchHov ? 50 : 25).mulAlpha(a));
+        // Иконка Minecraft — на весь размер кнопки с минимальным отступом
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(), MC_ICON,
+            btnX + 2, btnY + 2, btnSz - 4, btnSz - 4,
+            BorderRadius.all(5), ColorRGBA.WHITE.mulAlpha(a * (switchHov ? 1f : 0.9f)));
+        if (switchHov) {
+            // подсказка убрана
+        }
     }
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
+        // Кнопка переключения на ванильное меню
+        float btnSz = 28;
+        float btnX = width - btnSz - 10;
+        float btnY = height - btnSz - 10;
+        if (btn == 0 && mx >= btnX && mx <= btnX+btnSz && my >= btnY && my <= btnY+btnSz) {
+            // Устанавливаем флаг и открываем ванильный TitleScreen
+            Zenith.useVanillaMenu = true;
+            client.setScreen(new net.minecraft.client.gui.screen.TitleScreen());
+            return true;
+        }
         for (Btn b : btns) if (b.hit((float)mx,(float)my)) { b.run.run(); return true; }
         return super.mouseClicked(mx, my, btn);
     }

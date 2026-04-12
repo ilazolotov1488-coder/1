@@ -105,5 +105,15 @@ public abstract class InGameHudMixin {
         return original;
     }
 
+    @Inject(method = "renderStatusBars", at = @At("HEAD"), cancellable = true)
+    private void cancelVanillaStatusBars(DrawContext context, CallbackInfo ci) {
+        if (mc.interactionManager != null && mc.interactionManager.getCurrentGameMode() != GameMode.SPECTATOR) {
+            Interface interfaceModule = Interface.INSTANCE;
+            if (interfaceModule.isEnabled() && interfaceModule.isEnableStatusBars()) {
+                ci.cancel();
+            }
+        }
+    }
+
 
 }

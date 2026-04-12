@@ -46,6 +46,9 @@ public enum Zenith {
     private static final String MOD_ID = NAME.toLowerCase();
     public static final File DIRECTORY = new File(MinecraftClient.getInstance().runDirectory, Zenith.NAME);
 
+    // Флаг для переключения между кастомным и ванильным меню
+    public static boolean useVanillaMenu = false;
+
     private ModuleManager moduleManager;
 
     private ThemeManager themeManager;
