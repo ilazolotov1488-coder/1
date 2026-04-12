@@ -8,7 +8,6 @@ import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
 import space.visuals.base.autobuy.item.ItemBuy;
 import space.visuals.base.theme.Theme;
-import space.visuals.client.modules.impl.misc.AutoSbor;
 import space.visuals.client.screens.autobuy.UiItemBuy;
 import space.visuals.utility.game.other.render.CustomScreen;
 import space.visuals.utility.game.other.MouseButton;
@@ -238,7 +237,7 @@ public class AutoInventoryBuyScreen extends CustomScreen {
                             AutoInventoryItem newItem = draggedItem.getItemBuy().copy();
 
                             newItem.setSlotId(slotIndex);
-                            AutoSbor.INSTANCE.getZakup().add(newItem);
+                            // AutoSbor module removed - zakup list not available
                             UiItemBuy uiItemBuy = new UiItemBuy(newItem);
 
                             inventoryItems.add(uiItemBuy);
@@ -263,7 +262,7 @@ public class AutoInventoryBuyScreen extends CustomScreen {
 
 
             if (!placed && !draggedFromLibrary) {
-                AutoSbor.INSTANCE.getZakup().remove(draggedItem.getItemBuy());
+                // AutoSbor module removed - zakup list not available
                 inventoryItems.remove(draggedItem);
             }
 

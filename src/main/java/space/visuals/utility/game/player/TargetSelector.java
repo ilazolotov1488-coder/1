@@ -12,7 +12,6 @@ import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import space.visuals.Zenith;
-import space.visuals.client.modules.impl.combat.AntiBot;
 import space.visuals.utility.interfaces.IClient;
 
 import java.util.Comparator;
@@ -96,7 +95,7 @@ public class TargetSelector implements IClient {
         }
 
         private boolean isBotPlayer(LivingEntity entity) {
-            return entity instanceof PlayerEntity player && AntiBot.INSTANCE.isBot(player);
+            return false; // AntiBot module removed
         }
 
         private boolean isNakedPlayer(LivingEntity entity) {

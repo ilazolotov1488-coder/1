@@ -40,7 +40,15 @@ public class WatermarkComponent extends DraggableHudElement {
         Font font = Fonts.MEDIUM.getFont(6);
 
         elements.clear();
-        elements.add(new HudElement("5", ()->"",""));
+        elements.add(new HudElement("s", ()->"","") {
+            @Override
+            public void drawContent(CustomDrawContext ctx, float blockX, float blockY, float blockHeight, float iconSize, float iconTextSpacing, ColorRGBA iconColor, ColorRGBA textColor, Font font) {
+                Font boldFont = Fonts.BOLD.getFont(8f);
+                float textY = blockY + (blockHeight - boldFont.height()) / 2f;
+                float textX = blockX + (getWidth() - boldFont.width("s")) / 2f;
+                ctx.drawText(boldFont, "s", textX, textY, iconColor);
+            }
+        });
         elements.add(new HudElement("2", ()->String.valueOf(UserInfo.getUsername())));
         elements.add(new HudElement("G", ()-> String.valueOf(mc.getCurrentFps()),"fps"));
         elements.add(new HudElement("H",()-> mc.player.networkHandler.getServerInfo() == null ||mc.player.networkHandler.getPlayerListEntry(mc.player.getUuid())==null  ? "0" : String.valueOf(mc.player.networkHandler.getPlayerListEntry(mc.player.getUuid()).getLatency()),"ms" ));

@@ -28,7 +28,10 @@ import space.visuals.client.modules.api.setting.Setting;
 import space.visuals.client.modules.api.setting.impl.KeySetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
+import space.visuals.base.font.Font;
+import space.visuals.base.font.Fonts;
 import space.visuals.utility.render.display.base.CustomDrawContext;
+import space.visuals.utility.render.display.base.color.ColorRGBA;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,8 +41,13 @@ import java.util.Objects;
 public final class SwapPlus extends Module {
     public static final SwapPlus INSTANCE = new SwapPlus();
 
-    private static final float INNER_R = 54f;
-    private static final float OUTER_R = 92f;
+    private static final float PANEL_DISTANCE = 70f;
+    private static final float PANEL_WIDTH = 52f;
+    private static final float PANEL_HEIGHT = 52f;
+    private static final float PANEL_RADIUS = 10f;
+    
+    private long wheelOpenTime = 0L;
+    private float wheelAnimProgress = 0f;
 
     private final ModeSetting mode = new ModeSetting("Режим", "Предметы", "Колесо");
     private final KeySetting bind = new KeySetting("Кнопка свапа");
@@ -62,6 +70,7 @@ public final class SwapPlus extends Module {
     // Колесо
     private boolean wheelOpen = false;
     private int pendingPickSlot = -1;
+    private int pendingPickDelay = 0; // задержка перед открытием инвентаря
     private long removeFlashUntilMs = 0L;
     private int removeFlashIndex = -1;
     private boolean cursorUnlocked = false;
@@ -80,6 +89,14 @@ public final class SwapPlus extends Module {
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;
         if (cooldownTicks > 0) cooldownTicks--;
+        // Задержка перед открытием инвентаря для выбора предмета в ячейку
+        if (pendingPickDelay > 0) {
+            pendingPickDelay--;
+            if (pendingPickDelay == 0 && pendingPickSlot != -1) {
+                mc.setScreen(new InventoryScreen(mc.player));
+            }
+            return;
+        }
         if (step == 0) return;
         if (aka > 0) { aka--; return; }
         switch (step) {
@@ -127,12 +144,8 @@ public final class SwapPlus extends Module {
             float cx = mc.getWindow().getScaledWidth() / 2f, cy = mc.getWindow().getScaledHeight() / 2f;
             float mx = (float)(mc.mouse.getX() * mc.getWindow().getScaledWidth() / mc.getWindow().getWidth());
             float my = (float)(mc.mouse.getY() * mc.getWindow().getScaledHeight() / mc.getWindow().getHeight());
-            int hover = getHoverIndex(mx, my, cx, cy, INNER_R, OUTER_R + 28f, count);
+            int hover = getHoverPanelIndex(mx, my, cx, cy, count, wheelAnimProgress);
             if (hover == -1) {
-                if (event.getButton() == 0) {
-                    int nearest = getAngleIndex(mx, my, cx, cy, count);
-                    if (nearest != -1 && !isWheelEmpty(nearest)) startWheelSwap(nearest);
-                }
                 closeWheel();
                 return;
             }
@@ -145,7 +158,7 @@ public final class SwapPlus extends Module {
             if (event.getButton() == 0) {
                 if (isWheelEmpty(hover)) {
                     pendingPickSlot = hover;
-                    mc.setScreen(new InventoryScreen(Objects.requireNonNull(mc.player)));
+                    pendingPickDelay = 4; // ~4 тика задержки перед открытием инвентаря
                     return;
                 }
                 startWheelSwap(hover);
@@ -162,43 +175,72 @@ public final class SwapPlus extends Module {
     private void renderWheel(CustomDrawContext ctx) {
         if (!mode.get().equals("Колесо") || !wheelOpen || mc.currentScreen != null || mc.player == null) return;
         updateCursor(true);
+        
+        // Анимация появления
+        long elapsed = System.currentTimeMillis() - wheelOpenTime;
+        wheelAnimProgress = Math.min(1f, elapsed / 200f);
+        float eased = easeOutCubic(wheelAnimProgress);
+        
         int count = getWheelSlotCount();
         float cx = ctx.getScaledWindowWidth() / 2f, cy = ctx.getScaledWindowHeight() / 2f;
         float mx = (float)(mc.mouse.getX() * ctx.getScaledWindowWidth() / mc.getWindow().getWidth());
         float my = (float)(mc.mouse.getY() * ctx.getScaledWindowHeight() / mc.getWindow().getHeight());
-        int hover = getHoverIndex(mx, my, cx, cy, INNER_R, OUTER_R + 28f, count);
+        int hover = getHoverPanelIndex(mx, my, cx, cy, count, eased);
 
         RenderSystem.enableBlend();
         RenderSystem.disableDepthTest();
         RenderSystem.disableCull();
         RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        
         Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        
+        // Проход 1: только панели (без иконок, чтобы drawItem не сбрасывал шейдер)
+        float[] panelXs = new float[count];
+        float[] panelYs = new float[count];
         for (int i = 0; i < count; i++) {
             boolean isHover = i == hover;
             boolean isFlash = i == removeFlashIndex && System.currentTimeMillis() <= removeFlashUntilMs;
-            int r = 205, g = 205, b = 205, a = 95;
-            if (isHover) { r = 255; g = 209; b = 47; a = 140; }
-            if (isFlash) { r = 255; g = 70; b = 70; a = 140; }
-            float start = (float)(-Math.PI / 2d + 2d * Math.PI * (i / (double)count));
-            float end = (float)(-Math.PI / 2d + 2d * Math.PI * ((i + 1d) / count));
-            drawRingSegment(buf, cx, cy, INNER_R, OUTER_R, start, end, r, g, b, a);
+            
+            float angle = (float)(2.0 * Math.PI * i / count - Math.PI / 2.0);
+            panelXs[i] = cx + (float)Math.cos(angle) * PANEL_DISTANCE * eased;
+            panelYs[i] = cy + (float)Math.sin(angle) * PANEL_DISTANCE * eased;
+            
+            int bgColor = isFlash ? 0xFF3A1A1A : (isHover ? 0xFF2E2E2E : 0xFF1A1A1A);
+            int alpha = (int)(eased * (isHover ? 240 : 220));
+            bgColor = (bgColor & 0xFFFFFF) | (alpha << 24);
+            
+            drawRoundedRect(tess, panelXs[i] - PANEL_WIDTH/2, panelYs[i] - PANEL_HEIGHT/2, 
+                           PANEL_WIDTH, PANEL_HEIGHT, PANEL_RADIUS, bgColor);
         }
-        BufferRenderer.drawWithGlobalProgram(buf.end());
+        
         RenderSystem.enableCull();
         RenderSystem.enableDepthTest();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
-
+        
+        // Проход 2: иконки поверх панелей (drawItem меняет RenderSystem, поэтому после геометрии)
         for (int i = 0; i < count; i++) {
             if (!isWheelEmpty(i)) {
-                float start = (float)(-Math.PI / 2d + 2d * Math.PI * (i / (double)count));
-                float end = (float)(-Math.PI / 2d + 2d * Math.PI * ((i + 1d) / count));
-                float mid = (start + end) / 2f, iconR = (INNER_R + OUTER_R) / 2f;
-                ctx.drawItem(wheelStacks[i], (int)(cx + Math.cos(mid) * iconR - 8), (int)(cy + Math.sin(mid) * iconR - 8));
+                ctx.drawItem(wheelStacks[i], (int)(panelXs[i] - 8), (int)(panelYs[i] - 8));
+            } else {
+                // Крест для пустой ячейки — небольшой, по центру
+                drawCross(tess, panelXs[i], panelYs[i], 5f, (int)(eased * 120));
             }
         }
+        
+        // Центральный текст через кастомный шрифт
+        Font boldFont = Fonts.BOLD.getFont(7f);
+        Font subFont = Fonts.MEDIUM.getFont(5.5f);
+        int textAlpha = (int)(eased * 200);
+        ColorRGBA mainColor = new ColorRGBA(255, 255, 255, textAlpha);
+        ColorRGBA subColor = new ColorRGBA(180, 180, 180, (int)(textAlpha * 0.7f));
+        
+        String centerText = "Для добавления предмета";
+        String centerSubtext = "нажмите ЛКМ";
+        
+        ctx.drawText(boldFont, centerText, cx - boldFont.width(centerText) / 2f, cy - boldFont.height() / 2f - 3, mainColor);
+        ctx.drawText(subFont, centerSubtext, cx - subFont.width(centerSubtext) / 2f, cy + boldFont.height() / 2f + 1, subColor);
     }
 
     // Вызывается из HandledScreenMixin при клике на слот в инвентаре
@@ -274,9 +316,16 @@ public final class SwapPlus extends Module {
         cooldownTicks = 10;
     }
 
-    private void openWheel() { if (!wheelOpen) { wheelOpen = true; updateCursor(true); } }
+    private void openWheel() { 
+        if (!wheelOpen) { 
+            wheelOpen = true; 
+            wheelOpenTime = System.currentTimeMillis();
+            wheelAnimProgress = 0f;
+            updateCursor(true); 
+        } 
+    }
     private void releaseWheel() { if (wheelOpen) { wheelOpen = false; removeFlashIndex = -1; removeFlashUntilMs = 0L; updateCursor(false); } }
-    private void closeWheel() { wheelOpen = false; pendingPickSlot = -1; removeFlashIndex = -1; removeFlashUntilMs = 0L; updateCursor(false); }
+    private void closeWheel() { wheelOpen = false; pendingPickSlot = -1; pendingPickDelay = 0; removeFlashIndex = -1; removeFlashUntilMs = 0L; updateCursor(false); }
 
     private void updateCursor(boolean unlock) {
         if (mc == null || mc.mouse == null) return;
@@ -321,37 +370,114 @@ public final class SwapPlus extends Module {
         return -1;
     }
 
-    private int getHoverIndex(float mx, float my, float cx, float cy, float innerR, float outerR, int count) {
-        float dx = mx - cx, dy = my - cy, dist = (float)Math.sqrt(dx * dx + dy * dy);
-        if (dist < innerR || dist > outerR) return -1;
-        double ang = Math.atan2(dy, dx) + Math.PI / 2d;
-        if (ang < 0) ang += Math.PI * 2d;
-        int idx = (int)Math.floor(ang / (Math.PI * 2d) * count);
-        return (idx < 0 || idx >= count) ? -1 : idx;
+    private int getHoverPanelIndex(float mx, float my, float cx, float cy, int count, float animProgress) {
+        for (int i = 0; i < count; i++) {
+            float angle = (float)(2.0 * Math.PI * i / count - Math.PI / 2.0);
+            float panelX = cx + (float)Math.cos(angle) * PANEL_DISTANCE * animProgress;
+            float panelY = cy + (float)Math.sin(angle) * PANEL_DISTANCE * animProgress;
+            
+            float dx = mx - panelX;
+            float dy = my - panelY;
+            
+            if (Math.abs(dx) <= PANEL_WIDTH/2 && Math.abs(dy) <= PANEL_HEIGHT/2) {
+                return i;
+            }
+        }
+        return -1;
     }
-
-    private int getAngleIndex(float mx, float my, float cx, float cy, int count) {
-        double ang = Math.atan2(my - cy, mx - cx) + Math.PI / 2d;
-        if (ang < 0) ang += Math.PI * 2d;
-        int idx = (int)Math.floor(ang / (Math.PI * 2d) * count);
-        return (idx < 0 || idx >= count) ? -1 : idx;
+    
+    private float easeOutCubic(float t) {
+        return 1f - (float)Math.pow(1f - t, 3);
     }
-
-    private void drawRingSegment(BufferBuilder buf, float cx, float cy, float innerR, float outerR, float start, float end, int r, int g, int b, int a) {
-        int steps = Math.max(10, (int)(48 * Math.abs(end - start) / (Math.PI * 2f)));
-        float st = (end - start) / steps;
+    
+    private void drawCross(Tessellator tess, float cx, float cy, float size, int alpha) {
+        float thick = 1.5f;
+        int r = 120, g = 120, b = 120;
+        BufferBuilder buf = tess.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        // Линия \ (диагональ 1)
+        float dx = size * 0.707f, dy = size * 0.707f;
+        float nx = -thick * 0.707f, ny = thick * 0.707f;
+        buf.vertex(cx - dx + nx, cy - dy - ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx - dx - nx, cy - dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx + dx - nx, cy + dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx - dx + nx, cy - dy - ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx + dx - nx, cy + dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx + dx + nx, cy + dy - ny, 0).color(r, g, b, alpha);
+        // Линия / (диагональ 2)
+        buf.vertex(cx + dx + nx, cy - dy - ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx + dx - nx, cy - dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx - dx - nx, cy + dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx + dx + nx, cy - dy - ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx - dx - nx, cy + dy + ny, 0).color(r, g, b, alpha);
+        buf.vertex(cx - dx + nx, cy + dy - ny, 0).color(r, g, b, alpha);
+        RenderSystem.enableBlend();
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        BufferRenderer.drawWithGlobalProgram(buf.end());
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+    }
+    
+    private void drawRoundedRect(Tessellator tess, float x, float y, float w, float h, float r, int color) {
+        int a = (color >> 24) & 0xFF;
+        int red = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        
+        BufferBuilder buf = tess.begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        
+        // Центральный прямоугольник
+        buf.vertex(x + r, y, 0).color(red, g, b, a);
+        buf.vertex(x + w - r, y, 0).color(red, g, b, a);
+        buf.vertex(x + w - r, y + h, 0).color(red, g, b, a);
+        
+        buf.vertex(x + r, y, 0).color(red, g, b, a);
+        buf.vertex(x + w - r, y + h, 0).color(red, g, b, a);
+        buf.vertex(x + r, y + h, 0).color(red, g, b, a);
+        
+        buf.vertex(x, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + r, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + r, y + h - r, 0).color(red, g, b, a);
+        
+        buf.vertex(x, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + r, y + h - r, 0).color(red, g, b, a);
+        buf.vertex(x, y + h - r, 0).color(red, g, b, a);
+        
+        buf.vertex(x + w - r, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + w, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + w, y + h - r, 0).color(red, g, b, a);
+        
+        buf.vertex(x + w - r, y + r, 0).color(red, g, b, a);
+        buf.vertex(x + w, y + h - r, 0).color(red, g, b, a);
+        buf.vertex(x + w - r, y + h - r, 0).color(red, g, b, a);
+        
+        // Углы
+        drawCorner(buf, x + r, y + r, r, 180, 270, red, g, b, a);
+        drawCorner(buf, x + w - r, y + r, r, 270, 360, red, g, b, a);
+        drawCorner(buf, x + w - r, y + h - r, r, 0, 90, red, g, b, a);
+        drawCorner(buf, x + r, y + h - r, r, 90, 180, red, g, b, a);
+        
+        BufferRenderer.drawWithGlobalProgram(buf.end());
+    }
+    
+    private void drawCorner(BufferBuilder buf, float cx, float cy, float r, float startDeg, float endDeg, int red, int g, int b, int a) {
+        int steps = 8;
+        float startRad = (float)Math.toRadians(startDeg);
+        float endRad = (float)Math.toRadians(endDeg);
+        float step = (endRad - startRad) / steps;
+        
         for (int i = 0; i < steps; i++) {
-            float a0 = start + st * i, a1 = start + st * (i + 1);
-            float x0o = cx + (float)Math.cos(a0) * outerR, y0o = cy + (float)Math.sin(a0) * outerR;
-            float x1o = cx + (float)Math.cos(a1) * outerR, y1o = cy + (float)Math.sin(a1) * outerR;
-            float x0i = cx + (float)Math.cos(a0) * innerR, y0i = cy + (float)Math.sin(a0) * innerR;
-            float x1i = cx + (float)Math.cos(a1) * innerR, y1i = cy + (float)Math.sin(a1) * innerR;
-            buf.vertex(x0i, y0i, 0).color(r, g, b, a);
-            buf.vertex(x0o, y0o, 0).color(r, g, b, a);
-            buf.vertex(x1o, y1o, 0).color(r, g, b, a);
-            buf.vertex(x0i, y0i, 0).color(r, g, b, a);
-            buf.vertex(x1o, y1o, 0).color(r, g, b, a);
-            buf.vertex(x1i, y1i, 0).color(r, g, b, a);
+            float a1 = startRad + step * i;
+            float a2 = startRad + step * (i + 1);
+            
+            float x1 = cx + (float)Math.cos(a1) * r;
+            float y1 = cy + (float)Math.sin(a1) * r;
+            float x2 = cx + (float)Math.cos(a2) * r;
+            float y2 = cy + (float)Math.sin(a2) * r;
+            
+            buf.vertex(cx, cy, 0).color(red, g, b, a);
+            buf.vertex(x1, y1, 0).color(red, g, b, a);
+            buf.vertex(x2, y2, 0).color(red, g, b, a);
         }
     }
 }

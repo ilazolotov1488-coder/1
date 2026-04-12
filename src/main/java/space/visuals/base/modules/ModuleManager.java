@@ -11,13 +11,9 @@ import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.impl.combat.*;
 import space.visuals.client.modules.impl.misc.*;
 import space.visuals.client.modules.impl.movement.*;
-import space.visuals.client.modules.impl.player.FastBreak;
-import space.visuals.client.modules.impl.player.NoDelay;
+import space.visuals.client.modules.impl.player.AutoTool;
 import space.visuals.client.modules.impl.render.*;
 import space.visuals.utility.interfaces.IMinecraft;
-import space.visuals.client.modules.impl.player.AutoTool;
-import space.visuals.client.modules.impl.player.AutoArmor;
-import space.visuals.client.modules.impl.player.Blink;
 
 
 import java.util.*;
@@ -41,21 +37,13 @@ public final class ModuleManager implements IMinecraft {
     }
 
     private void registerCombat() {
-
-        registerModule(AntiBot.INSTANCE);
-        registerModule(Aura.INSTANCE);
         registerModule(AutoSwap.INSTANCE);
         registerModule(AutoTotem.INSTANCE);
         registerModule(SwapPlus.INSTANCE);
     }
 
     private void registerMovement() {
-
         registerModule(AutoSprint.INSTANCE);
-        registerModule(ElytraBooster.INSTANCE);
-        registerModule(ElytraRecast.INSTANCE);
-        registerModule(GuiWalk.INSTANCE);
-        registerModule(NoSlow.INSTANCE);
     }
 
     private void registerRender() {
@@ -75,10 +63,6 @@ public final class ModuleManager implements IMinecraft {
 
     private void registerPlayer() {
         registerModule(AutoTool.INSTANCE);
-        registerModule(AutoArmor.INSTANCE);
-        registerModule(Blink.INSTANCE);
-        registerModule(NoDelay.INSTANCE);
-        registerModule(FastBreak.INSTANCE);
     }
 
     private void registerMisc() {
@@ -91,12 +75,10 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AutoAuth.INSTANCE);
         registerModule(AutoDuels.INSTANCE);
         registerModule(AHHelper.INSTANCE);
-        registerModule(AutoSbor.INSTANCE);
         registerModule(NoInteract.INSTANCE);
         registerModule(AutoAccept.INSTANCE);
         registerModule(AutoRespawn.INSTANCE);
         registerModule(NameProtect.INSTANCE);
-        registerModule(ClanUpgrade.INSTANCE);
     }
 
     private void registerModule(Module module) {

@@ -15,8 +15,6 @@ import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.KeySetting;
-import space.visuals.client.modules.impl.movement.ElytraRecast;
-import space.visuals.utility.game.player.MovingUtil;
 import space.visuals.utility.game.player.PlayerIntersectionUtil;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.utility.game.player.rotation.Rotation;
@@ -107,21 +105,7 @@ public final class ElytraHelper extends Module {
     @EventTarget
     public void onTick(EventUpdate e) {
         if (fireworkCooldown > 0) fireworkCooldown--;
-
-        if (mc.player.getEquippedStack(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA)
-                && !mc.player.isTouchingWater()) {
-            if (!ElytraRecast.INSTANCE.isEnabled()
-                    || (mc.player.isUsingItem() || !MovingUtil.hasPlayerMovement())) {
-                if (!mc.player.isOnGround() && !mc.player.isGliding()) {
-                    elytraDelay++;
-                    if (elytraDelay == 4) {
-                        PlayerIntersectionUtil.startFallFlying();
-                    }
-                } else {
-                    elytraDelay = 0;
-                }
-            }
-        }
+        // Автопрыжок убран
     }
 
     private Slot chestPlate() {

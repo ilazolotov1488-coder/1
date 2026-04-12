@@ -195,10 +195,10 @@ public class StatusBarsComponent extends DraggableHudElement {
         }
         // Текст HP по центру бара
         String hpStr = absorp > 0 ? (int)curHp + "+" + (int)absorp : (int)curHp + "/" + (int)maxHp;
-        ctx.drawText(font, hpStr,
-                hpX + pad + (innerBarW - font.width(hpStr)) / 2f,
-                barY + (h - textH) / 2f,
-                new ColorRGBA(255, 255, 255, 200));
+        float hpTextX = hpX + pad + (innerBarW - font.width(hpStr)) / 2f;
+        float hpTextY = barY + (h - textH) / 2f;
+        ctx.drawText(font, hpStr, hpTextX + 0.5f, hpTextY + 0.5f, new ColorRGBA(0, 0, 0, 160));
+        ctx.drawText(font, hpStr, hpTextX, hpTextY, new ColorRGBA(255, 255, 255, 255));
 
         // ── Еда блок ──
         DrawUtil.drawBlurHud(ctx.getMatrices(), foodX, blockY, blockW, blockH, 18, BorderRadius.all(4f), ColorRGBA.WHITE);
@@ -215,10 +215,10 @@ public class StatusBarsComponent extends DraggableHudElement {
         }
         // Текст еды по центру бара
         String foodStr = (int)curFood + "/20";
-        ctx.drawText(font, foodStr,
-                foodX + pad + (innerBarW - font.width(foodStr)) / 2f,
-                barY + (h - textH) / 2f,
-                new ColorRGBA(255, 255, 255, 200));
+        float foodTextX = foodX + pad + (innerBarW - font.width(foodStr)) / 2f;
+        float foodTextY = barY + (h - textH) / 2f;
+        ctx.drawText(font, foodStr, foodTextX + 0.5f, foodTextY + 0.5f, new ColorRGBA(0, 0, 0, 160));
+        ctx.drawText(font, foodStr, foodTextX, foodTextY, new ColorRGBA(255, 255, 255, 255));
 
         width  = HOTBAR_W;
         height = blockH + ABOVE_HOTBAR;

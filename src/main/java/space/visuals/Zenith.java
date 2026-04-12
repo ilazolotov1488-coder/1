@@ -12,6 +12,7 @@ import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
 import space.visuals.base.autobuy.AutoBuyManager;
+import space.visuals.base.discord.DiscordManager;
 
 
 import space.visuals.base.comand.CommandManager;
@@ -66,6 +67,7 @@ public enum Zenith {
     private CommandManager commandManager;
     private ConfigManager configManager;
     private RCTRepository rctRepository;
+    private DiscordManager discordManager;
 
     @CompileToNative
     @VMProtect(type = CompileType.ULTRA)
@@ -80,6 +82,9 @@ public enum Zenith {
             staffManager = new StaffManager();
             System.out.println("[ZENITH] step 3: NotifyManager");
             notifyManager = new NotifyManager();
+            System.out.println("[ZENITH] step 3.5: DiscordManager");
+            discordManager = new DiscordManager();
+            discordManager.connect();
             System.out.println("[ZENITH] step 4: ServerHandler");
             serverHandler = new ServerHandler();
             System.out.println("[ZENITH] step 5: RCTRepository");
@@ -129,6 +134,7 @@ public enum Zenith {
         friendManager.save();
         staffManager.save();
         configManager.save();
+        if (discordManager != null) discordManager.shutdown();
     }
 
     public static Identifier id(String path) {

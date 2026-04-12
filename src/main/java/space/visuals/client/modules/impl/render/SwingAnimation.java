@@ -20,7 +20,6 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
-import space.visuals.client.modules.impl.combat.Aura;
 
 /**
  А ты не хочешь признавать, что фрик сделал это сам

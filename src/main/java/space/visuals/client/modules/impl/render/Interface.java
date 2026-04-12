@@ -35,26 +35,28 @@ public final class Interface extends Module {
     public static final Interface INSTANCE = new Interface();
 
     private final MultiBooleanSetting elementsSetting = MultiBooleanSetting.create("Элементы", List.of(
-            "Ватермарка",    // 0
-            "Эффекты",       // 1
-            "Стафф",         // 2
-            "Уведомления",   // 3
-            "Инвентарь",     // 4
-            "Кулдауны",      // 5
-            "Информация",    // 6
-            "Бинды",         // 7
-            "Таргет худ",    // 8
-            "Музыка",        // 9
-            "Хотбар",        // 10
-            "Скрореборд",    // 11
-            "Таб",           // 12
-            "Статус бары"    // 13
+            "Ватермарка",      // 0
+            "Эффекты",         // 1
+            "Стафф",           // 2
+            "Уведомления",     // 3
+            "Инвентарь",       // 4
+            "Кулдауны",        // 5
+            "Информация",      // 6
+            "Бинды",           // 7
+            "Таргет худ",      // 8
+            "Музыка",          // 9
+            "Хотбар",          // 10
+            "Скрореборд",      // 11
+            "Таб",             // 12
+            "Статус бары",     // 13
+            "Dynamic Island"   // 14
     ));
 
     private final List<DraggableHudElement> elements = new ArrayList<>();
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
     private final NumberSetting scale = new NumberSetting("Размер", 2, 1, 3, 0.1f, ((oldValue, newValue) -> {
+        if (mc.getWindow() == null) return;
         float width = mc.getWindow().getWidth() / newValue;
         float height = mc.getWindow().getHeight() / newValue;
 
@@ -106,6 +108,8 @@ public final class Interface extends Module {
         statusBarStyle        = statusBarsComponent.style;
         statusBarHpColor      = statusBarsComponent.hpColor;
         statusBarFoodColor    = statusBarsComponent.foodColor;
+
+        addElement(new DynamicIslandComponent("DynamicIsland", 0.0f, 0.0f, 960.0f, 495.5f, 0.0f, 7.0f, DraggableHudElement.Align.TOP_CENTER)); // 14 - Dynamic Island
 
     }
 
@@ -318,6 +322,9 @@ public final class Interface extends Module {
     }
     public boolean isEnableStatusBars() {
         return elementsSetting.isEnable(13); //13 - статус бары
+    }
+    public boolean isEnableDynamicIsland() {
+        return elementsSetting.isEnable(14); //14 - dynamic island
     }
 
     @EventTarget

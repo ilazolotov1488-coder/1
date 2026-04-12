@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.base.events.impl.render.EventRender2D;
+import space.visuals.client.modules.impl.combat.SwapPlus;
 import space.visuals.client.modules.impl.render.Crosshair;
 import space.visuals.client.modules.impl.render.Interface;
 import space.visuals.utility.render.display.base.CustomDrawContext;
@@ -37,7 +38,7 @@ public abstract class InGameHudMixin {
     private void removeVanillaCrosshair(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         try {
             Module crosshairModule = Crosshair.INSTANCE;
-            if ( crosshairModule.isEnabled()) {
+            if (crosshairModule.isEnabled() || SwapPlus.INSTANCE.isWheelOpen()) {
                 ci.cancel();
             }
         } catch (Exception e) {

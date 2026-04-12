@@ -12,9 +12,7 @@ import space.visuals.base.font.Font;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.theme.Theme;
 import space.visuals.client.hud.elements.draggable.DraggableHudElement;
-import space.visuals.client.modules.impl.combat.Aura;
 import space.visuals.utility.game.player.PlayerIntersectionUtil;
-import space.visuals.utility.game.server.ServerHandler;
 import space.visuals.utility.mixin.accessors.DrawContextAccessor;
 import space.visuals.utility.render.display.base.BorderRadius;
 import space.visuals.utility.render.display.base.CustomDrawContext;
@@ -40,24 +38,24 @@ public class TargetHudComponent extends DraggableHudElement {
 
     }
 
+    private static final float TARGET_RANGE = 4f;
+
     @Override
     public void render(CustomDrawContext ctx) {
         this.width=145f;
         this.height=40f;
-        Aura aura = Aura.INSTANCE;
 
-        LivingEntity target = (mc.currentScreen instanceof ChatScreen) ? mc.player :aura.getTarget();
+        LivingEntity target = null;
+        if (mc.currentScreen instanceof ChatScreen) {
+            target = mc.player;
+        } else if (mc.targetedEntity instanceof LivingEntity living && living != mc.player) {
+            target = living;
+        }
         setTarget(target);
 
+        if (toggleAnimation.getValue() == 0 || this.target == null) return;
 
-
-        if (toggleAnimation.getValue() == 0 ||this.target ==null) return;
-
-        String currentTargetName = this.target.getName().getString();
-
-
-        renderTargetHud(ctx,  this.target, toggleAnimation.getValue() );
-
+        renderTargetHud(ctx, this.target, toggleAnimation.getValue());
     }
 
     private void renderTargetHud(CustomDrawContext ctx, LivingEntity target, float animation) {

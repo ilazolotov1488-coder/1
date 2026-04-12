@@ -21,6 +21,7 @@
     "accessors.InGameHudAccessor",
     "accessors.ShaderProgramAccessor",
     "client.BackGroundRendererMixin",
+    "client.BossBarHudMixin",
     "client.CameraMixin",
     "client.ChatInputSuggestorMixin",
     "client.ClientPlayerEntityMixin",
