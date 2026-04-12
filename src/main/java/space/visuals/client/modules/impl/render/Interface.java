@@ -18,6 +18,7 @@ import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.ColorSetting;
+import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.MultiBooleanSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.utility.game.other.TextUtil;
@@ -69,8 +70,8 @@ public final class Interface extends Module {
     // Настройки статус-баров (делегируются в StatusBarsComponent)
     private StatusBarsComponent statusBarsComponent;
     private NumberSetting statusBarHeight;
-    private NumberSetting statusBarWidth;
     private BooleanSetting statusBarCustomColors;
+    private ModeSetting statusBarStyle;
     private ColorSetting statusBarHpColor;
     private ColorSetting statusBarFoodColor;
 
@@ -101,8 +102,8 @@ public final class Interface extends Module {
 
         // Привязываем настройки компонента как поля модуля (для отображения в меню)
         statusBarHeight       = statusBarsComponent.barHeight;
-        statusBarWidth        = statusBarsComponent.barWidth;
         statusBarCustomColors = statusBarsComponent.customColors;
+        statusBarStyle        = statusBarsComponent.style;
         statusBarHpColor      = statusBarsComponent.hpColor;
         statusBarFoodColor    = statusBarsComponent.foodColor;
 
