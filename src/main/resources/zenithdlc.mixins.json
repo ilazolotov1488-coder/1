@@ -33,6 +33,7 @@
     "client.MinecraftClientMixin",
     "client.MouseMixin",
     "client.ParticleManagerMixin",
+    "client.TitleScreenMixin",
     "client.render.LivingEntityRendererMixin",
     "client.render.ScreenMixin",
     "client.render.WindowMixin",
