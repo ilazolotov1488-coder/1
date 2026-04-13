@@ -76,11 +76,9 @@ public enum Zenith {
     public void init() {
         System.out.println("[ZENITH] init() started");
         try {
-            // Создаём папку space при первом запуске
-            if (!DIRECTORY.exists()) {
-                DIRECTORY.mkdirs();
-                System.out.println("[ZENITH] Created directory: " + DIRECTORY.getAbsolutePath());
-            }
+            // Создаём папку space и configs при первом запуске
+            DIRECTORY.mkdirs();
+            new java.io.File(DIRECTORY, "configs").mkdirs();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> Zenith.getInstance().shutdown()));
 
             System.out.println("[ZENITH] step 1: FriendManager");

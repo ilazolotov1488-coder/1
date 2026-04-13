@@ -34,21 +34,27 @@ public class Config {
         try {
             JsonObject root = new JsonObject();
 
-            
             JsonObject modulesObject = new JsonObject();
             for (Module module : Zenith.getInstance().getModuleManager().getModules()) {
-                modulesObject.add(module.getName(), module.save());
+                try {
+                    modulesObject.add(module.getName(), module.save());
+                } catch (Exception e) {
+                    System.err.println("[Config] Failed to save module: " + module.getName());
+                    e.printStackTrace();
+                }
             }
             root.add("Modules", modulesObject);
 
-            
             ThemeManager themeManager = Zenith.getInstance().getThemeManager();
 
             JsonObject themeObject = new JsonObject();
             themeObject.addProperty("selected", themeManager.getCurrentTheme().getName());
-            themeObject.addProperty("columns", Zenith.getInstance().getMenuScreen().getColumns());
+            try {
+                themeObject.addProperty("columns", Zenith.getInstance().getMenuScreen().getColumns());
+            } catch (Exception e) {
+                themeObject.addProperty("columns", 3);
+            }
 
-            
             JsonObject items = new JsonObject();
             for (Theme t : themeManager.getThemes()) {
                 items.add(t.getName(), serializeTheme(t));
@@ -59,6 +65,7 @@ public class Config {
 
             return root;
         } catch (Exception exception) {
+            System.err.println("[Config] save() failed:");
             exception.printStackTrace();
             return null;
         }

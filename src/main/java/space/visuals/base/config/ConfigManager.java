@@ -81,7 +81,13 @@ public class ConfigManager {
                 config = new Config(configName);
             }
 
-            String contentPrettyPrint = new GsonBuilder().setPrettyPrinting().create().toJson(config.save());
+            JsonObject saveData = config.save();
+            if (saveData == null) {
+                System.err.println("[ConfigManager] config.save() returned null, skipping write");
+                return false;
+            }
+
+            String contentPrettyPrint = new GsonBuilder().setPrettyPrinting().create().toJson(saveData);
 
             contentPrettyPrint = Base64.getEncoder().encodeToString(CryptUtility.encryptData(contentPrettyPrint.getBytes(), shifr));
             try {
@@ -90,9 +96,11 @@ public class ConfigManager {
                 writer.close();
                 return true;
             } catch (IOException e) {
+                e.printStackTrace();
                 return false;
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

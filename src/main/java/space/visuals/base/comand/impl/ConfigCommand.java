@@ -19,10 +19,18 @@ public class ConfigCommand extends CommandAbstract {
 
         builder.then(literal("dir").executes(context -> {
             try {
-                java.awt.Desktop.getDesktop().open(space.visuals.base.config.ConfigManager.configDirectory);
+                new Thread(() -> {
+                    try {
+                        java.awt.Desktop.getDesktop().open(space.visuals.base.config.ConfigManager.configDirectory);
+                    } catch (Exception e) {
+                        space.visuals.utility.game.other.MessageUtil.displayMessage(
+                            space.visuals.utility.game.other.MessageUtil.LogLevel.WARN,
+                            "§cНе удалось открыть папку: " + e.getMessage());
+                    }
+                }).start();
                 MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§aОткрываю папку с конфигами");
             } catch (Exception e) {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN, "§cНе удалось открыть папку: " + e.getMessage());
+                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN, "§cОшибка: " + e.getMessage());
             }
             return SINGLE_SUCCESS;
         }));

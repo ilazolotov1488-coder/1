@@ -25,18 +25,22 @@ public class PlayerInventoryComponent implements IMinecraft {
 
 
     public void addTask(Runnable task) {
-        if ( MovingUtil.hasPlayerMovement()) {
-            Zenith.getInstance().getScriptManager().addTask(script);
+        if (MovingUtil.hasPlayerMovement()) {
+            // не добавляем если предыдущая задача ещё выполняется
+            if (!Zenith.getInstance().getScriptManager().isFinished()) {
+                return;
+            }
+
+            ScriptManager.ScriptTask newScript = new ScriptManager.ScriptTask();
+            Zenith.getInstance().getScriptManager().addTask(newScript);
 
             switch (Zenith.getInstance().getServerHandler().getServer()) {
                 case "FunTime", "HolyWorld" -> {
-
-
-                    script.schedule(EventUpdate.class, eventUpdate -> {
+                    newScript.schedule(EventUpdate.class, eventUpdate -> {
                         PlayerInventoryComponent.disableMoveKeys();
                         return true;
                     });
-                    script.schedule(EventUpdate.class, eventUpdate -> {
+                    newScript.schedule(EventUpdate.class, eventUpdate -> {
                         task.run();
                         enableMoveKeys();
                         return true;
@@ -45,22 +49,19 @@ public class PlayerInventoryComponent implements IMinecraft {
                 }
                 case "ReallyWorld" -> {
                     if (mc.player.isOnGround()) {
-
-                        script.schedule(EventUpdate.class, eventUpdate -> {
+                        newScript.schedule(EventUpdate.class, eventUpdate -> {
                             PlayerInventoryComponent.disableMoveKeys();
                             return true;
                         });
-
-                        script.schedule(EventUpdate.class, eventUpdate -> {
+                        newScript.schedule(EventUpdate.class, eventUpdate -> {
                             PlayerInventoryComponent.disableMoveKeys();
                             return true;
                         });
-
-                        script.schedule(EventUpdate.class, eventUpdate -> {
+                        newScript.schedule(EventUpdate.class, eventUpdate -> {
                             task.run();
                             return true;
                         });
-                        script.schedule(EventUpdate.class, eventUpdate -> {
+                        newScript.schedule(EventUpdate.class, eventUpdate -> {
                             enableMoveKeys();
                             return true;
                         });
@@ -68,16 +69,15 @@ public class PlayerInventoryComponent implements IMinecraft {
                     }
                 }
                 case "CopyTime" -> {
-                    script.schedule(EventUpdate.class, eventUpdate -> {
+                    newScript.schedule(EventUpdate.class, eventUpdate -> {
                         PlayerInventoryComponent.disableMoveKeys();
                         return true;
                     });
-                    script.schedule(EventUpdate.class, eventUpdate -> {
+                    newScript.schedule(EventUpdate.class, eventUpdate -> {
                         task.run();
-
                         return true;
                     });
-                    script.schedule(EventUpdate.class, eventUpdate -> {
+                    newScript.schedule(EventUpdate.class, eventUpdate -> {
                         enableMoveKeys();
                         return true;
                     });
