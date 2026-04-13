@@ -57,3 +57,6 @@ accessible method net/minecraft/client/network/ClientPlayerInteractionManager se
 accessible method net/minecraft/client/sound/SoundSystem getAdjustedVolume (Lnet/minecraft/client/sound/SoundInstance;)F
 
 accessible method net/minecraft/client/sound/SoundSystem getAdjustedVolume (FLnet/minecraft/sound/SoundCategory;)F
+
+accessible method net/minecraft/client/sound/SoundListener setVolume (F)V
+accessible field net/minecraft/client/sound/SoundListener volume F

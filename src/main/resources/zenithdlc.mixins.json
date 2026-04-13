@@ -17,6 +17,7 @@
   ],
   "client": [
     "accessors.DrawContextAccessor",
+    "accessors.SoundSystemAccessor",
     "accessors.HandledScreenAccessor",
     "accessors.InGameHudAccessor",
     "accessors.ShaderProgramAccessor",
