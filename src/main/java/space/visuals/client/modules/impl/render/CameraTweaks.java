@@ -32,7 +32,7 @@ public class CameraTweaks extends Module {
 
     private final MultiBooleanSetting multiSetting = MultiBooleanSetting.create(
             "Настройки",
-            List.of("Соотношение сторон", "Клип камеры", "Дистанция камеры")
+            List.of("Соотношение сторон", "Дистанция камеры")
     );
 
     private final NumberSetting ratioSetting =
@@ -41,7 +41,7 @@ public class CameraTweaks extends Module {
 
     private final NumberSetting distanceSetting =
             new NumberSetting("Дистанция камеры", 3.0F, 2.0F, 5.0F, 0.5f,
-                    () -> multiSetting.isEnable(2));
+                    () -> multiSetting.isEnable(1));
 
     private final KeySetting zoomSetting = new KeySetting("Зум");
     private final KeySetting freeLookSetting = new KeySetting("Свободный взгляд");
@@ -104,8 +104,7 @@ public class CameraTweaks extends Module {
 
     @EventTarget
     public void onCamera(EventCamera e) {
-        e.setCameraClip(multiSetting.isEnable(1));
-        if (multiSetting.isEnable(2)) {
+        if (multiSetting.isEnable(1)) {
             e.setDistance(distanceSetting.getCurrent());
         }
         e.setAngle(angle);

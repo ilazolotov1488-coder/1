@@ -26,6 +26,7 @@ import space.visuals.base.rotation.deeplearnig.DeepLearningManager;
 import space.visuals.base.theme.ThemeManager;
 import space.visuals.client.screens.autobuy.items.AutoInventoryBuyScreen;
 import space.visuals.client.screens.menu.MenuScreen;
+import space.visuals.utility.game.server.LastServerManager;
 import space.visuals.utility.game.server.ServerHandler;
 import space.visuals.base.notify.NotifyManager;
 import space.visuals.base.repository.RCTRepository;
@@ -57,6 +58,7 @@ public enum Zenith {
     private ScriptManager scriptManager;
     private AutoInventoryBuyScreen autoInventoryBuyScreen;
     private ServerHandler serverHandler;
+    private LastServerManager lastServerManager;
     private FriendManager friendManager;
     private StaffManager staffManager;
     private DeepLearningManager deepLearningManager;
@@ -74,6 +76,11 @@ public enum Zenith {
     public void init() {
         System.out.println("[ZENITH] init() started");
         try {
+            // Создаём папку space при первом запуске
+            if (!DIRECTORY.exists()) {
+                DIRECTORY.mkdirs();
+                System.out.println("[ZENITH] Created directory: " + DIRECTORY.getAbsolutePath());
+            }
             Runtime.getRuntime().addShutdownHook(new Thread(() -> Zenith.getInstance().shutdown()));
 
             System.out.println("[ZENITH] step 1: FriendManager");
@@ -87,6 +94,8 @@ public enum Zenith {
             discordManager.connect();
             System.out.println("[ZENITH] step 4: ServerHandler");
             serverHandler = new ServerHandler();
+            System.out.println("[ZENITH] step 4.5: LastServerManager");
+            lastServerManager = new LastServerManager();
             System.out.println("[ZENITH] step 5: RCTRepository");
             rctRepository = new RCTRepository();
             System.out.println("[ZENITH] step 6: ThemeManager");
@@ -134,6 +143,7 @@ public enum Zenith {
         friendManager.save();
         staffManager.save();
         configManager.save();
+        if (lastServerManager != null) lastServerManager.save();
         if (discordManager != null) discordManager.shutdown();
     }
 

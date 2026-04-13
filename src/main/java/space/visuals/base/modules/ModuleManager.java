@@ -40,10 +40,12 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AutoSwap.INSTANCE);
         registerModule(AutoTotem.INSTANCE);
         registerModule(SwapPlus.INSTANCE);
+        registerModule(ItemRadius.INSTANCE);
     }
 
     private void registerMovement() {
         registerModule(AutoSprint.INSTANCE);
+        registerModule(ElytraFly.INSTANCE);
     }
 
     private void registerRender() {
@@ -59,6 +61,9 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ViewModel.INSTANCE);
         registerModule(WorldTweaks.INSTANCE);
         registerModule(EntityESP.INSTANCE);
+        registerModule(BlockOverlay.INSTANCE);
+        registerModule(Taksa.INSTANCE);
+        registerModule(TargetESP.INSTANCE);
     }
 
     private void registerPlayer() {
@@ -80,6 +85,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AutoRespawn.INSTANCE);
         registerModule(NameProtect.INSTANCE);
         registerModule(Sounds.INSTANCE);
+        registerModule(AutoJoin.INSTANCE);
     }
 
     private void registerModule(Module module) {

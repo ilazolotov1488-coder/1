@@ -17,6 +17,16 @@ public class ConfigCommand extends CommandAbstract {
     @Override
     public void execute(LiteralArgumentBuilder<CommandSource> builder) {
 
+        builder.then(literal("dir").executes(context -> {
+            try {
+                java.awt.Desktop.getDesktop().open(space.visuals.base.config.ConfigManager.configDirectory);
+                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§aОткрываю папку с конфигами");
+            } catch (Exception e) {
+                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN, "§cНе удалось открыть папку: " + e.getMessage());
+            }
+            return SINGLE_SUCCESS;
+        }));
+
         builder.then(literal("save").executes(context -> {
             boolean success = Zenith.getInstance().getConfigManager().saveConfig("confeg");
             if (success) {
