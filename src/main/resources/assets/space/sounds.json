@@ -1,0 +1,16 @@
+{
+  "clickgui_open": { "sounds": [ { "name": "space:clickgui_open", "stream": false } ] },
+  "toggle":        { "sounds": [ { "name": "space:toggle",        "stream": false } ] },
+  "applepay":      { "sounds": [ { "name": "space:applepay",      "stream": false } ] },
+  "welcome":       { "sounds": [ { "name": "space:welcome",       "stream": false } ] },
+  "typing":        { "sounds": [ { "name": "space:typing",        "stream": false } ] },
+  "critical":      { "sounds": [ { "name": "space:critical",      "stream": false } ] },
+  "hitsound1":     { "sounds": [ { "name": "space:hitsound1",     "stream": false } ] },
+  "hitsound2":     { "sounds": [ { "name": "space:hitsound2",     "stream": false } ] },
+  "hitsound3":     { "sounds": [ { "name": "space:hitsound3",     "stream": false } ] },
+  "hitsound4":     { "sounds": [ { "name": "space:hitsound4",     "stream": false } ] },
+  "hitsound5":     { "sounds": [ { "name": "space:hitsound5",     "stream": false } ] },
+  "hitsound6":     { "sounds": [ { "name": "space:hitsound6",     "stream": false } ] },
+  "hitsound7":     { "sounds": [ { "name": "space:hitsound7",     "stream": false } ] },
+  "hitsound8":     { "sounds": [ { "name": "space:hitsound8",     "stream": false } ] }
+}

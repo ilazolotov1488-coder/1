@@ -100,6 +100,7 @@ public final class MsdfFont implements IMinecraft {
 			x += glyph.apply(matrix, consumer, size, x, y, z, color) + thickness + spacing;
 			prevChar = c;
 		}
+		texture.setFilter(false, false); // сброс — не влияем на ванильный рендер
 	}
 	public void applyGlyphs(Matrix4f matrix, VertexConsumer consumer, String text, float size, float thickness, float spacing, float x, float y, float z, Gradient color) {
 		texture.setFilter(true, true);
@@ -157,6 +158,7 @@ public final class MsdfFont implements IMinecraft {
 			x += glyph.apply(matrix, consumer, size, x, y, z, color) + thickness + spacing;
 			prevChar = c;
 		}
+		texture.setFilter(false, false); // сброс — не влияем на ванильный рендер
 	}
 public float getWidth(String text, float size) {
 	text = text.replace("ᴀ", "A")

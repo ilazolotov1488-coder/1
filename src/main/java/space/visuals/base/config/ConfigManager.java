@@ -32,6 +32,10 @@ public class ConfigManager {
 
         configDirectory.mkdirs();
         loadConfig("current_config");
+        // включаем Sounds по умолчанию если конфиг не задал состояние
+        if (!space.visuals.client.modules.impl.misc.Sounds.INSTANCE.isEnabled()) {
+            space.visuals.client.modules.impl.misc.Sounds.INSTANCE.toggle();
+        }
         EventManager.register(this);
         scheduler.scheduleAtFixedRate(() -> {
             try {

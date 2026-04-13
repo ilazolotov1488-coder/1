@@ -72,6 +72,8 @@ public class BlurProgram implements IWindow {
         mc.getFramebuffer().endRead();
 
         mc.getFramebuffer().beginWrite(false);
+        // сбрасываем фильтр на NEAREST чтобы не смазывать ванильный рендер
+        mc.getFramebuffer().setTexFilter(org.lwjgl.opengl.GL11.GL_NEAREST);
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.disableBlend();
 

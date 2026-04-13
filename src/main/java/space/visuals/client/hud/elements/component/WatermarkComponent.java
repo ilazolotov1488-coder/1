@@ -42,10 +42,19 @@ public class WatermarkComponent extends DraggableHudElement {
         elements.clear();
         elements.add(new HudElement("s", ()->"","") {
             @Override
+            public void calculateWidth(Font font, float iconSize, float cellPadding, float iconTextSpacing) {
+                Font boldFont = Fonts.BOLD.getFont(10f);
+                this.width = cellPadding * 2 + boldFont.width("s");
+            }
+
+            @Override
             public void drawContent(CustomDrawContext ctx, float blockX, float blockY, float blockHeight, float iconSize, float iconTextSpacing, ColorRGBA iconColor, ColorRGBA textColor, Font font) {
-                Font boldFont = Fonts.BOLD.getFont(8f);
-                float textY = blockY + (blockHeight - boldFont.height()) / 2f;
-                float textX = blockX + (getWidth() - boldFont.width("s")) / 2f;
+                Font boldFont = Fonts.BOLD.getFont(10f);
+                float textW = boldFont.width("s");
+                float textH = boldFont.height();
+                // blockX уже без +4 смещения, центрируем по всей ширине ячейки
+                float textX = blockX + (getWidth() - textW) / 2f;
+                float textY = blockY + (blockHeight - textH) / 2f - 1f;
                 ctx.drawText(boldFont, "s", textX, textY, iconColor);
             }
         });
@@ -77,7 +86,7 @@ public class WatermarkComponent extends DraggableHudElement {
                 ctx.drawRoundedRect(currentX, y, el.getWidth()+(i==elements.size()-1?4:0), totalHeight, r,i % 2 == 0? highlightBgColor:mainBgColor);
 
 
-            el.drawContent(ctx, currentX+(i==0?4:0), y, totalHeight, iconSize, iconTextSpacing, iconColor, textColor, font);
+            el.drawContent(ctx, currentX, y, totalHeight, iconSize, iconTextSpacing, iconColor, textColor, font);
             currentX += el.getWidth() ;
         }
         ctx.drawRoundedBorder(x, y,totalWidth, totalHeight,0.01f,BorderRadius.all(4),theme.getForegroundStroke());

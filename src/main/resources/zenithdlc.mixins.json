@@ -20,6 +20,7 @@
     "accessors.HandledScreenAccessor",
     "accessors.InGameHudAccessor",
     "accessors.ShaderProgramAccessor",
+    "client.SoundSystemMixin",
     "client.BackGroundRendererMixin",
     "client.BossBarHudMixin",
     "client.CameraMixin",

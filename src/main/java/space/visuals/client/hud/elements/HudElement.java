@@ -16,7 +16,7 @@ public class HudElement {
     private final Supplier<String> text;
     private final String prefix;
     @Getter
-    private float width;
+    protected float width;
 
     public HudElement(String icon, Supplier<String> text) {
         this(icon, text, "");

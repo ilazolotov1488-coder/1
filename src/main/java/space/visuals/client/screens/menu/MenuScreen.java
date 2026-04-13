@@ -397,6 +397,13 @@ public class MenuScreen extends CustomScreen {
                 setting.getAnimationScale().setTargetValue(0);
             }
             closing = true;
+            // звук закрытия гуи — сразу при нажатии Escape
+            try {
+                if (mc.getSoundManager() != null) {
+                    float vol = space.visuals.client.modules.impl.misc.Sounds.INSTANCE.volumeGuiClose.getCurrent();
+                    space.visuals.utility.sounds.ClientSounds.CLICKGUI_OPEN.play(vol, 0.8f);
+                }
+            } catch (Exception ignored) {}
         }
 
 

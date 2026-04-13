@@ -1,0 +1,16 @@
+{
+  "clickgui_open": { "sounds": [ { "name": "zenithdlc:clickgui_open", "stream": false } ] },
+  "toggle":        { "sounds": [ { "name": "zenithdlc:toggle",        "stream": false } ] },
+  "applepay":      { "sounds": [ { "name": "zenithdlc:applepay",      "stream": false } ] },
+  "welcome":       { "sounds": [ { "name": "zenithdlc:welcome",       "stream": false } ] },
+  "typing":        { "sounds": [ { "name": "zenithdlc:typing",        "stream": false } ] },
+  "critical":      { "sounds": [ { "name": "zenithdlc:critical",      "stream": false } ] },
+  "hitsound1":     { "sounds": [ { "name": "zenithdlc:hitsound1",     "stream": false } ] },
+  "hitsound2":     { "sounds": [ { "name": "zenithdlc:hitsound2",     "stream": false } ] },
+  "hitsound3":     { "sounds": [ { "name": "zenithdlc:hitsound3",     "stream": false } ] },
+  "hitsound4":     { "sounds": [ { "name": "zenithdlc:hitsound4",     "stream": false } ] },
+  "hitsound5":     { "sounds": [ { "name": "zenithdlc:hitsound5",     "stream": false } ] },
+  "hitsound6":     { "sounds": [ { "name": "zenithdlc:hitsound6",     "stream": false } ] },
+  "hitsound7":     { "sounds": [ { "name": "zenithdlc:hitsound7",     "stream": false } ] },
+  "hitsound8":     { "sounds": [ { "name": "zenithdlc:hitsound8",     "stream": false } ] }
+}

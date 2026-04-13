@@ -69,10 +69,14 @@ public class SidebarPanel {
         float logoSize = 14;
         float logoX = sidebarX + (collapsedSidebarWidth - logoSize) / 2f;
         float logoY = sidebarY + 8;
-        ctx.drawText(Fonts.ICONS.getFont(11), "5", logoX + 2, logoY + 3, Zenith.getInstance().getThemeManager().getColorCycleIcon().toGradient().mulAlpha(progress));
+        // Буква "s" по центру collapsed-зоны
+        Font sBoldFont = Fonts.BOLD.getFont(11f);
+        float sW = sBoldFont.width("s");
+        float sH = sBoldFont.height();
+        float sIconX = sidebarX + (collapsedSidebarWidth - sW) / 2f;
+        float sIconY = logoY + (logoSize - sH) / 2f;
+        ctx.drawText(sBoldFont, "s", sIconX, sIconY, Zenith.getInstance().getThemeManager().getColorCycleIcon().toGradient().mulAlpha(progress));
 
-
-        //ctx.drawSprite(new CustomSprite("icons/logo.png"), logoX, logoY, logoSize, logoSize, primary);
         ctx.pushMatrix();
         ctx.enableScissor((int) sidebarX, (int) sidebarY,
                 (int) (sidebarX + sidebarWidth), (int) (sidebarY + sidebarHeight));
@@ -82,9 +86,8 @@ public class SidebarPanel {
         ColorRGBA iconColorDisable = theme.getGray().mulAlpha(progress);
         {
             Font logoFont = Fonts.MEDIUM.getFont(7);
-            String clientName = "zenithdlc.net";
-
-            ctx.drawText(logoFont, clientName, logoX + logoSize + 8, logoY + (logoSize - logoFont.height()) / 2f + 1, textColor);
+            String clientName = "t.me/spacevisuals";
+            ctx.drawText(logoFont, clientName, logoX + logoSize + 4, logoY + (logoSize - logoFont.height()) / 2f + 1, textColor);
         }
 
         final float expandedIconSize = 10f;
@@ -144,7 +147,7 @@ public class SidebarPanel {
 
         boolean hover = GuiUtil.isHovered(avatarX, avatarY, avatarSize, avatarSize, ctx);
 
-        DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/avatar.png"), avatarX, avatarY, avatarSize, avatarSize, BorderRadius.all(4), ColorRGBA.WHITE.mulAlpha(progress));
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/space_cat.png"), avatarX, avatarY, avatarSize, avatarSize, BorderRadius.all(4), ColorRGBA.WHITE.mulAlpha(progress));
         DrawUtil.drawRoundedBorder(ctx.getMatrices(), avatarX, avatarY, avatarSize, avatarSize, -0.1f, BorderRadius.all(3), new ColorRGBA(181, 162, 255, hover ? 200 : 190).mulAlpha(progress));
 
         {

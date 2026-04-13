@@ -1,5 +1,6 @@
 package space.visuals.client.modules.impl.render;
 
+import com.darkmagician6.eventapi.EventManager;
 import com.darkmagician6.eventapi.EventTarget;
 import org.lwjgl.glfw.GLFW;
 import space.visuals.Zenith;
@@ -36,15 +37,21 @@ public final class Menu extends Module {
 
         mc.setScreen(Zenith.getInstance().getMenuScreen());
 
-        super.onEnable();
+        // только звук открытия гуи, без toggle-звука из super
+        EventManager.register(this);
+        EventManager.call(new space.visuals.base.events.impl.other.EventModuleToggle(this, isEnabled()));
+        try {
+            if (mc.getSoundManager() != null) {
+                float vol = space.visuals.client.modules.impl.misc.Sounds.INSTANCE.volumeGuiOpen.getCurrent();
+                space.visuals.utility.sounds.ClientSounds.CLICKGUI_OPEN.play(vol);
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
     public void onDisable() {
-
-
-        super.onDisable();
-
+        EventManager.unregister(this);
+        EventManager.call(new space.visuals.base.events.impl.other.EventModuleToggle(this, isEnabled()));
     }
 
 

@@ -54,3 +54,6 @@ accessible method net/minecraft/client/network/ClientPlayerEntity sendSprintingP
 accessible field net/minecraft/client/gui/hud/InGameHud heldItemTooltipFade I
 accessible method net/minecraft/client/gui/hud/InGameHud renderMountHealth (Lnet/minecraft/client/gui/DrawContext;)V
 accessible method net/minecraft/client/network/ClientPlayerInteractionManager sendSequencedPacket (Lnet/minecraft/client/world/ClientWorld;Lnet/minecraft/client/network/SequencedPacketCreator;)V
+accessible method net/minecraft/client/sound/SoundSystem getAdjustedVolume (Lnet/minecraft/client/sound/SoundInstance;)F
+
+accessible method net/minecraft/client/sound/SoundSystem getAdjustedVolume (FLnet/minecraft/sound/SoundCategory;)F

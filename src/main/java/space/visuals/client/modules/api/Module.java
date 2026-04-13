@@ -63,13 +63,24 @@ public class Module implements IClient,Comparable<Module> {
 
     public void onEnable() {
         EventManager.register(this);
-        EventManager.call(new EventModuleToggle(this,enabled));
-
+        EventManager.call(new EventModuleToggle(this, enabled));
+        try {
+            if (mc.getSoundManager() != null) {
+                float vol = space.visuals.client.modules.impl.misc.Sounds.INSTANCE.volumeEnable.getCurrent();
+                space.visuals.utility.sounds.ClientSounds.MODULE.play(vol, 1.3f);
+            }
+        } catch (Exception ignored) {}
     }
 
     public void onDisable() {
         EventManager.unregister(this);
-        EventManager.call(new EventModuleToggle(this,enabled));
+        EventManager.call(new EventModuleToggle(this, enabled));
+        try {
+            if (mc.getSoundManager() != null) {
+                float vol = space.visuals.client.modules.impl.misc.Sounds.INSTANCE.volumeDisable.getCurrent();
+                space.visuals.utility.sounds.ClientSounds.MODULE.play(vol, 0.8f);
+            }
+        } catch (Exception ignored) {}
     }
 
     public List<Setting> getSettings() {

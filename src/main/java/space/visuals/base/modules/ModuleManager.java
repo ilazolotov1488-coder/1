@@ -79,6 +79,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AutoAccept.INSTANCE);
         registerModule(AutoRespawn.INSTANCE);
         registerModule(NameProtect.INSTANCE);
+        registerModule(Sounds.INSTANCE);
     }
 
     private void registerModule(Module module) {
