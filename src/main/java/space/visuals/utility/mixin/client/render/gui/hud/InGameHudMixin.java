@@ -34,10 +34,15 @@ public abstract class InGameHudMixin {
 
     @Inject(method = "render", at = @At("HEAD"))
     public void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
-        // Рисуем блюр только если Interface включен и блюр активен
+        // Рисуем блюр только если Interface включен, блюр активен,
+        // и НЕ открыт инвентарь с включённой анимацией
         Interface interfaceModule = Interface.INSTANCE;
         if (interfaceModule.isEnabled() && interfaceModule.isBlur()) {
-            DrawUtil.blurProgram.draw();
+            boolean inventoryOpen = mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+            boolean animHidesBlur = AnimationModule.INSTANCE.isEnabled() && AnimationModule.INSTANCE.animateInventory.isEnabled();
+            if (!(inventoryOpen && animHidesBlur)) {
+                DrawUtil.blurProgram.draw();
+            }
         }
         CustomDrawContext customDrawContext = new CustomDrawContext(mc.getBufferBuilders().getEntityVertexConsumers());
         EventManager.call(new EventRender2D(customDrawContext, tickCounter.getTickDelta(false)));
@@ -90,11 +95,13 @@ public abstract class InGameHudMixin {
             if (scale <= 0f) { ci.cancel(); tabPushed = false; return; }
             if (scale < 1f) {
                 int w = mc.getWindow().getScaledWidth();
+                int h = mc.getWindow().getScaledHeight();
                 MatrixStack ms = context.getMatrices();
                 ms.push();
-                ms.translate(w / 2f, 0, 0);
-                ms.scale(1f, scale, 1f);
-                ms.translate(-w / 2f, 0, 0);
+                // Масштабируем из центра экрана по обеим осям
+                ms.translate(w / 2f, h / 2f, 0);
+                ms.scale(scale, scale, 1f);
+                ms.translate(-w / 2f, -h / 2f, 0);
                 tabPushed = true;
             }
         }

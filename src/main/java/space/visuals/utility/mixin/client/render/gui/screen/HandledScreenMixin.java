@@ -31,16 +31,36 @@ public abstract class HandledScreenMixin {
     @Shadow protected int backgroundWidth;
     @Shadow protected int backgroundHeight;
 
+    /** Если Animation включён — пропускаем тёмный оверлей (method_52752), серый фон инвентаря остаётся */
+    @org.spongepowered.asm.mixin.injection.Redirect(
+            method = "renderBackground",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/class_465;method_52752(Lnet/minecraft/class_332;)V"))
+    private void skipDarkOverlay(net.minecraft.client.gui.screen.ingame.HandledScreen instance, DrawContext context) {
+        if (!AnimationModule.INSTANCE.isEnabled() || !AnimationModule.INSTANCE.animateInventory.isEnabled()) {
+            // Анимация выключена — вызываем оригинал через reflection
+            try {
+                java.lang.reflect.Method m = net.minecraft.client.gui.screen.ingame.HandledScreen.class
+                    .getDeclaredMethod("method_52752", DrawContext.class);
+                m.setAccessible(true);
+                m.invoke(instance, context);
+            } catch (Exception ignored) {}
+        }
+        // Анимация включена — пропускаем тёмный оверлей
+    }
+
     @Inject(method = "init", at = @At("TAIL"))
     private void onInit(CallbackInfo ci) {
         animInit = false;
         animPushed = false;
     }
 
-    // Анимируем только содержимое инвентаря — после renderBackground (блюр остаётся на весь экран)
-    @Inject(method = "render", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;renderBackground(Lnet/minecraft/client/gui/DrawContext;IIF)V",
-            shift = At.Shift.AFTER))
+    /** Если Animation включён — отменяем только блюр инвентаря, фон остаётся */
+
+    /**
+     * Анимируем весь render инвентаря из центра.
+     * Блюр рисуется через InGameHudMixin отдельно и не попадает в эту матрицу.
+     */
+    @Inject(method = "render", at = @At("HEAD"))
     private void onRenderPre(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!AnimationModule.INSTANCE.isEnabled() || !AnimationModule.INSTANCE.animateInventory.isEnabled()) return;
         if (!animInit) { openAnim.reset(0); animInit = true; }

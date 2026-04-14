@@ -30,9 +30,11 @@ import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @ModuleAnnotation(name = "Particles", category = Category.RENDER, description = "Частицы вокруг игрока")
 public final class ParticlesModule extends Module {
@@ -69,15 +71,10 @@ public final class ParticlesModule extends Module {
     private final ModeSetting particleMode = new ModeSetting("Тип", "Кубы", "Доллары", "Сердечки", "Снежинки", "Звезды", "Искры", "Рандом");
     private final ModeSetting colorMode    = new ModeSetting("Цвет", "Клиентский", "Радужный");
 
-    // Режим движения idle
-    private final ModeSetting idleMotion  = new ModeSetting("Движение (idle)", "Вверх", "Дождь");
-    private final NumberSetting rainSpeed = new NumberSetting("Скорость дождя", 1.0f, 0.1f, 5.0f, 0.1f,
-            () -> !idleMotion.is("Дождь") || !spawnIdle.isEnabled());
-
-    private final NumberSetting idleCount  = new NumberSetting("Кол-во (idle)",  5f, 1f, 25f, 1f, () -> !spawnIdle.isEnabled());
-    private final NumberSetting idleRange  = new NumberSetting("Дистанция",     16f, 4f, 32f, 1f, () -> !spawnIdle.isEnabled());
-    private final NumberSetting idleLife   = new NumberSetting("Жизнь (idle)", 3500f, 500f, 5000f, 250f, () -> !spawnIdle.isEnabled());
-    private final NumberSetting idleSize   = new NumberSetting("Размер (idle)",  0.5f, 0.0f, 1.0f, 0.1f, () -> !spawnIdle.isEnabled());
+    private final NumberSetting idleCount  = new NumberSetting("Кол-во",   5f, 1f, 25f, 1f, () -> !spawnIdle.isEnabled());
+    private final NumberSetting idleRange  = new NumberSetting("Дистанция", 16f, 4f, 32f, 1f, () -> !spawnIdle.isEnabled());
+    private final NumberSetting idleLife   = new NumberSetting("Жизнь",   3500f, 500f, 5000f, 250f, () -> !spawnIdle.isEnabled());
+    private final NumberSetting idleSize   = new NumberSetting("Размер",    0.5f, 0.0f, 1.0f, 0.1f, () -> !spawnIdle.isEnabled());
 
     private final NumberSetting critCount  = new NumberSetting("Кол-во (крит)",  5f, 1f, 50f, 1f, () -> !spawnCrit.isEnabled());
     private final NumberSetting critLife   = new NumberSetting("Жизнь (крит)", 3500f, 500f, 5000f, 250f, () -> !spawnCrit.isEnabled());
@@ -88,11 +85,11 @@ public final class ParticlesModule extends Module {
     private final NumberSetting moveSize   = new NumberSetting("Размер (движ)",  0.5f, 0.0f, 1.0f, 0.1f, () -> !spawnMove.isEnabled());
 
     // ── Particle lists ───────────────────────────────────────────────────────
-    private final List<Particle>       idleParticles   = new CopyOnWriteArrayList<>();
-    private final List<ParticleAttack> critParticles   = new CopyOnWriteArrayList<>();
-    private final List<ParticleAttack> moveParticles   = new CopyOnWriteArrayList<>();
-    private final List<ParticleAttack> thrownParticles = new CopyOnWriteArrayList<>();
-    private final List<ParticleAttack> totemParticles  = new CopyOnWriteArrayList<>();
+    private final List<Particle>       idleParticles   = new ArrayList<>();
+    private final List<ParticleAttack> critParticles   = new ArrayList<>();
+    private final List<ParticleAttack> moveParticles   = new ArrayList<>();
+    private final List<ParticleAttack> thrownParticles = new ArrayList<>();
+    private final List<ParticleAttack> totemParticles  = new ArrayList<>();
 
     private double lastX, lastY, lastZ;
     private boolean posInit = false;
@@ -125,22 +122,11 @@ public final class ParticlesModule extends Module {
 
         if (spawnIdle.isEnabled()) {
             int r = (int) idleRange.getCurrent();
-            boolean isRain = idleMotion.is("Дождь");
             for (int i = 0; i < (int) idleCount.getCurrent(); i++) {
                 Vec3d add = mc.player.getPos().add(rnd(-r, r), 0, rnd(-r, r));
                 BlockPos pos = mc.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, BlockPos.ofFloored(add));
-                double spawnY;
-                Vec3d vel;
-                if (isRain) {
-                    // Дождь: спавним выше игрока, двигаемся вниз
-                    spawnY = mc.player.getY() + rnd(8, 16);
-                    double speed = rainSpeed.getCurrent();
-                    vel = new Vec3d(rnd(-0.05, 0.05), -speed * 0.5, rnd(-0.05, 0.05));
-                } else {
-                    // Обычный: спавним в радиусе, двигаемся вверх
-                    spawnY = mc.player.getY() + rnd(mc.player.getHeight(), r);
-                    vel = new Vec3d(0, rnd(0, 0.5), 0);
-                }
+                double spawnY = mc.player.getY() + rnd(mc.player.getHeight(), r);
+                Vec3d vel = new Vec3d(0, rnd(0, 0.5), 0);
                 spawnIdle(new Vec3d(pos.getX() + rnd(0, 1), spawnY, pos.getZ() + rnd(0, 1)), vel);
             }
         }
@@ -225,30 +211,185 @@ public final class ParticlesModule extends Module {
     // ── Render ───────────────────────────────────────────────────────────────
 
     private void renderIdle(MatrixStack worldMs, float pt) {
+        if (idleParticles.isEmpty()) return;
         long life = (long) idleLife.getCurrent();
         long fade = 500L;
+        long now = System.currentTimeMillis();
+
+        Map<ParticleType, List<Particle>> byType = new EnumMap<>(ParticleType.class);
         for (Particle p : idleParticles) {
             p.update(physic.isEnabled());
-            long elapsed = p.timer.getElapsedTime();
-            float alpha;
-            if (elapsed < fade) alpha = (float) elapsed / fade;
-            else if (elapsed > life) alpha = Math.max(0, 1f - (float)(elapsed - life) / fade);
-            else alpha = 1f;
-            float pulse = (float)((Math.sin((System.currentTimeMillis() - p.spawnTime) / 200.0) + 1.0) / 2.0);
-            renderParticle(worldMs, p.position, p.prevPosition, p.type, p.size, withAlpha(p.color, alpha * pulse), p.rotate, p.rotateVec, p.prevRotateVec, elapsed, pt, false);
+            byType.computeIfAbsent(p.type, k -> new ArrayList<>()).add(p);
+        }
+
+        Vec3d cam = mc.gameRenderer.getCamera().getPos();
+        float pitch = mc.gameRenderer.getCamera().getPitch();
+        float yaw   = mc.gameRenderer.getCamera().getYaw();
+        // Предвычисляем sin/cos один раз для всех частиц
+        float sinYaw   = (float) Math.sin(Math.toRadians(yaw));
+        float cosYaw   = (float) Math.cos(Math.toRadians(yaw));
+        float sinPitch = (float) Math.sin(Math.toRadians(pitch));
+        float cosPitch = (float) Math.cos(Math.toRadians(pitch));
+
+        for (Map.Entry<ParticleType, List<Particle>> entry : byType.entrySet()) {
+            ParticleType type = entry.getKey();
+            List<Particle> batch = entry.getValue();
+
+            if (type == ParticleType.CUBE) {
+                for (Particle p : batch) {
+                    long elapsed = p.timer.getElapsedTime();
+                    float alpha = calcIdleAlpha(elapsed, fade, life);
+                    float pulse = (float)((Math.sin((now - p.spawnTime) / 200.0) + 1.0) / 2.0);
+                    renderParticle(worldMs, p.position, p.prevPosition, type, p.size, withAlpha(p.color, alpha * pulse), p.rotate, p.rotateVec, p.prevRotateVec, elapsed, pt, false);
+                }
+                continue;
+            }
+
+            AbstractTexture tex = mc.getTextureManager().getTexture(type.texture);
+            tex.setFilter(false, false);
+            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+            RenderSystem.setShaderTexture(0, tex.getGlId());
+            BufferBuilder buf = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+            boolean hasVerts = false;
+
+            boolean flip   = type != ParticleType.STAR;
+            boolean isHeart = type == ParticleType.HEART;
+
+            for (Particle p : batch) {
+                long elapsed = p.timer.getElapsedTime();
+                float alpha = calcIdleAlpha(elapsed, fade, life);
+                float pulse = (float)((Math.sin((now - p.spawnTime) / 200.0) + 1.0) / 2.0);
+                int color = withAlpha(p.color, alpha * pulse);
+                float a = ((color >> 24) & 0xFF) / 255f;
+                if (a <= 0.004f) continue;
+
+                hasVerts = true;
+                float r2 = ((color >> 16) & 0xFF) / 255f;
+                float g2 = ((color >> 8)  & 0xFF) / 255f;
+                float b2 = (color         & 0xFF) / 255f;
+                float sz = p.size;
+
+                // Billboard entry в camera space — не зависит от worldMs
+                MatrixStack.Entry e = billboardEntry(lerp(p.prevPosition, p.position, pt), cam,
+                    p.rotate, sz, flip, isHeart, false);
+                buf.vertex(e, -sz,  sz, 0).texture(0, 0).color(r2, g2, b2, a);
+                buf.vertex(e,  sz,  sz, 0).texture(0, 1).color(r2, g2, b2, a);
+                buf.vertex(e,  sz, -sz, 0).texture(1, 1).color(r2, g2, b2, a);
+                buf.vertex(e, -sz, -sz, 0).texture(1, 0).color(r2, g2, b2, a);
+            }
+            if (hasVerts) { BuiltBuffer built = buf.endNullable(); if (built != null) BufferRenderer.drawWithGlobalProgram(built); }
+            else buf.endNullable();
         }
     }
 
+    private float calcIdleAlpha(long elapsed, long fade, long life) {
+        if (elapsed < fade) return (float) elapsed / fade;
+        if (elapsed > life) return Math.max(0, 1f - (float)(elapsed - life) / fade);
+        return 1f;
+    }
+
     private void renderAttack(MatrixStack worldMs, List<ParticleAttack> list, long fadeIn, long life, float pt) {
+        if (list.isEmpty()) return;
+
+        Map<ParticleType, List<ParticleAttack>> byType = new EnumMap<>(ParticleType.class);
         for (ParticleAttack p : list) {
             p.update(physic.isEnabled());
-            long elapsed = p.timer.getElapsedTime();
-            float alpha;
-            if (elapsed < fadeIn) alpha = (float) elapsed / fadeIn;
-            else if (elapsed > life - 1000) alpha = Math.max(0, (life - elapsed) / 1000f);
-            else alpha = 1f;
-            renderParticle(worldMs, p.position, p.prevPosition, p.type, p.size, withAlpha(p.color, alpha), p.rotate, p.rotateVec, p.prevRotateVec, elapsed, pt, true);
+            byType.computeIfAbsent(p.type, k -> new ArrayList<>()).add(p);
         }
+
+        Vec3d cam = mc.gameRenderer.getCamera().getPos();
+        float pitch = mc.gameRenderer.getCamera().getPitch();
+        float yaw   = mc.gameRenderer.getCamera().getYaw();
+        float sinYaw   = (float) Math.sin(Math.toRadians(yaw));
+        float cosYaw   = (float) Math.cos(Math.toRadians(yaw));
+        float sinPitch = (float) Math.sin(Math.toRadians(pitch));
+        float cosPitch = (float) Math.cos(Math.toRadians(pitch));
+
+        for (Map.Entry<ParticleType, List<ParticleAttack>> entry : byType.entrySet()) {
+            ParticleType type = entry.getKey();
+            List<ParticleAttack> batch = entry.getValue();
+
+            if (type == ParticleType.CUBE) {
+                for (ParticleAttack p : batch) {
+                    long elapsed = p.timer.getElapsedTime();
+                    float alpha;
+                    if (elapsed < fadeIn) alpha = (float) elapsed / fadeIn;
+                    else if (elapsed > life - 1000) alpha = Math.max(0, (life - elapsed) / 1000f);
+                    else alpha = 1f;
+                    renderParticle(worldMs, p.position, p.prevPosition, type, p.size, withAlpha(p.color, alpha), p.rotate, p.rotateVec, p.prevRotateVec, elapsed, pt, true);
+                }
+                continue;
+            }
+
+            AbstractTexture tex = mc.getTextureManager().getTexture(type.texture);
+            tex.setFilter(false, false);
+            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+            RenderSystem.setShaderTexture(0, tex.getGlId());
+            BufferBuilder buf = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+            boolean hasVerts = false;
+
+            boolean flip    = type != ParticleType.STAR;
+            boolean isHeart = type == ParticleType.HEART;
+
+            for (ParticleAttack p : batch) {
+                long elapsed = p.timer.getElapsedTime();
+                float alpha;
+                if (elapsed < fadeIn) alpha = (float) elapsed / fadeIn;
+                else if (elapsed > life - 1000) alpha = Math.max(0, (life - elapsed) / 1000f);
+                else alpha = 1f;
+                int color = withAlpha(p.color, alpha);
+                float a = ((color >> 24) & 0xFF) / 255f;
+                if (a <= 0.004f) continue;
+
+                hasVerts = true;
+                float r2 = ((color >> 16) & 0xFF) / 255f;
+                float g2 = ((color >> 8)  & 0xFF) / 255f;
+                float b2 = (color         & 0xFF) / 255f;
+                float sz = p.size;
+
+                MatrixStack.Entry e = billboardEntry(lerp(p.prevPosition, p.position, pt), cam,
+                    p.rotate, sz, flip, isHeart, true);
+                buf.vertex(e, -sz,  sz, 0).texture(0, 0).color(r2, g2, b2, a);
+                buf.vertex(e,  sz,  sz, 0).texture(0, 1).color(r2, g2, b2, a);
+                buf.vertex(e,  sz, -sz, 0).texture(1, 1).color(r2, g2, b2, a);
+                buf.vertex(e, -sz, -sz, 0).texture(1, 0).color(r2, g2, b2, a);
+            }
+            if (hasVerts) { BuiltBuffer built = buf.endNullable(); if (built != null) BufferRenderer.drawWithGlobalProgram(built); }
+            else buf.endNullable();
+        }
+    }
+
+    // Статический MatrixStack для billboard — переиспользуем без аллокаций
+    private static final MatrixStack BILLBOARD_MS = new MatrixStack();
+
+    private MatrixStack.Entry billboardEntry(Vec3d iPos, Vec3d cam,
+            int rotateDeg, float sz, boolean flip, boolean isHeart, boolean isAttack) {
+        double dx = iPos.x - cam.x;
+        double dy = iPos.y - cam.y;
+        double dz = iPos.z - cam.z;
+        float pitch = mc.gameRenderer.getCamera().getPitch();
+        float yaw   = mc.gameRenderer.getCamera().getYaw();
+
+        // Сбрасываем стек до чистого состояния
+        while (BILLBOARD_MS.isEmpty() == false) BILLBOARD_MS.pop();
+        BILLBOARD_MS.push();
+        BILLBOARD_MS.multiply(RotationAxis.POSITIVE_X.rotationDegrees(pitch));
+        BILLBOARD_MS.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(yaw + 180.0F));
+        BILLBOARD_MS.translate(dx, dy, dz);
+        BILLBOARD_MS.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw));
+        BILLBOARD_MS.multiply(RotationAxis.POSITIVE_X.rotationDegrees(pitch));
+        if (flip)    BILLBOARD_MS.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(180F));
+        if (isHeart) BILLBOARD_MS.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(90F));
+        BILLBOARD_MS.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotateDeg));
+        if (isAttack) BILLBOARD_MS.translate(0, -sz, 0);
+        else          BILLBOARD_MS.translate(0, -sz, -sz);
+        return BILLBOARD_MS.peek();
+    }
+
+    private static void transformVert(org.joml.Matrix4f m, float x, float y, float z, float[] out, int off) {
+        out[off]   = m.m00()*x + m.m10()*y + m.m20()*z + m.m30();
+        out[off+1] = m.m01()*x + m.m11()*y + m.m21()*z + m.m31();
+        out[off+2] = m.m02()*x + m.m12()*y + m.m22()*z + m.m32();
     }
 
     private void renderParticle(MatrixStack worldMs, Vec3d pos, Vec3d prevPos, ParticleType type, float size,
