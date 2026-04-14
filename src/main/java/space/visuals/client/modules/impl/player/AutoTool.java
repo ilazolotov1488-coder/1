@@ -8,7 +8,7 @@ import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 
-@ModuleAnnotation(name = "AutoTool", category = Category.PLAYER, description = "Выбирает лучший инструмент для добычи блоков")
+@ModuleAnnotation(name = "AutoTool", category = Category.COMBAT, description = "Выбирает лучший инструмент для добычи блоков")
 public final class AutoTool extends Module {
 
     public static final AutoTool INSTANCE = new AutoTool();

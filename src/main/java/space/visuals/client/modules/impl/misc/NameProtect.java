@@ -22,7 +22,7 @@ public final class NameProtect extends Module {
 
     public static String getCustomName() {
         Module module = NameProtect.INSTANCE;
-        return module != null && module.isEnabled() ? "ZENITHDLC" : mc.player.getNameForScoreboard();
+        return module != null && module.isEnabled() ? "space" : mc.player.getNameForScoreboard();
     }
 
     public static String getCustomName(String originalName) {
@@ -33,14 +33,14 @@ public final class NameProtect extends Module {
 
         String me = mc.player.getNameForScoreboard();
         if (originalName.contains(me)) {
-            return originalName.replace(me, "ZENITHDLC");
+            return originalName.replace(me, "space");
         }
 
         if (module instanceof NameProtect nameProtect && nameProtect.hideFriends.isEnabled()) {
             var friends = Zenith.getInstance().getFriendManager().getItems();
             for (String friend : friends) {
                 if (originalName.contains(friend)) {
-                    return originalName.replace(friend, "ZENITHDLC");
+                    return originalName.replace(friend, "space");
                 }
             }
         }

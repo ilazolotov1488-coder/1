@@ -80,22 +80,35 @@ public final class EntityESP extends Module {
     }
 
     public boolean isRenderName() {
-        return this.isEnabled()&&this.elements.isEnable(0) ;
+        return this.isEnabled() && this.elements.isEnable(0);
     }
 
-    private boolean isElementEnabled(String elementName) {
-        return elements.isEnable(elementName);
+    /**
+     * Нужно ли скрывать ванильный нейм тег для данного игрока.
+     * Скрываем только если игрок ближе 30 блоков — тогда рисуем свой кастомный.
+     * Дальше 30 блоков — оставляем ванильный.
+     */
+    public boolean shouldHideVanillaName(PlayerEntity player) {
+        if (!this.isEnabled() || !this.elements.isEnable(0)) return false;
+        if (mc.player == null) return false;
+        return player.distanceTo(mc.player) <= 30;
     }
 
     @EventTarget
     public void onHudRender(EventRender3D event) {
-        if(!elements.isEnable(4)) return;
+        if (!elements.isEnable(4)) return;
+        if (mc.world == null || mc.player == null) return;
         for (Entity ent : mc.world.getPlayers()) {
+            // Общая оптимизация: дистанция и поле зрения
+            if (ent.distanceTo(mc.player) > 30) continue;
+            if (!ProjectionUtil.canSee(ent.getBoundingBox())) continue;
 
             if (ent instanceof PlayerEntity entity) {
                 if (entity == mc.player && mc.options.getPerspective().isFirstPerson()) continue;
-
-
+                // Инвизок — не рендерим
+                if (entity.isInvisible()) continue;
+                // За стеной — не рендерим
+                if (!isEntityVisible(entity)) continue;
                 Render3DUtil.drawBox((entity.getBoundingBox().offset(MathUtil.interpolate(entity).subtract(entity.getPos()))), Zenith.getInstance().getThemeManager().getClientColor(180).getRGB(), 1f);
             }
         }
@@ -110,30 +123,70 @@ public final class EntityESP extends Module {
             CustomDrawContext context = event.getContext();
 
             for (Entity ent : mc.world.getEntities()) {
+                // Общая оптимизация для всех энтити: дистанция и поле зрения
+                float dist = ent.distanceTo(mc.player);
+                if (dist > 30) continue; // Дальше 30 блоков — не рендерим
+                if (!ProjectionUtil.canSee(ent.getBoundingBox())) continue; // Не в поле зрения — не рендерим
 
                 if (ent instanceof PlayerEntity entity) {
-                    if ( this.elements.isEnable(5)) {
-                        if (elements.isEnable(5)) {
+                    if (entity == mc.player && mc.options.getPerspective().isFirstPerson()) continue;
+                    // Инвизок — не рендерим
+                    if (entity.isInvisible()) continue;
 
-                            Vector4d vec4d = ProjectionUtil.getVector4D(entity);
+                    // За стеной — не рендерим
+                    if (!isEntityVisible(entity)) continue;
 
-                            drawHands(event.getContext(), entity, vec4d);
-                        }
+                    // Ближе 30 блоков, виден и в поле зрения — рендерим всё
+                    if (this.elements.isEnable(5)) {
+                        Vector4d vec4d = ProjectionUtil.getVector4D(entity);
+                        drawHands(event.getContext(), entity, vec4d);
                     }
-                    if ( this.elements.isEnable(0)) renderNameTag(context, entity, event.getTickDelta());
-
+                    if (this.elements.isEnable(0)) renderNameTag(context, entity, event.getTickDelta());
                     if (elements.isEnable(3)) renderEntityBox(context, entity, event.getTickDelta());
-
                 }
+
                 if (ent instanceof ItemEntity entity) {
-                    if ( this.elements.isEnable(1)) renderItemESP(context, entity, event.getTickDelta());
+                    // За стеной — не рендерим
+                    if (!isEntityVisible(entity)) continue;
+                    if (this.elements.isEnable(1)) renderItemESP(context, entity, event.getTickDelta());
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             RenderSystem.depthMask(true);
         }
+    }
+
+    /**
+     * Проверяет, виден ли хотя бы 1 пиксель сущности (не за стеной).
+     * Делает raycast от камеры к нескольким точкам bounding box.
+     */
+    private boolean isEntityVisible(Entity entity) {
+        Vec3d camPos = mc.gameRenderer.getCamera().getPos();
+        Box box = entity.getBoundingBox();
+
+        // Проверяем несколько точек: центр, верх, низ, 4 угла
+        Vec3d[] checkPoints = {
+            box.getCenter(),
+            new Vec3d(box.getCenter().x, box.maxY - 0.1, box.getCenter().z),
+            new Vec3d(box.getCenter().x, box.minY + 0.1, box.getCenter().z),
+            new Vec3d(box.minX + 0.1, box.getCenter().y, box.minZ + 0.1),
+            new Vec3d(box.maxX - 0.1, box.getCenter().y, box.maxZ - 0.1),
+        };
+
+        for (Vec3d point : checkPoints) {
+            net.minecraft.world.RaycastContext ctx = new net.minecraft.world.RaycastContext(
+                    camPos, point,
+                    net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
+                    net.minecraft.world.RaycastContext.FluidHandling.NONE,
+                    mc.player
+            );
+            if (mc.world.raycast(ctx).getType() == net.minecraft.util.hit.HitResult.Type.MISS) {
+                return true;
+            }
+        }
+        return false;
     }
     private void drawHands(CustomDrawContext context, PlayerEntity player, Vector4d vec) {
         if (player == mc.player && mc.options.getPerspective().isFirstPerson()) return;

@@ -16,7 +16,7 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.impl.render.taksa.TaksaBrain;
 import space.visuals.client.modules.impl.render.taksa.TaksaModel;
 
-@ModuleAnnotation(name = "Taksa", category = Category.RENDER, description = "Питомец такса")
+@ModuleAnnotation(name = "Taksa", category = Category.MOVEMENT, description = "Питомец такса")
 public final class Taksa extends Module {
 
     public static final Taksa INSTANCE = new Taksa();

@@ -41,27 +41,26 @@ public final class ModuleManager implements IMinecraft {
         registerModule(AutoTotem.INSTANCE);
         registerModule(SwapPlus.INSTANCE);
         registerModule(ItemRadius.INSTANCE);
+        registerModule(AutoTool.INSTANCE);
     }
 
     private void registerMovement() {
         registerModule(AutoSprint.INSTANCE);
+        registerModule(Taksa.INSTANCE);
     }
 
     private void registerRender() {
         registerModule(Interface.INSTANCE);
-        registerModule(AntiInvisible.INSTANCE);
 
         registerModule(Menu.INSTANCE);
         registerModule(NoRender.INSTANCE);
         registerModule(Predictions.INSTANCE);
-        registerModule(BlockESP.INSTANCE);
         registerModule(SwingAnimation.INSTANCE);
         registerModule(Crosshair.INSTANCE);
         registerModule(ViewModel.INSTANCE);
         registerModule(WorldTweaks.INSTANCE);
         registerModule(EntityESP.INSTANCE);
         registerModule(BlockOverlay.INSTANCE);
-        registerModule(Taksa.INSTANCE);
         registerModule(TargetESP.INSTANCE);
         registerModule(AnimationModule.INSTANCE);
         registerModule(KillEffects.INSTANCE);
@@ -70,7 +69,7 @@ public final class ModuleManager implements IMinecraft {
     }
 
     private void registerPlayer() {
-        registerModule(AutoTool.INSTANCE);
+        // AutoTool moved to Combat
     }
 
     private void registerMisc() {
@@ -78,12 +77,10 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ElytraHelper.INSTANCE);
         registerModule(ItemScroller.INSTANCE);
         registerModule(ClickAction.INSTANCE);
-        registerModule(FreeCam.INSTANCE);
         registerModule(CameraTweaks.INSTANCE);
         registerModule(AutoAuth.INSTANCE);
         registerModule(AutoDuels.INSTANCE);
         registerModule(AHHelper.INSTANCE);
-        registerModule(NoInteract.INSTANCE);
         registerModule(AutoAccept.INSTANCE);
         registerModule(AutoRespawn.INSTANCE);
         registerModule(NameProtect.INSTANCE);

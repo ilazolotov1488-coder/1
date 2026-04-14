@@ -34,12 +34,18 @@ public class ProjectionUtil implements IMinecraft {
         return new Vec3d(target.x / mc.getWindow().getScaleFactor(), (mc.getWindow().getHeight() - target.y) / mc.getWindow().getScaleFactor(), target.z);
     }
     public boolean canSee(Vec3d vec3d) {
+        // Глобальная оптимизация: проверяем дистанцию
+        if (mc.player != null && vec3d.distanceTo(mc.player.getPos()) > 30) return false;
+        
         Camera camera = mc.getEntityRenderDispatcher().camera;
         Rotation angle = RotationUtil.calculateAngle(vec3d);
         return (Math.abs(MathHelper.wrapDegrees(angle.getYaw() - camera.getYaw())) < 90 && Math.abs(MathHelper.wrapDegrees(angle.getPitch() - camera.getPitch())) < 60) || canSee(new Box(BlockPos.ofFloored(vec3d)));
     }
 
     public boolean canSee(Box box) {
+        // Глобальная оптимизация: проверяем дистанцию
+        if (mc.player != null && box.getCenter().distanceTo(mc.player.getPos()) > 30) return false;
+        
         Frustum frustum = mc.worldRenderer.frustum;
         return box != null && frustum != null && frustum.isVisible(box);
     }

@@ -38,6 +38,46 @@ public class Render3DUtil implements IMinecraft {
     private Matrix4f lastProjMat = new Matrix4f(), lastModMat = new Matrix4f(), lastWorldSpaceMatrix = new Matrix4f();
     private final Identifier captureId = Identifier.of("textures/capture.png"), bloom = Identifier.of("textures/bloom.png");
 
+    /**
+     * Глобальная оптимизация рендера: проверяет дистанцию и поле зрения
+     * @param pos позиция для проверки
+     * @param maxDistance максимальная дистанция (по умолчанию 30)
+     * @return true если объект нужно рендерить
+     */
+    public boolean shouldRender(Vec3d pos, double maxDistance) {
+        if (mc.player == null) return false;
+        // Проверка дистанции
+        if (pos.distanceTo(mc.player.getPos()) > maxDistance) return false;
+        // Проверка поля зрения (frustum)
+        return ProjectionUtil.canSee(new Box(pos.subtract(0.5, 0.5, 0.5), pos.add(0.5, 0.5, 0.5)));
+    }
+
+    /**
+     * Глобальная оптимизация рендера с дефолтной дистанцией 30 блоков
+     */
+    public boolean shouldRender(Vec3d pos) {
+        return shouldRender(pos, 30.0);
+    }
+
+    /**
+     * Глобальная оптимизация рендера для Box
+     */
+    public boolean shouldRender(Box box, double maxDistance) {
+        if (mc.player == null) return false;
+        Vec3d center = box.getCenter();
+        // Проверка дистанции
+        if (center.distanceTo(mc.player.getPos()) > maxDistance) return false;
+        // Проверка поля зрения (frustum)
+        return ProjectionUtil.canSee(box);
+    }
+
+    /**
+     * Глобальная оптимизация рендера для Box с дефолтной дистанцией 30 блоков
+     */
+    public boolean shouldRender(Box box) {
+        return shouldRender(box, 30.0);
+    }
+
     public void onEventRender3D(MatrixStack matrix) {
 
         MatrixStack.Entry entry = matrix.peek();
@@ -116,14 +156,20 @@ public class Render3DUtil implements IMinecraft {
     }
 
     public void drawShape(BlockPos blockPos, VoxelShape voxelShape, int color, float width, boolean fill, boolean depth) {
-        if (ProjectionUtil.canSee(voxelShape.getBoundingBox().offset(blockPos))) SHAPE_BOXES.stream().filter(boxes -> boxes.shape.equals(voxelShape))
+        Box boundingBox = voxelShape.getBoundingBox().offset(blockPos);
+        if (!shouldRender(boundingBox)) return;
+        
+        if (ProjectionUtil.canSee(boundingBox)) SHAPE_BOXES.stream().filter(boxes -> boxes.shape.equals(voxelShape))
                 .findFirst().ifPresentOrElse(shapeBoxes -> shapeBoxes.boxes.forEach(box -> drawBox(box.offset(blockPos), color, width, true, fill, depth)),
                         () -> SHAPE_BOXES.add(new ShapeBoxes(voxelShape, voxelShape.getBoundingBoxes())));
     }
 
     public void drawShapeAlternative(BlockPos blockPos, VoxelShape voxelShape, int color, float width, boolean fill, boolean depth) {
         Vec3d vec3d = Vec3d.of(blockPos);
-        if (ProjectionUtil.canSee(voxelShape.getBoundingBox().offset(vec3d))) {
+        Box boundingBox = voxelShape.getBoundingBox().offset(vec3d);
+        if (!shouldRender(boundingBox)) return;
+        
+        if (ProjectionUtil.canSee(boundingBox)) {
             List<Box> voxelBoxes = voxelShape.getBoundingBoxes();
             SHAPE_OUTLINES.stream().filter(shapeOutline -> shapeOutline.boxes.equals(voxelBoxes))
                     .findFirst().ifPresentOrElse(shapeOutline -> {
@@ -142,6 +188,8 @@ public class Render3DUtil implements IMinecraft {
     }
 
     public void drawBox(Box box, int color, float width, boolean line, boolean fill, boolean depth) {
+        if (!shouldRender(box)) return;
+        
         box = box.expand(1e-3);
         if (ProjectionUtil.canSee(box)) {
             double x1 = box.minX;
@@ -238,6 +286,9 @@ public class Render3DUtil implements IMinecraft {
     }
 
     public void drawLine(Vec3d start, Vec3d end, int colorStart, int colorEnd, float width, boolean depth) {
+        // Проверяем дистанцию и поле зрения для обеих точек
+        if (!shouldRender(start) && !shouldRender(end)) return;
+        
         Vec3d cameraPos = mc.getEntityRenderDispatcher().camera.getPos();
         Line line = new Line(start.subtract(cameraPos), end.subtract(cameraPos), colorStart, colorEnd, width);
         if (depth) LINE_DEPTH.add(line);
@@ -245,6 +296,10 @@ public class Render3DUtil implements IMinecraft {
     }
 
     public void drawQuad(Vec3d x, Vec3d y, Vec3d w, Vec3d z, int color, boolean depth) {
+        // Проверяем центр квада
+        Vec3d center = x.add(y).add(w).add(z).multiply(0.25);
+        if (!shouldRender(center)) return;
+        
         Vec3d cameraPos = mc.getEntityRenderDispatcher().camera.getPos();
         Quad quad = new Quad(x.subtract(cameraPos), y.subtract(cameraPos), w.subtract(cameraPos), z.subtract(cameraPos), color);
         if (depth) QUAD_DEPTH.add(quad);

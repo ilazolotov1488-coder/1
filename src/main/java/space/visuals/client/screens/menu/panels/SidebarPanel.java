@@ -37,7 +37,9 @@ public class SidebarPanel {
         this.isSidebarExpanded = isSidebarExpanded;
         this.onCategorySelect = onCategorySelect;
         this.onSidebarToggle = onSidebarToggle;
-        categories.addAll(Arrays.stream(Category.values()).map(SideBarCategory::new).toList());
+        categories.addAll(Arrays.stream(Category.values())
+                .filter(c -> c != Category.PLAYER)
+                .map(SideBarCategory::new).toList());
 
     }
 

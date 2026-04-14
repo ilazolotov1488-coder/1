@@ -24,7 +24,6 @@ import space.visuals.base.request.ScriptManager;
 import space.visuals.base.rotation.RotationManager;
 import space.visuals.base.rotation.deeplearnig.DeepLearningManager;
 import space.visuals.base.theme.ThemeManager;
-import space.visuals.client.screens.autobuy.items.AutoInventoryBuyScreen;
 import space.visuals.client.screens.menu.MenuScreen;
 import space.visuals.utility.game.server.LastServerManager;
 import space.visuals.utility.game.server.ServerHandler;
@@ -58,7 +57,6 @@ public enum Zenith {
     private ThemeManager themeManager;
     private MenuScreen menuScreen;
     private ScriptManager scriptManager;
-    private AutoInventoryBuyScreen autoInventoryBuyScreen;
     private ServerHandler serverHandler;
     private LastServerManager lastServerManager;
     private FriendManager friendManager;
