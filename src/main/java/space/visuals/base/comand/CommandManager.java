@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 import space.visuals.base.comand.api.CommandAbstract;
 import space.visuals.base.comand.impl.FriendCommand;
 import space.visuals.base.comand.impl.MacroCommand;
-import space.visuals.base.comand.impl.ClipCommand;
 import space.visuals.base.comand.impl.ConfigCommand;
 import space.visuals.base.comand.impl.RCTCommand;
 
@@ -33,7 +32,6 @@ public class CommandManager {
 
         registerCommand(new FriendCommand());
         registerCommand(new MacroCommand());
-        registerCommand(new ClipCommand());
         registerCommand(new ConfigCommand());
         registerCommand(new RCTCommand());
 

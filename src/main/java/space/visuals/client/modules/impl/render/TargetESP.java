@@ -224,34 +224,61 @@ public final class TargetESP extends Module {
         float entityHeight = target.getHeight();
 
         double duration = 2000.0;
-        double elapsed = System.currentTimeMillis() % duration;
-        double t = elapsed / duration;
-        double progress = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        double elapsedMillis = System.currentTimeMillis() % duration;
+        // MONOTON логика: 0→1 первую половину, 1→0 вторую
+        double progress = elapsedMillis / (duration / 2);
+        progress = elapsedMillis > duration / 2 ? progress - 1 : 1 - progress;
+        // ease in-out quad
+        progress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        // след: смещение вниз в первой половине, вверх во второй
+        double heightOffset = (entityHeight / 2)
+                * (progress > 0.5 ? 1 - progress : progress)
+                * (elapsedMillis > duration / 2 ? -1 : 1);
 
         ColorRGBA base = getTargetColor();
         ColorRGBA dark = base.mix(new ColorRGBA(0, 0, 0), 0.5f);
 
         ms.push();
-        // позиционируем относительно камеры через prepareMatrices
         prepareMatrices(ms, getRenderPos(target));
 
         RenderSystem.lineWidth(particleThickness.getCurrent() * 1.5f);
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+        RenderSystem.blendFunc(SrcFactor.SRC_ALPHA, DstFactor.ONE);
         RenderSystem.disableDepthTest();
 
         Matrix4f m = ms.peek().getPositionMatrix();
+        float ringY = (float)(entityHeight * progress);
 
-        // кольцо движется вверх-вниз по телу
+        // лента: для каждого угла — две вершины (основная + хвост с alpha=0)
         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
         for (int deg = 0; deg <= 360; deg++) {
             double rad = Math.toRadians(deg);
+            float cx = (float)(Math.cos(rad) * radius);
+            float cz = (float)(Math.sin(rad) * radius);
+
+            // градиент по углу как в MONOTON
             float t2 = deg / 360.0f;
             ColorRGBA grad = base.mix(dark, t2);
-            buf.vertex(m,
-                (float)(Math.cos(rad) * radius),
-                (float)(entityHeight * progress),
-                (float)(Math.sin(rad) * radius))
-               .color(grad.getRGB());
+
+            // основная вершина кольца
+            buf.vertex(m, cx, ringY, cz).color(grad.getRGB());
+        }
+        buildBuffer(buf);
+
+        // хвост — второй проход с прозрачностью
+        buf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
+        for (int deg = 0; deg <= 360; deg++) {
+            double rad = Math.toRadians(deg);
+            float cx = (float)(Math.cos(rad) * radius);
+            float cz = (float)(Math.sin(rad) * radius);
+
+            float t2 = deg / 360.0f;
+            ColorRGBA grad = base.mix(dark, t2);
+
+            // вершина хвоста — смещена по Y, прозрачная
+            buf.vertex(m, cx, (float)(ringY + heightOffset), cz)
+               .color(grad.withAlpha(0).getRGB());
         }
         buildBuffer(buf);
 

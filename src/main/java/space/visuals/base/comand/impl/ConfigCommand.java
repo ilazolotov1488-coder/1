@@ -1,73 +1,78 @@
 package space.visuals.base.comand.impl;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.command.CommandSource;
-import space.visuals.Zenith;
 import space.visuals.base.comand.api.CommandAbstract;
-
+import space.visuals.base.config.ConfigManager;
+import space.visuals.Zenith;
 import space.visuals.utility.game.other.MessageUtil;
 
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class ConfigCommand extends CommandAbstract {
     public ConfigCommand() {
-        super("config");
+        super("cfg");
     }
 
     @Override
     public void execute(LiteralArgumentBuilder<CommandSource> builder) {
 
+        // .cfg dir — открывает папку configs
         builder.then(literal("dir").executes(context -> {
-            try {
-                new Thread(() -> {
-                    try {
-                        java.awt.Desktop.getDesktop().open(space.visuals.base.config.ConfigManager.configDirectory);
-                    } catch (Exception e) {
-                        space.visuals.utility.game.other.MessageUtil.displayMessage(
-                            space.visuals.utility.game.other.MessageUtil.LogLevel.WARN,
-                            "§cНе удалось открыть папку: " + e.getMessage());
-                    }
-                }).start();
-                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§aОткрываю папку с конфигами");
-            } catch (Exception e) {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN, "§cОшибка: " + e.getMessage());
-            }
+            new Thread(() -> {
+                try {
+                    ConfigManager.configDirectory.mkdirs();
+                    Runtime.getRuntime().exec(new String[]{"explorer", ConfigManager.configDirectory.getAbsolutePath()});
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§aОткрываю папку configs");
             return SINGLE_SUCCESS;
         }));
 
-        builder.then(literal("save").executes(context -> {
-            boolean success = Zenith.getInstance().getConfigManager().saveConfig("confeg");
-            if (success) {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                    "§aКонфигурация сохранена");
+        // .cfg save <name>
+        builder.then(literal("save")
+            .then(arg("name", StringArgumentType.word()).executes(context -> {
+                String name = StringArgumentType.getString(context, "name");
+                boolean ok = Zenith.getInstance().getConfigManager().saveConfig(name);
+                MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
+                    ok ? "§aКонфиг §e" + name + "§a сохранён" : "§cОшибка при сохранении §e" + name);
+                return SINGLE_SUCCESS;
+            }))
+        );
+
+        // .cfg load <name>
+        builder.then(literal("load")
+            .then(arg("name", StringArgumentType.word()).executes(context -> {
+                String name = StringArgumentType.getString(context, "name");
+                boolean ok = Zenith.getInstance().getConfigManager().loadConfig(name);
+                MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
+                    ok ? "§aКонфиг §e" + name + "§a загружен" : "§cКонфиг §e" + name + "§c не найден");
+                return SINGLE_SUCCESS;
+            }))
+        );
+
+        // .cfg del <name>
+        builder.then(literal("del")
+            .then(arg("name", StringArgumentType.word()).executes(context -> {
+                String name = StringArgumentType.getString(context, "name");
+                boolean ok = Zenith.getInstance().getConfigManager().deleteConfig(name);
+                MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
+                    ok ? "§aКонфиг §e" + name + "§a удалён" : "§cКонфиг §e" + name + "§c не найден");
+                return SINGLE_SUCCESS;
+            }))
+        );
+
+        // .cfg list — список всех конфигов
+        builder.then(literal("list").executes(context -> {
+            java.util.List<String> names = Zenith.getInstance().getConfigManager().configNames();
+            if (names.isEmpty()) {
+                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§7Нет сохранённых конфигов");
             } else {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN,
-                    "§cОшибка при сохранении конфигурации");
+                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO, "§aКонфиги: §e" + String.join("§7, §e", names));
             }
-            return SINGLE_SUCCESS;
-        }));
-
-        builder.then(literal("load").executes(context -> {
-            boolean success = Zenith.getInstance().getConfigManager().loadConfig("confeg");
-            if (success) {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                    "§aКонфигурация загружена");
-            } else {
-                MessageUtil.displayMessage(MessageUtil.LogLevel.WARN,
-                    "§cОшибка при загрузке конфигурации");
-            }
-            return SINGLE_SUCCESS;
-        }));
-
-        builder.then(literal("help").executes(context -> {
-            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                "§6Использование: §r.config <list/save/load/help>");
-            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                "§6Команды:§r");
-            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                "§e.config save §7- сохранить конфигурацию");
-            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
-                "§e.config load §7- загрузить конфигурацию");
             return SINGLE_SUCCESS;
         }));
     }

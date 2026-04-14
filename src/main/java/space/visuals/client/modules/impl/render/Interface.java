@@ -56,13 +56,15 @@ public final class Interface extends Module {
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
     private final NumberSetting scale = new NumberSetting("Размер", 2, 1, 3, 0.1f, ((oldValue, newValue) -> {
-        if (mc.getWindow() == null) return;
-        float width = mc.getWindow().getWidth() / newValue;
-        float height = mc.getWindow().getHeight() / newValue;
+        try {
+            if (mc.getWindow() == null) return;
+            float width = mc.getWindow().getWidth() / newValue;
+            float height = mc.getWindow().getHeight() / newValue;
 
-        for (DraggableHudElement element : elements) {
-            element.windowResized(width, height);
-        }
+            for (DraggableHudElement element : elements) {
+                element.windowResized(width, height);
+            }
+        } catch (Exception ignored) {}
     }
     ));
     private BooleanSetting corners = new BooleanSetting("Треугольнички", true);

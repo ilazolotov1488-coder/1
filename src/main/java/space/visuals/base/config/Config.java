@@ -19,7 +19,7 @@ public class Config {
 
     public Config(String name) {
         this.name = name;
-        this.file = new File(ConfigManager.configDirectory, name + "." + Zenith.NAME.toLowerCase());
+        this.file = new File(ConfigManager.configDirectory, name + ".space");
 
         if (!file.exists()) {
             try {
@@ -82,8 +82,12 @@ public class Config {
                 Zenith.getInstance().getThemeManager().switchThemeByName(selected);
             }
             if (themeObject.has("columns")) {
-                int columns = themeObject.get("columns").getAsInt();
-                Zenith.getInstance().getMenuScreen().setColumns(columns);
+                try {
+                    int columns = themeObject.get("columns").getAsInt();
+                    if (Zenith.getInstance().getMenuScreen() != null) {
+                        Zenith.getInstance().getMenuScreen().setColumns(columns);
+                    }
+                } catch (Exception ignored) {}
             }
 
             ThemeManager themeManager = Zenith.getInstance().getThemeManager();
@@ -107,7 +111,14 @@ public class Config {
             try {
                 JsonObject modulesObject = object.getAsJsonObject("Modules");
                 for (Module module : Zenith.getInstance().getModuleManager().getModules()) {
-                    module.load(modulesObject.getAsJsonObject(module.getName()));
+                    try {
+                        if (modulesObject.has(module.getName())) {
+                            module.load(modulesObject.getAsJsonObject(module.getName()));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("[Config] Failed to load module: " + module.getName());
+                        e.printStackTrace();
+                    }
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();

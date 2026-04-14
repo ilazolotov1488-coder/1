@@ -26,7 +26,7 @@ public class ManagerFileAbstract<T> {
         this.type = type;
         this.collectionSupplier = collectionSupplier;
 
-        File file = new File(Zenith.DIRECTORY, fileName);
+        File file = new File(Zenith.getDirectory(), fileName);
 
         if (!file.exists()) {
             try {
@@ -43,7 +43,7 @@ public class ManagerFileAbstract<T> {
     public void save() {
         Gson gson = new Gson();
         String json = gson.toJson(items);
-        try (FileWriter writer = new FileWriter(new File(Zenith.DIRECTORY, fileName))) {
+        try (FileWriter writer = new FileWriter(new File(Zenith.getDirectory(), fileName))) {
             writer.write(shifr.isEmpty()
                     ? json
                     : Base64.getEncoder().encodeToString(CryptUtility.encryptData(json.getBytes(), shifr)));
@@ -52,7 +52,7 @@ public class ManagerFileAbstract<T> {
     }
 
     public void load() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(new File(Zenith.DIRECTORY, fileName)))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(Zenith.getDirectory(), fileName)))) {
             Gson gson = new Gson();
 
             if (!shifr.isEmpty()) {

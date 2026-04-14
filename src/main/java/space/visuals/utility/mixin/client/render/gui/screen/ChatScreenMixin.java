@@ -17,12 +17,18 @@ public class ChatScreenMixin extends Screen implements IMinecraft {
         super(title);
     }
 
-    @Inject(method = "sendMessage(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = false)
+    @Inject(method = "sendMessage(Ljava/lang/String;Z)V", at = @At("HEAD"), cancellable = true)
     private void onSendMessage(String text, boolean addToHistory, CallbackInfo ci) {
-
-//        if (Zenith.getInstance().getCommandManager().dispatch(text)) {
-//            mc.inGameHud.getChatHud().addToMessageHistory(text);
-//            ci.cancel();
-//        }
+        String prefix = Zenith.getInstance().getCommandManager().getPrefix();
+        if (text.startsWith(prefix)) {
+            try {
+                Zenith.getInstance().getCommandManager().getDispatcher().execute(
+                    text.substring(prefix.length()),
+                    Zenith.getInstance().getCommandManager().getSource()
+                );
+            } catch (Exception ignored) {}
+            mc.inGameHud.getChatHud().addToMessageHistory(text);
+            ci.cancel();
+        }
     }
 }

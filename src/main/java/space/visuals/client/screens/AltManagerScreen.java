@@ -84,7 +84,7 @@ public class AltManagerScreen extends Screen {
 
     @Override
     protected void init() {
-        savePath = client.runDirectory.toPath().resolve("Space Visuals/accounts.txt");
+        savePath = client.runDirectory.toPath().resolve("SpaceVisuals/accounts.txt");
         if (!initialized) { loadAccounts(); initialized = true; }
         fadeIn.animateTo(1);
         panelIn.animateTo(1);

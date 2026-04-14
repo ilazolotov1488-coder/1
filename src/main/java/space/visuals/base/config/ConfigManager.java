@@ -1,7 +1,5 @@
 package space.visuals.base.config;
 
-import com.darkmagician6.eventapi.EventManager;
-import com.darkmagician6.eventapi.EventTarget;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -9,62 +7,51 @@ import com.google.gson.JsonParser;
 import lombok.Getter;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.player.EventUpdate;
-import space.visuals.client.hud.elements.component.MusicInfoComponent;
-import space.visuals.utility.crypt.CryptUtility;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Getter
 public class ConfigManager {
-    public static final File configDirectory = new File(Zenith.DIRECTORY, "configs");
-    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final String shifr = "config";
+    public static File configDirectory;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public ConfigManager() {
-
+        configDirectory = new File(Zenith.getDirectory(), "configs");
+        Zenith.getDirectory().mkdirs();
         configDirectory.mkdirs();
+
         loadConfig("current_config");
-        // включаем Sounds по умолчанию если конфиг не задал состояние
+
         if (!space.visuals.client.modules.impl.misc.Sounds.INSTANCE.isEnabled()) {
             space.visuals.client.modules.impl.misc.Sounds.INSTANCE.toggle();
         }
-        EventManager.register(this);
+
         scheduler.scheduleAtFixedRate(() -> {
-            try {
-                saveConfig("current_config");
-            } catch (Exception e) {
-            }
+            try { saveConfig("current_config"); } catch (Exception ignored) {}
         }, 5, 5, TimeUnit.MINUTES);
     }
 
+    public boolean saveConfig(String configName) {
+        try {
+            configDirectory.mkdirs();
+            File file = new File(configDirectory, configName + ".space");
 
-    public boolean loadConfig(String configName) {
+            Config config = new Config(configName);
+            JsonObject data = config.save();
+            if (data == null) {
+                System.err.println("[ConfigManager] save() returned null for: " + configName);
+                return false;
+            }
 
-        if (configName == null)
-            return false;
-        Config config = findConfig(configName);
-        if (config == null)
-            return false;
-        try (BufferedReader reader = new BufferedReader(new FileReader(config.getFile()))) {
-            JsonParser parser = new JsonParser();
-            String encryptedDataBase64 = reader.readLine();
-
-            byte[] encryptedData = Base64.getDecoder().decode(encryptedDataBase64);
-            byte[] decryptedData = CryptUtility.decryptData(encryptedData, shifr);
-
-            String json = new String(decryptedData, StandardCharsets.UTF_8);
-
-            JsonObject object = (JsonObject) parser.parse(json);
-
-            config.load(object);
+            String json = new GsonBuilder().setPrettyPrinting().create().toJson(data);
+            Files.write(file.toPath(), json.getBytes(StandardCharsets.UTF_8));
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,33 +59,15 @@ public class ConfigManager {
         }
     }
 
-    public boolean saveConfig(String configName) {
+    public boolean loadConfig(String configName) {
         try {
-            if (configName == null)
-                return false;
-            Config config;
-            if ((config = findConfig(configName)) == null) {
-                config = new Config(configName);
-            }
+            File file = new File(configDirectory, configName + ".space");
+            if (!file.exists()) return false;
 
-            JsonObject saveData = config.save();
-            if (saveData == null) {
-                System.err.println("[ConfigManager] config.save() returned null, skipping write");
-                return false;
-            }
-
-            String contentPrettyPrint = new GsonBuilder().setPrettyPrinting().create().toJson(saveData);
-
-            contentPrettyPrint = Base64.getEncoder().encodeToString(CryptUtility.encryptData(contentPrettyPrint.getBytes(), shifr));
-            try {
-                FileWriter writer = new FileWriter(config.getFile());
-                writer.write(contentPrettyPrint);
-                writer.close();
-                return true;
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
+            String json = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            JsonObject object = JsonParser.parseString(json).getAsJsonObject();
+            new Config(configName).load(object);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -107,38 +76,29 @@ public class ConfigManager {
 
     public Config findConfig(String configName) {
         if (configName == null) return null;
-
-
-        if (new File(configDirectory, configName + "." + Zenith.NAME.toLowerCase()).exists())
-            return new Config(configName);
-
-        return null;
+        File file = new File(configDirectory, configName + ".space");
+        return file.exists() ? new Config(configName) : null;
     }
 
     public List<String> configNames() {
-        File[] files = configDirectory.listFiles();
         List<String> names = new ArrayList<>();
-        for (File file : files) {
-            names.add(file.getName());
+        File[] files = configDirectory.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().endsWith(".space"))
+                    names.add(f.getName().replace(".space", ""));
+            }
         }
         return names;
     }
 
     public boolean deleteConfig(String configName) {
-        if (configName == null)
-            return false;
-        Config config;
-        if ((config = findConfig(configName)) != null) {
-            final File f = config.getFile();
-
-            return f.exists() && f.delete();
-        }
-        return false;
+        File file = new File(configDirectory, configName + ".space");
+        return file.exists() && file.delete();
     }
 
     public void save() {
-        this.scheduler.shutdown();
+        scheduler.shutdown();
         saveConfig("current_config");
-
     }
 }

@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class LastServerManager implements IMinecraft {
 
-    private static final File FILE = new File(Zenith.DIRECTORY, "last_server.json");
+    private final File FILE = new File(Zenith.getDirectory(), "last_server.json");
 
     private String savedServer = "";
     private int savedAnarchy = -1;

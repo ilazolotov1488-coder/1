@@ -46,7 +46,9 @@ public enum Zenith {
 
     public static final String NAME = "space", VER = "2.0", TYPE = "DEV";
     private static final String MOD_ID = NAME.toLowerCase();
-    public static final File DIRECTORY = new File(MinecraftClient.getInstance().runDirectory, Zenith.NAME);
+    public static File getDirectory() {
+        return new File(MinecraftClient.getInstance().runDirectory, "SpaceVisuals");
+    }
 
     // Флаг для переключения между кастомным и ванильным меню
     public static boolean useVanillaMenu = false;
@@ -77,8 +79,8 @@ public enum Zenith {
         System.out.println("[ZENITH] init() started");
         try {
             // Создаём папку space и configs при первом запуске
-            DIRECTORY.mkdirs();
-            new java.io.File(DIRECTORY, "configs").mkdirs();
+            getDirectory().mkdirs();
+            new java.io.File(getDirectory(), "configs").mkdirs();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> Zenith.getInstance().shutdown()));
 
             System.out.println("[ZENITH] step 1: FriendManager");

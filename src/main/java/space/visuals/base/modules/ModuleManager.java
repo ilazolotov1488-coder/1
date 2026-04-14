@@ -45,7 +45,6 @@ public final class ModuleManager implements IMinecraft {
 
     private void registerMovement() {
         registerModule(AutoSprint.INSTANCE);
-        registerModule(ElytraFly.INSTANCE);
     }
 
     private void registerRender() {
@@ -64,6 +63,11 @@ public final class ModuleManager implements IMinecraft {
         registerModule(BlockOverlay.INSTANCE);
         registerModule(Taksa.INSTANCE);
         registerModule(TargetESP.INSTANCE);
+        registerModule(AnimationModule.INSTANCE);
+        registerModule(KillEffects.INSTANCE);
+        registerModule(SantaHat.INSTANCE);
+        registerModule(Trails.INSTANCE);
+        registerModule(ParticlesModule.INSTANCE);
     }
 
     private void registerPlayer() {
@@ -89,6 +93,11 @@ public final class ModuleManager implements IMinecraft {
     }
 
     private void registerModule(Module module) {
+        if (module == null) {
+            System.err.println("[ModuleManager] Tried to register null module!");
+            return;
+        }
+        System.out.println("[ModuleManager] Registering: " + module.getName() + " [" + module.getCategory() + "]");
         modules.add(module);
     }
 
