@@ -4,14 +4,19 @@ import com.darkmagician6.eventapi.EventManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.world.GameMode;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import space.visuals.base.animations.base.Animation;
+import space.visuals.base.animations.base.Easing;
 import space.visuals.base.events.impl.render.EventRender2D;
 import space.visuals.client.modules.impl.combat.SwapPlus;
+import space.visuals.client.modules.impl.render.AnimationModule;
 import space.visuals.client.modules.impl.render.Crosshair;
 import space.visuals.client.modules.impl.render.Interface;
 import space.visuals.utility.render.display.base.CustomDrawContext;
@@ -22,6 +27,10 @@ import static space.visuals.utility.interfaces.IMinecraft.mc;
 
 @Mixin(InGameHud.class)
 public abstract class InGameHudMixin {
+
+    @Unique private final Animation tabAnim = new Animation(250, 0, Easing.QUAD_OUT);
+    @Unique private boolean tabWasVisible = false;
+    @Unique private boolean tabPushed = false;
 
     @Inject(method = "render", at = @At("HEAD"))
     public void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
@@ -67,11 +76,35 @@ public abstract class InGameHudMixin {
     }
     @Inject(method = "renderPlayerList", at = @At(value = "HEAD"), cancellable = true)
     private void inject(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
-               Interface interfaceModule = Interface.INSTANCE;
-            if (interfaceModule.isEnabled() && interfaceModule.isEnableTab()) {
-                ci.cancel();
+        Interface interfaceModule = Interface.INSTANCE;
+        if (interfaceModule.isEnabled() && interfaceModule.isEnableTab()) {
+            ci.cancel();
+            return;
+        }
+        // TAB анимация
+        if (AnimationModule.INSTANCE.isEnabled() && AnimationModule.INSTANCE.animateTabList.isEnabled()) {
+            boolean visible = mc.options.playerListKey.isPressed();
+            if (!tabWasVisible && visible) tabAnim.reset(0);
+            tabWasVisible = visible;
+            float scale = tabAnim.update(visible ? 1 : 0);
+            if (scale <= 0f) { ci.cancel(); tabPushed = false; return; }
+            if (scale < 1f) {
+                int w = mc.getWindow().getScaledWidth();
+                MatrixStack ms = context.getMatrices();
+                ms.push();
+                ms.translate(w / 2f, 0, 0);
+                ms.scale(1f, scale, 1f);
+                ms.translate(-w / 2f, 0, 0);
+                tabPushed = true;
             }
+        }
+    }
 
+    @Inject(method = "renderPlayerList", at = @At(value = "RETURN"))
+    private void injectPost(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        if (!tabPushed) return;
+        context.getMatrices().pop();
+        tabPushed = false;
     }
     @Inject(method = "renderOverlayMessage", at = @At(value = "HEAD"), cancellable = true)
     private void injectRenderOverlayMessage(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {

@@ -24,6 +24,15 @@ import space.visuals.utility.game.server.AutoBuyUtil;
 @Mixin(ClientPlayerInteractionManager.class)
 public class ClientPlayerInteractionManagerMixin {
 
+    @Inject(method = "attackEntity", at = @At("HEAD"))
+    public void attackEntityPre(PlayerEntity player, Entity target, CallbackInfo ci) {
+        EventManager.call(new EventAttack(target, EventAttack.Action.PRE));
+    }
+
+    @Inject(method = "attackEntity", at = @At("RETURN"))
+    public void attackEntityPost(PlayerEntity player, Entity target, CallbackInfo ci) {
+        EventManager.call(new EventAttack(target, EventAttack.Action.POST));
+    }
 
     @Inject(method = "clickSlot", at = @At("HEAD"), cancellable = true)
     public void clickSlotHook(int syncId, int slotId, int button, SlotActionType actionType, PlayerEntity player, CallbackInfo info) {

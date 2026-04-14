@@ -65,7 +65,6 @@ public final class ModuleManager implements IMinecraft {
         registerModule(TargetESP.INSTANCE);
         registerModule(AnimationModule.INSTANCE);
         registerModule(KillEffects.INSTANCE);
-        registerModule(SantaHat.INSTANCE);
         registerModule(Trails.INSTANCE);
         registerModule(ParticlesModule.INSTANCE);
     }

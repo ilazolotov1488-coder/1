@@ -60,7 +60,7 @@ public final class Trails extends Module {
         RenderSystem.enableBlend();
         RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.disableCull();
-        RenderSystem.disableDepthTest();
+        RenderSystem.enableDepthTest();
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
 
         ms.push();

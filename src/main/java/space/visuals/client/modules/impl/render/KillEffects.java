@@ -14,21 +14,38 @@ import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ModuleAnnotation(name = "KillEffects", category = Category.RENDER, description = "Эффекты при убийстве игроков")
 public final class KillEffects extends Module {
     public static final KillEffects INSTANCE = new KillEffects();
 
-    private final ModeSetting effect = new ModeSetting("Эффект", "Молния", "Молния", "Взрыв", "Сердце", "Дым");
+    private final ModeSetting effect = new ModeSetting("Эффект", "Молния", "Взрыв", "Сердце", "Дым");
+
+    // Сохраняем здоровье до атаки
+    private final Map<Integer, Float> healthBefore = new HashMap<>();
 
     private KillEffects() {}
 
     @EventTarget
-    public void onAttack(EventAttack event) {
+    public void onAttackPre(EventAttack event) {
+        if (event.getAction() != EventAttack.Action.PRE) return;
+        if (!(event.getTarget() instanceof LivingEntity target)) return;
+        if (!(target instanceof PlayerEntity)) return;
+        healthBefore.put(target.getId(), target.getHealth());
+    }
+
+    @EventTarget
+    public void onAttackPost(EventAttack event) {
         if (event.getAction() != EventAttack.Action.POST) return;
         if (!(event.getTarget() instanceof LivingEntity target)) return;
         if (!(target instanceof PlayerEntity)) return;
         if (mc.world == null || mc.player == null) return;
-        if (target.getHealth() > 0) return;
+
+        Float before = healthBefore.remove(target.getId());
+        // Убит если здоровье стало <= 0 или было > 0 до атаки и теперь <= 0
+        if (target.getHealth() > 0 && (before == null || before > 0)) return;
 
         spawnEffect(target);
     }

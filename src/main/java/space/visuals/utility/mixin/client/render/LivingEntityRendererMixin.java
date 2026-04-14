@@ -3,8 +3,7 @@ package space.visuals.utility.mixin.client.render;
 import com.darkmagician6.eventapi.EventManager;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.model.EntityModel;
 import net.minecraft.client.render.entity.state.LivingEntityRenderState;
@@ -15,10 +14,11 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.entity.EventEntityColor;
-
 import space.visuals.utility.interfaces.IMinecraft;
 import space.visuals.utility.render.level.Render3DUtil;
 
@@ -69,6 +69,5 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
         if (renderState.invisibleToPlayer) EventManager.call(event);
         instance.render(matrixStack, vertexConsumer, i, j, event.getColor());
     }
-
 
 }
