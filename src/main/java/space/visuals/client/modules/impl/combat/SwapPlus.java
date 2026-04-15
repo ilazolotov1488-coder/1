@@ -21,6 +21,7 @@ import space.visuals.base.events.impl.input.EventKey;
 import space.visuals.base.events.impl.input.EventMouse;
 import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.base.events.impl.render.EventHudRender;
+import space.visuals.Zenith;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
@@ -305,10 +306,23 @@ public final class SwapPlus extends Module {
 
     private void doSwap(int slotId) {
         if (mc.interactionManager == null || mc.player == null) return;
+        // Сохраняем стек ДО свапа — это то что идёт в оффхенд
+        net.minecraft.item.ItemStack swappedStack = net.minecraft.item.ItemStack.EMPTY;
+        List<Slot> slots = mc.player.currentScreenHandler.slots;
+        for (Slot s : slots) {
+            if (s.id == slotId && !s.getStack().isEmpty()) {
+                swappedStack = s.getStack().copy();
+                break;
+            }
+        }
         mc.interactionManager.clickSlot(
             mc.player.currentScreenHandler.syncId,
             slotId, 40, SlotActionType.SWAP, mc.player
         );
+        // Уведомление о том что попало в оффхенд
+        if (!swappedStack.isEmpty()) {
+            Zenith.getInstance().getNotifyManager().addSwapNotification(swappedStack);
+        }
     }
 
     private void reset() {

@@ -42,6 +42,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(SwapPlus.INSTANCE);
         registerModule(ItemRadius.INSTANCE);
         registerModule(AutoTool.INSTANCE);
+        registerModule(ShiftTap.INSTANCE);
     }
 
     private void registerMovement() {

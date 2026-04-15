@@ -6,6 +6,7 @@ import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Hand;
 import org.lwjgl.glfw.GLFW;
+import space.visuals.Zenith;
 import space.visuals.base.events.impl.input.EventKey;
 import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.client.modules.api.Category;
@@ -105,8 +106,14 @@ public final class AutoSwap extends Module {
             }
 
             if (swapTick >= 1) {
+                // Сохраняем стек ДО свапа — это то что идёт в оффхенд
+                net.minecraft.item.ItemStack swappedStack = validSlot != null ? validSlot.getStack().copy() : net.minecraft.item.ItemStack.EMPTY;
                 PlayerInventoryUtil.swapHand(validSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
+                // Уведомление о том что попало в оффхенд
+                if (!swappedStack.isEmpty()) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(swappedStack);
+                }
                 startSwap = false;
                 swapTick = 0;
             } else {

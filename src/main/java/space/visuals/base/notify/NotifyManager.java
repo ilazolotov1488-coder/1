@@ -4,6 +4,7 @@ import com.darkmagician6.eventapi.EventManager;
 import com.darkmagician6.eventapi.EventTarget;
 
 
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import space.visuals.base.events.impl.other.EventModuleToggle;
 import space.visuals.client.modules.api.Module;
@@ -41,9 +42,15 @@ public class NotifyManager {
             notifyComponent.addNotification(module, enabled);
         }
     }
-    public void addNotification(String icon,Text module) {
+    public void addNotification(String icon, Text module) {
         if (notifyComponent != null) {
-            notifyComponent.addTextNotification(icon,module);
+            notifyComponent.addTextNotification(icon, module);
         }
     }
-} 
+
+    public void addSwapNotification(ItemStack stack) {
+        if (notifyComponent != null) {
+            notifyComponent.addSwapNotification(stack);
+        }
+    }
+}

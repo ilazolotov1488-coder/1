@@ -1,6 +1,7 @@
 package space.visuals.client.hud.elements.component;
 
 import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
@@ -10,7 +11,6 @@ import space.visuals.base.font.Fonts;
 import space.visuals.base.theme.Theme;
 import space.visuals.client.hud.elements.draggable.DraggableHudElement;
 import space.visuals.client.modules.api.Module;
-import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.utility.render.display.base.BorderRadius;
 import space.visuals.utility.render.display.base.CustomDrawContext;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
@@ -24,14 +24,12 @@ public class NotifyComponent extends DraggableHudElement {
 
     private final Animation toggleAnimation = new Animation(200, Easing.QUAD_IN_OUT);
 
-    
     private final Deque<BaseNotification> notifications = new ArrayDeque<>();
 
     public NotifyComponent(String name, float initialX, float initialY, float windowWidth, float windowHeight, float offsetX, float offsetY, Align align) {
         super(name, initialX, initialY, windowWidth, windowHeight, offsetX, offsetY, align);
     }
 
-    
     public void addNotification(Module module, boolean enabled) {
         notifications.addLast(new ModuleNotification(module, enabled));
     }
@@ -40,7 +38,10 @@ public class NotifyComponent extends DraggableHudElement {
         notifications.addLast(new TextNotification(icon, text));
     }
 
-    
+    public void addSwapNotification(ItemStack stack) {
+        notifications.addLast(new SwapNotification(stack.copy()));
+    }
+
     @Override
     public void render(CustomDrawContext ctx) {
         width = 100;
@@ -48,7 +49,6 @@ public class NotifyComponent extends DraggableHudElement {
 
         long now = System.currentTimeMillis();
         Iterator<BaseNotification> iterator = notifications.iterator();
-
 
         toggleAnimation.update(mc.currentScreen instanceof ChatScreen && notifications.isEmpty());
 
@@ -59,7 +59,7 @@ public class NotifyComponent extends DraggableHudElement {
         float baseX = x;
         float baseY = y;
 
-                ctx.pushMatrix();
+        ctx.pushMatrix();
         ctx.getMatrices().translate(x + 50, y + 9, 0);
         ctx.getMatrices().scale(toggleAnimation.getValue(), toggleAnimation.getValue(), 1);
         ctx.getMatrices().translate(-(x + 50), -(y + 9), 0);
@@ -69,7 +69,7 @@ public class NotifyComponent extends DraggableHudElement {
 
         ctx.drawRoundedRect(x, y, 90, notificationHeight, BorderRadius.all(4), theme.getForegroundColor());
         ctx.drawRoundedRect(x, y, 16, notificationHeight, BorderRadius.left(4, 4), theme.getForegroundLight());
-        DrawUtil.drawRoundedCorner(ctx.getMatrices(), x, y, 90, notificationHeight, 0.1f,14,  theme.getColor(),BorderRadius.all(4));
+        DrawUtil.drawRoundedCorner(ctx.getMatrices(), x, y, 90, notificationHeight, 0.1f, 14, theme.getColor(), BorderRadius.all(4));
 
         ctx.drawText(iconFont, "A", x + (16 - iconFont.width("A")) / 2f + 1f, y + (notificationHeight - iconFont.height()) / 2f, theme.getColor());
         ctx.drawText(textFont, "Пример уведомления", x + 16 + 4, y + (18 - textFont.height()) / 2f, theme.getWhite());
@@ -77,7 +77,7 @@ public class NotifyComponent extends DraggableHudElement {
         baseY += (notificationHeight + 6) * toggleAnimation.getValue();
         ctx.popMatrix();
 
-                for (BaseNotification n : notifications) {
+        for (BaseNotification n : notifications) {
             float gap = 6f;
             float offset = n.offsetAnimation.getValue() * (notificationHeight + gap);
             if (offset < 100) {
@@ -87,17 +87,15 @@ public class NotifyComponent extends DraggableHudElement {
             }
         }
 
-                int index = 0;
+        int index = 0;
         while (iterator.hasNext()) {
             BaseNotification n = iterator.next();
 
-            
             if (!n.fadingOut && now - n.timestamp > 1500) {
                 n.fadingOut = true;
                 n.alphaAnimation.update(0);
             }
 
-            
             if (n.fadingOut && n.alphaAnimation.getValue() < 0.01f) {
                 iterator.remove();
                 continue;
@@ -115,7 +113,6 @@ public class NotifyComponent extends DraggableHudElement {
         }
     }
 
-    
     private static abstract class BaseNotification {
         long timestamp;
         boolean fadingOut = false;
@@ -131,7 +128,6 @@ public class NotifyComponent extends DraggableHudElement {
                              NotifyComponent parent);
     }
 
-    
     private static class ModuleNotification extends BaseNotification {
         final Module module;
         final boolean enabled;
@@ -148,7 +144,6 @@ public class NotifyComponent extends DraggableHudElement {
             float borderRadius = 4f;
             float iconBgWidth = 16f;
 
-            
             ColorRGBA headerBg = theme.getForegroundLight();
             ColorRGBA rowBg = theme.getForegroundColor();
             ColorRGBA primary = enabled ? theme.getColor() : theme.getGrayLight();
@@ -164,10 +159,8 @@ public class NotifyComponent extends DraggableHudElement {
             parent.height = notificationHeight;
             parent.width = 100;
 
-            
             x += (100 - width) / 2f;
 
-            
             float alpha = alphaAnimation.getValue();
             float scale = alpha;
 
@@ -178,18 +171,15 @@ public class NotifyComponent extends DraggableHudElement {
             ctx.getMatrices().scale(scale, scale, 1f);
             ctx.getMatrices().translate(-(x + width / 2f), -(y + notificationHeight / 2f), 0f);
 
-            
             DrawUtil.drawBlurHud(ctx.getMatrices(), x, y, width, notificationHeight, 21, BorderRadius.all(borderRadius), ColorRGBA.WHITE);
             ctx.drawRoundedRect(x, y, width, notificationHeight, BorderRadius.all(borderRadius), rowBg);
             ctx.drawRoundedRect(x, y, iconBgWidth, notificationHeight, BorderRadius.left(borderRadius, borderRadius), headerBg);
 
-            
             String icon = module.getCategory().getIcon();
             float iconX = x + (iconBgWidth - iconFont.width(icon)) / 2f + 1f;
             float iconY = y + (notificationHeight - iconFont.height()) / 2f;
             ctx.drawText(iconFont, icon, iconX, iconY, primary);
 
-            
             float textX = x + iconBgWidth + 4f;
             float textY = y + (notificationHeight - textFont.height()) / 2f;
             ctx.drawText(textFont, moduleName, textX, textY, primary);
@@ -199,10 +189,9 @@ public class NotifyComponent extends DraggableHudElement {
         }
     }
 
-    
     private static class TextNotification extends BaseNotification {
-        final String icon; 
-        final Text text;   
+        final String icon;
+        final Text text;
 
         TextNotification(String icon, Text text) {
             this.icon = icon;
@@ -216,12 +205,9 @@ public class NotifyComponent extends DraggableHudElement {
             float borderRadius = 4f;
             float iconBgWidth = 16f;
 
-            
             ColorRGBA headerBg = theme.getForegroundLight();
             ColorRGBA rowBg = theme.getForegroundColor();
             ColorRGBA primary = theme.getColor();
-            ColorRGBA textColor = theme.getWhite();
-
 
             float contentWidth = textFont.width(text);
             float width = iconBgWidth + 4 + contentWidth + 4;
@@ -229,10 +215,8 @@ public class NotifyComponent extends DraggableHudElement {
             parent.height = notificationHeight;
             parent.width = Math.max(parent.width, 100);
 
-            
             x += (100 - width) / 2f;
 
-            
             float alpha = alphaAnimation.getValue();
             float scale = alpha;
 
@@ -243,20 +227,75 @@ public class NotifyComponent extends DraggableHudElement {
             ctx.getMatrices().scale(scale, scale, 1f);
             ctx.getMatrices().translate(-(x + width / 2f), -(y + notificationHeight / 2f), 0f);
 
-            
             DrawUtil.drawBlurHud(ctx.getMatrices(), x, y, width, notificationHeight, 21, BorderRadius.all(borderRadius), ColorRGBA.WHITE);
             ctx.drawRoundedRect(x, y, width, notificationHeight, BorderRadius.all(borderRadius), rowBg);
             ctx.drawRoundedRect(x, y, iconBgWidth, notificationHeight, BorderRadius.left(borderRadius, borderRadius), headerBg);
 
-            
             float iconX = x + (iconBgWidth - iconFont.width(icon)) / 2f + 1f;
             float iconY = y + (notificationHeight - iconFont.height()) / 2f;
             ctx.drawText(iconFont, icon, iconX, iconY, primary);
 
-            
             float textX = x + iconBgWidth + 4f;
             float textY = y + (notificationHeight - textFont.height()) / 2f;
             ctx.drawText(textFont, text, textX, textY);
+
+            ctx.getMatrices().pop();
+        }
+    }
+
+    // Уведомление о свапе: иконка предмета + название в цвете предмета
+    private static class SwapNotification extends BaseNotification {
+        final ItemStack stack;
+
+        SwapNotification(ItemStack stack) {
+            this.stack = stack;
+        }
+
+        @Override
+        void render(CustomDrawContext ctx, float x, float y, Font textFont, Theme theme, float notificationHeight, NotifyComponent parent) {
+            if (timestamp == 0) timestamp = System.currentTimeMillis();
+
+            float borderRadius = 4f;
+            float itemBgWidth = notificationHeight;
+
+            ColorRGBA headerBg = theme.getForegroundLight();
+            ColorRGBA rowBg = theme.getForegroundColor();
+
+            Text nameText = stack.getName();
+            float nameWidth = textFont.width(nameText);
+            float width = itemBgWidth + 4 + nameWidth + 4;
+
+            parent.height = notificationHeight;
+            parent.width = Math.max(parent.width, 100);
+
+            x += (100 - width) / 2f;
+
+            float scale = alphaAnimation.getValue();
+
+            ctx.getMatrices().push();
+            ctx.getMatrices().translate(x + width / 2f, y + notificationHeight / 2f, 0f);
+            ctx.getMatrices().scale(scale, scale, 1f);
+            ctx.getMatrices().translate(-(x + width / 2f), -(y + notificationHeight / 2f), 0f);
+
+            DrawUtil.drawBlurHud(ctx.getMatrices(), x, y, width, notificationHeight, 21, BorderRadius.all(borderRadius), ColorRGBA.WHITE);
+            ctx.drawRoundedRect(x, y, width, notificationHeight, BorderRadius.all(borderRadius), rowBg);
+            ctx.drawRoundedRect(x, y, itemBgWidth, notificationHeight, BorderRadius.left(borderRadius, borderRadius), headerBg);
+
+            // Иконка предмета
+            float itemScale = 0.8f;
+            float itemSize = 16f * itemScale;
+            float itemX = x + (itemBgWidth - itemSize) / 2f;
+            float itemY = y + (notificationHeight - itemSize) / 2f;
+            ctx.getMatrices().push();
+            ctx.getMatrices().translate(itemX, itemY, 0f);
+            ctx.getMatrices().scale(itemScale, itemScale, 1f);
+            ctx.drawItem(stack, 0, 0);
+            ctx.getMatrices().pop();
+
+            // Название с оригинальным цветом
+            float textX = x + itemBgWidth + 4f;
+            float textY = y + (notificationHeight - textFont.height()) / 2f;
+            ctx.drawText(textFont, nameText, textX, textY);
 
             ctx.getMatrices().pop();
         }

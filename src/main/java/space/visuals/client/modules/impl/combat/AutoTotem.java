@@ -1,8 +1,8 @@
 package space.visuals.client.modules.impl.combat;
 
 import com.darkmagician6.eventapi.EventTarget;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Hand;
 import space.visuals.base.events.impl.player.EventUpdate;
@@ -15,6 +15,8 @@ import space.visuals.utility.game.player.PlayerInventoryComponent;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.client.modules.impl.misc.ElytraHelper;
 
+import java.util.Comparator;
+
 import static net.minecraft.item.Items.TOTEM_OF_UNDYING;
 
 @ModuleAnnotation(
@@ -24,16 +26,14 @@ import static net.minecraft.item.Items.TOTEM_OF_UNDYING;
 public final class AutoTotem extends Module {
     public static final AutoTotem INSTANCE = new AutoTotem();
 
-    private AutoTotem() {
-    }
+    private AutoTotem() {}
 
     private final NumberSetting health = new NumberSetting("Здоровье", 5f, 0, 36, 0.1f);
 
-    private final BooleanSetting elytra = new BooleanSetting("Элитры", true);
-    private final NumberSetting elytraHealth = new NumberSetting("На элитрах", 10f, 0, 36, 0.1f, elytra::isEnabled);
-
     private final BooleanSetting fall = new BooleanSetting("Падение", true);
     private final NumberSetting fallDistance = new NumberSetting("При падении", 20f, 10, 50, 0.1f, fall::isEnabled);
+
+    private final BooleanSetting saveEnchanted = new BooleanSetting("Сохранять зачарованные", false);
 
     private int cooldownTicks = 0;
     private Item previousItem = null;
@@ -55,6 +55,27 @@ public final class AutoTotem extends Module {
                 ? null : mc.player.getOffHandStack().getItem();
 
         if (shouldUseTotem()) {
+            // Если нужен тотем и в руке зачарованный — свапаем на обычный (если включено)
+            if (saveEnchanted.isEnabled() && current == TOTEM_OF_UNDYING) {
+                boolean isEnchanted = mc.player.getOffHandStack().get(DataComponentTypes.ENCHANTMENTS) != null
+                        && !mc.player.getOffHandStack().get(DataComponentTypes.ENCHANTMENTS).isEmpty();
+                if (isEnchanted) {
+                    Slot plainTotem = PlayerInventoryUtil.getSlot(
+                            TOTEM_OF_UNDYING,
+                            Comparator.comparing(s -> s.getStack().get(DataComponentTypes.ENCHANTMENTS) == null
+                                    || s.getStack().get(DataComponentTypes.ENCHANTMENTS).isEmpty()),
+                            s -> s.id != 46 && s.id != 45
+                                    && (s.getStack().get(DataComponentTypes.ENCHANTMENTS) == null
+                                    || s.getStack().get(DataComponentTypes.ENCHANTMENTS).isEmpty())
+                    );
+                    if (plainTotem != null) {
+                        swapToOffhand(plainTotem);
+                        return;
+                    }
+                }
+            }
+
+            // Если тотема нет в руке — берём любой
             if (current != TOTEM_OF_UNDYING) {
                 Slot slot = PlayerInventoryUtil.getSlot(TOTEM_OF_UNDYING);
                 if (slot != null) {
@@ -84,10 +105,6 @@ public final class AutoTotem extends Module {
 
         if (healthValue <= health.getCurrent()) return true;
 
-        if (fall.isEnabled() && mc.player.fallDistance >= fallDistance.getCurrent()) return true;
-
-        return elytra.isEnabled()
-                && mc.player.getInventory().getArmorStack(2).getItem() == Items.ELYTRA
-                && healthValue <= elytraHealth.getCurrent();
+        return fall.isEnabled() && mc.player.fallDistance >= fallDistance.getCurrent();
     }
 }
