@@ -42,6 +42,7 @@
     "client.OptionsScreenMixin",
     "client.GameMenuScreenMixin",
     "client.render.LivingEntityRendererMixin",
+    "client.render.ArmorFeatureRendererMixin",
     "client.render.ScreenMixin",
     "client.render.WindowMixin",
     "client.render.gui.hud.GameOverlayRendererMixin",

@@ -1,28 +1,33 @@
 package space.visuals.utility.mixin.minecraft.entity;
 
+import com.darkmagician6.eventapi.EventManager;
 import net.minecraft.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.Zenith;
+import space.visuals.base.events.impl.player.EventJump;
 import space.visuals.utility.interfaces.IMinecraft;
 
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin implements IMinecraft {
+
+    @Inject(method = "jump", at = @At("HEAD"))
+    private void onJump(CallbackInfo ci) {
+        if ((Object) this == mc.player) {
+            EventManager.call(new EventJump());
+        }
+    }
 
     //ЛИКВИДБАБУНС ЧТО ДЕЛАЕТ????
     @Redirect(method = "jump", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/LivingEntity;getYaw()F"))
     public float replaceMovePacketPitch(LivingEntity instance) {
         if ((Object) this != mc.player) {
             return instance.getYaw();
-        }else{
+        } else {
             return Zenith.getInstance().getRotationManager().getCurrentRotation().getYaw();
         }
-
-
-
-
     }
-
-
 }

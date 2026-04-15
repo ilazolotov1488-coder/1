@@ -66,6 +66,19 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
 
     @Redirect(method = "render(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;getRenderLayer(Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;ZZZ)Lnet/minecraft/client/render/RenderLayer;"))
     private RenderLayer renderHook(LivingEntityRenderer instance, LivingEntityRenderState state, boolean showBody, boolean translucent, boolean showOutline) {
+        // CustomModels: подменяем текстуру на текстуру кастомной модели
+        CustomModels customModels = CustomModels.INSTANCE;
+        if (customModels.isEnabled()) {
+            LivingEntity entity = RenderStateEntityCache.get(state);
+            CustomModelType type;
+            if (entity != null && customModels.shouldApplyTo(entity) && (type = customModels.getSelectedType()) != null) {
+                // Возвращаем слой с текстурой кастомной модели вместо скина игрока
+                return showOutline
+                        ? RenderLayer.getOutline(type.getTexture())
+                        : RenderLayer.getEntityTranslucent(type.getTexture());
+            }
+        }
+
         if (!translucent && state.width == 0.6F) {
             EventEntityColor event = new EventEntityColor(-1);
             EventManager.call(event);

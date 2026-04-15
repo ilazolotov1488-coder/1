@@ -6,7 +6,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
@@ -51,9 +50,9 @@ public final class JumpCircle extends Module {
     private static final Identifier TEXTURE_JUMPS_V2 = Zenith.id("hud/circle_2.png");
     private static final Identifier TEXTURE_JUMPS_V3 = Zenith.id("hud/circle_bold.png");
     private static final Identifier TEXTURE_JUMPS_V4 = Zenith.id("hud/hens.png");
-    private static final Identifier TEXTURE_VURST    = Zenith.id("hud/vurstvisual.png");
+    private static final Identifier TEXTURE_SPACE    = Zenith.id("hud/space.png");
 
-    private final ModeSetting mode = new ModeSetting("Режим", "Обычный", "Рокстар", "Пульс", "Тонкие", "Широкие", "Ромбированный", "Вурст Визуал");
+    private final ModeSetting mode = new ModeSetting("Режим", "Обычный", "Рокстар", "Пульс", "Тонкие", "Широкие", "Ромбированный", "Space");
     private final ModeSetting.Value modeClassic    = mode.getValues().get(0);
     private final ModeSetting.Value modeRockstar   = mode.getValues().get(1);
     private final ModeSetting.Value modeJumpsV1    = mode.getValues().get(2);
@@ -156,7 +155,7 @@ public final class JumpCircle extends Module {
         int bottomLeft  = lerpColor(primary, secondary, animatedBlend(phase + 0.75f));
         matrices.push();
         matrices.translate(pos.x - camPos.x, pos.y - camPos.y, pos.z - camPos.z);
-        BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        BufferBuilder buffer = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         buffer.vertex(matrix, -half, 0f, -half).texture(0f, 0f).color(topLeft);
         buffer.vertex(matrix,  half, 0f, -half).texture(1f, 0f).color(topRight);
@@ -191,7 +190,7 @@ public final class JumpCircle extends Module {
         if (mode.is(modeJumpsV2)) return TEXTURE_JUMPS_V2;
         if (mode.is(modeJumpsV3)) return TEXTURE_JUMPS_V3;
         if (mode.is(modeJumpsV4)) return TEXTURE_JUMPS_V4;
-        if (mode.is(modeVurstVisual)) return TEXTURE_VURST;
+        if (mode.is(modeVurstVisual)) return TEXTURE_SPACE;
         return TEXTURE_DEFAULT;
     }
 
