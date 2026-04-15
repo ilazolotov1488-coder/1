@@ -18,8 +18,6 @@ import space.visuals.client.modules.api.setting.impl.KeySetting;
 import space.visuals.utility.game.player.PlayerInventoryComponent;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 
-import java.util.Comparator;
-
 @ModuleAnnotation(name = "AutoSwap", category = Category.COMBAT, description = "Автоматический свап предметов")
 public final class AutoSwap extends Module {
     public static final AutoSwap INSTANCE = new AutoSwap();
@@ -71,9 +69,37 @@ public final class AutoSwap extends Module {
     public void onTick(EventUpdate event) {
         if (!startSwap) return;
 
-        Slot first = PlayerInventoryUtil.getSlot(getItemByType(itemType.get()), Comparator.comparing(s -> s.getStack().hasEnchantments()), s -> s.id >= 9 && s.id <= 35);
-        Slot second = PlayerInventoryUtil.getSlot(getItemByType(swapType.get()), Comparator.comparing(s -> s.getStack().hasEnchantments()), s -> s.id >= 9 && s.id <= 35);
-        Slot validSlot = first != null && mc.player.getOffHandStack().getItem() != first.getStack().getItem() ? first : second;
+        Item currentOffhand = mc.player.getOffHandStack().getItem();
+        Item item1 = getItemByType(itemType.get());
+        Item item2 = getItemByType(swapType.get());
+
+        // Определяем цель: если в оффхенде item1 — берём item2, иначе item1
+        Item targetItem = (currentOffhand == item1) ? item2 : item1;
+
+        // Поиск в порядке: хотбар (36-44), потом инвентарь строчками сверху вниз (9-35)
+        // Только точное совпадение по типу предмета — никаких других предметов
+        Slot validSlot = findNearestSlot(targetItem);
+
+        // Если предмет не найден или уже в оффхенде — отменяем
+        if (validSlot == null) {
+            startSwap = false;
+            swapTick = 0;
+            return;
+        }
+
+        // Если предмет в хотбаре — не берём его (он там нужен игроку)
+        // Берём только если это именно тот тип что настроен
+        if (validSlot.getStack().getItem() != targetItem) {
+            startSwap = false;
+            swapTick = 0;
+            return;
+        }
+
+        // Добавляем задачу только если очередь пуста (не спамим)
+        if (!space.visuals.Zenith.getInstance().getScriptManager().isFinished()) return;
+
+        // Сразу сбрасываем флаг — задача будет добавлена один раз
+        startSwap = false;
 
         PlayerInventoryComponent.addTask(() -> {
             if (isWPressed()) mc.options.forwardKey.setPressed(true);
@@ -89,17 +115,62 @@ public final class AutoSwap extends Module {
                 if (!swappedStack.isEmpty()) {
                     Zenith.getInstance().getNotifyManager().addSwapNotification(swappedStack);
                 }
-                startSwap = false;
                 swapTick = 0;
             } else {
                 swapTick++;
+                // Не сбрасываем startSwap здесь — он уже сброшен выше
                 mc.options.jumpKey.setPressed(false);
                 mc.options.forwardKey.setPressed(false);
                 mc.options.leftKey.setPressed(false);
                 mc.options.rightKey.setPressed(false);
                 mc.options.backKey.setPressed(false);
+                // Нужно ещё один тик — возвращаем флаг
+                startSwap = true;
             }
         });
+    }
+
+    /**
+     * Ищет предмет в порядке близости:
+     * 1. Хотбар (слоты 36-44) — слева направо
+     * 2. Инвентарь строчками сверху вниз (слоты 9-35)
+     * Только точное совпадение по Item — никаких других предметов.
+     */
+    private Slot findNearestSlot(Item targetItem) {
+        if (mc.player == null) return null;
+        java.util.List<net.minecraft.screen.slot.Slot> slots = mc.player.currentScreenHandler.slots;
+
+        // 1. Хотбар (36-44), предпочитаем зачарованный
+        net.minecraft.screen.slot.Slot hotbarEnchanted = null;
+        net.minecraft.screen.slot.Slot hotbarPlain = null;
+        for (net.minecraft.screen.slot.Slot s : slots) {
+            if (s.id >= 36 && s.id <= 44 && s.getStack().getItem() == targetItem) {
+                if (s.getStack().hasEnchantments()) {
+                    if (hotbarEnchanted == null) hotbarEnchanted = s;
+                } else {
+                    if (hotbarPlain == null) hotbarPlain = s;
+                }
+            }
+        }
+        if (hotbarEnchanted != null) return hotbarEnchanted;
+        if (hotbarPlain != null) return hotbarPlain;
+
+        // 2. Инвентарь строчками сверху вниз (9-35), предпочитаем зачарованный
+        net.minecraft.screen.slot.Slot invEnchanted = null;
+        net.minecraft.screen.slot.Slot invPlain = null;
+        for (net.minecraft.screen.slot.Slot s : slots) {
+            if (s.id >= 9 && s.id <= 35 && s.getStack().getItem() == targetItem) {
+                if (s.getStack().hasEnchantments()) {
+                    if (invEnchanted == null) invEnchanted = s;
+                } else {
+                    if (invPlain == null) invPlain = s;
+                }
+            }
+        }
+        if (invEnchanted != null) return invEnchanted;
+        if (invPlain != null) return invPlain;
+
+        return null;
     }
 
     private Item getItemByType(String itemType) {

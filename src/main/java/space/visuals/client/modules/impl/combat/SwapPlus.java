@@ -327,7 +327,8 @@ public final class SwapPlus extends Module {
 
     private void reset() {
         step = 0; aka = 0; lk = -1; auj = false;
-        cooldownTicks = 10;
+        // Кулдаун только для колеса, для предметов — без задержки
+        cooldownTicks = mode.get().equals("Колесо") ? 10 : 0;
     }
 
     private void openWheel() { 
