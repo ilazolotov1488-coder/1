@@ -66,6 +66,8 @@ public final class ModuleManager implements IMinecraft {
         registerModule(KillEffects.INSTANCE);
         registerModule(Trails.INSTANCE);
         registerModule(ParticlesModule.INSTANCE);
+        registerModule(CustomModels.INSTANCE);
+        registerModule(JumpCircle.INSTANCE);
     }
 
     private void registerPlayer() {

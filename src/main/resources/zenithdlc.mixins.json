@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "accessors.ItemStackAccessor",
+    "accessors.BipedEntityModelAccessor",
     "client.ClientWorldMixin",
     "client.EntityMixin",
     "client.PlayerEntityMixin",

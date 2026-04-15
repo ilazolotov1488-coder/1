@@ -19,11 +19,22 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.entity.EventEntityColor;
+import space.visuals.client.modules.impl.render.CustomModelType;
+import space.visuals.client.modules.impl.render.CustomModels;
 import space.visuals.utility.interfaces.IMinecraft;
+import space.visuals.utility.render.entity.CustomModelsRenderer;
+import space.visuals.utility.render.entity.RenderStateEntityCache;
 import space.visuals.utility.render.level.Render3DUtil;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extends LivingEntityRenderState, M extends EntityModel<? super S>> implements IMinecraft {
+
+    // Сохраняем entity в кэш при обновлении render state — нужно для CustomModels
+    @Inject(method = "updateRenderState(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;F)V",
+            at = @At("TAIL"))
+    private void storeRenderStateEntity(T entity, S state, float tickDelta, CallbackInfo ci) {
+        RenderStateEntityCache.put(state, entity);
+    }
 
     @ModifyExpressionValue(method = "updateRenderState(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;F)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;clampBodyYaw(Lnet/minecraft/entity/LivingEntity;FF)F"))
     public float changeYaw(float oldValue, LivingEntity entity) {
@@ -67,6 +78,18 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, S extend
     private void renderModelHook(EntityModel<?> instance, MatrixStack matrixStack, VertexConsumer vertexConsumer, int i, int j, int l, @Local(ordinal = 0, argsOnly = true) LivingEntityRenderState renderState) {
         EventEntityColor event = new EventEntityColor(l);
         if (renderState.invisibleToPlayer) EventManager.call(event);
+
+        // CustomModels: заменяем модель если нужно
+        CustomModels customModels = CustomModels.INSTANCE;
+        if (customModels.isEnabled()) {
+            LivingEntity entity = RenderStateEntityCache.get(renderState);
+            CustomModelType type;
+            if (entity != null && customModels.shouldApplyTo(entity) && (type = customModels.getSelectedType()) != null
+                    && CustomModelsRenderer.render(type, instance, matrixStack, vertexConsumer, i, j, event.getColor())) {
+                return;
+            }
+        }
+
         instance.render(matrixStack, vertexConsumer, i, j, event.getColor());
     }
 
