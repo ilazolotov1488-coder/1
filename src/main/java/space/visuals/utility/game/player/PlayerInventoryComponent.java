@@ -9,10 +9,8 @@ import net.minecraft.client.gui.screen.ingame.StructureBlockScreen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import space.visuals.Zenith;
-import space.visuals.base.events.impl.player.EventMoveInput;
 import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.base.request.ScriptManager;
-import space.visuals.client.screens.menu.MenuScreen;
 import space.visuals.utility.interfaces.IMinecraft;
 
 import java.util.List;
@@ -25,67 +23,17 @@ public class PlayerInventoryComponent implements IMinecraft {
 
 
     public void addTask(Runnable task) {
-        if (MovingUtil.hasPlayerMovement()) {
-            // не добавляем если предыдущая задача ещё выполняется
-            if (!Zenith.getInstance().getScriptManager().isFinished()) {
-                return;
-            }
+        if (mc.player == null) return;
 
-            ScriptManager.ScriptTask newScript = new ScriptManager.ScriptTask();
-            Zenith.getInstance().getScriptManager().addTask(newScript);
+        // Добавляем задачу в очередь (как в zenith.pl - без проверки isFinished)
+        ScriptManager.ScriptTask newScript = new ScriptManager.ScriptTask();
+        Zenith.getInstance().getScriptManager().addTask(newScript);
 
-            switch (Zenith.getInstance().getServerHandler().getServer()) {
-                case "FunTime", "HolyWorld" -> {
-                    newScript.schedule(EventUpdate.class, eventUpdate -> {
-                        PlayerInventoryComponent.disableMoveKeys();
-                        return true;
-                    });
-                    newScript.schedule(EventUpdate.class, eventUpdate -> {
-                        task.run();
-                        enableMoveKeys();
-                        return true;
-                    });
-                    return;
-                }
-                case "ReallyWorld" -> {
-                    if (mc.player.isOnGround()) {
-                        newScript.schedule(EventUpdate.class, eventUpdate -> {
-                            PlayerInventoryComponent.disableMoveKeys();
-                            return true;
-                        });
-                        newScript.schedule(EventUpdate.class, eventUpdate -> {
-                            PlayerInventoryComponent.disableMoveKeys();
-                            return true;
-                        });
-                        newScript.schedule(EventUpdate.class, eventUpdate -> {
-                            task.run();
-                            return true;
-                        });
-                        newScript.schedule(EventUpdate.class, eventUpdate -> {
-                            enableMoveKeys();
-                            return true;
-                        });
-                        return;
-                    }
-                }
-                case "CopyTime" -> {
-                    newScript.schedule(EventUpdate.class, eventUpdate -> {
-                        PlayerInventoryComponent.disableMoveKeys();
-                        return true;
-                    });
-                    newScript.schedule(EventUpdate.class, eventUpdate -> {
-                        task.run();
-                        return true;
-                    });
-                    newScript.schedule(EventUpdate.class, eventUpdate -> {
-                        enableMoveKeys();
-                        return true;
-                    });
-                    return;
-                }
-            }
-        }
-        task.run();
+        // Выполняем через ScriptTask на следующем тике (не напрямую на render thread)
+        newScript.schedule(EventUpdate.class, eventUpdate -> {
+            if (mc.player != null) task.run();
+            return true;
+        });
     }
 
     public void disableMoveKeys() {
