@@ -184,22 +184,79 @@ public class PlayerInventoryUtil implements IClient {
 
         Slot slot = getSlot(item);
         if (slot == null) {
-          //  Notifications.getInstance().addList(Formatting.RED + item.getName().getString() + Formatting.RESET + " - не найден!", 2000);
             Zenith.getInstance().getNotifyManager().addNotification( "M",Text.of(item.getName().copy().setStyle(Style.EMPTY.withColor(zenith.getThemeManager().getCurrentTheme().getColor().getRGB())).append(Text.of("не найден").copy().setStyle(Style.EMPTY.withColor(zenith.getThemeManager().getCurrentTheme().getWhite().getRGB())))));
-
             return;
         }
-        PlayerInventoryComponent.addTask(() -> swapAndUse(slot, angle));
 
+        // Не запускаем если уже выполняется задача
+        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
+
+        swapAndUse(slot, angle);
     }
 
     public void swapAndUse(Slot slot, Rotation angle) {
-        swapHand(slot, Hand.MAIN_HAND, false);
-        PlayerInventoryUtil.closeScreen(true);
-        PlayerIntersectionUtil.useItem(Hand.MAIN_HAND, angle);
-        swapHand(slot, Hand.MAIN_HAND,false);
-        PlayerInventoryUtil.closeScreen(true);
+        if (mc.player == null) return;
 
+        int prevSlot = mc.player.getInventory().selectedSlot;
+        boolean itemInHotbar = slot.id >= 36 && slot.id <= 44;
+
+        space.visuals.base.request.ScriptManager.ScriptTask task = new space.visuals.base.request.ScriptManager.ScriptTask();
+        Zenith.getInstance().getScriptManager().addTask(task);
+
+        if (itemInHotbar) {
+            // Предмет в хотбаре — переключаем слот, используем, возвращаем
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                mc.player.getInventory().selectedSlot = slot.id - 36;
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                PlayerIntersectionUtil.useItem(Hand.MAIN_HAND, angle);
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                mc.player.getInventory().selectedSlot = prevSlot;
+                PlayerInventoryComponent.updateMoveKeys();
+                return true;
+            });
+        } else {
+            // Предмет в инвентаре — открываем инвентарь, свапаем на prevSlot, используем, свапаем обратно
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
+                mc.options.jumpKey.setPressed(false);
+                if (!(mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen))
+                    mc.setScreen(new net.minecraft.client.gui.screen.ingame.InventoryScreen(mc.player));
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, slot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                if (mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen)
+                    mc.currentScreen.close();
+                PlayerIntersectionUtil.useItem(Hand.MAIN_HAND, angle);
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                if (!(mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen))
+                    mc.setScreen(new net.minecraft.client.gui.screen.ingame.InventoryScreen(mc.player));
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, slot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                return true;
+            });
+            task.schedule(space.visuals.base.events.impl.player.EventUpdate.class, ev -> {
+                if (mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen)
+                    mc.currentScreen.close();
+                PlayerInventoryUtil.closeScreen(true);
+                PlayerInventoryComponent.updateMoveKeys();
+                return true;
+            });
+        }
     }
 
     public void moveItem(Slot from, int to) {

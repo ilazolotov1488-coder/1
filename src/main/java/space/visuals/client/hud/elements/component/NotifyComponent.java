@@ -31,14 +31,17 @@ public class NotifyComponent extends DraggableHudElement {
     }
 
     public void addNotification(Module module, boolean enabled) {
+        if (notifications.size() >= 10) notifications.pollFirst();
         notifications.addLast(new ModuleNotification(module, enabled));
     }
 
     public void addTextNotification(String icon, Text text) {
+        if (notifications.size() >= 10) notifications.pollFirst();
         notifications.addLast(new TextNotification(icon, text));
     }
 
     public void addSwapNotification(ItemStack stack) {
+        if (notifications.size() >= 10) notifications.pollFirst();
         notifications.addLast(new SwapNotification(stack.copy()));
     }
 

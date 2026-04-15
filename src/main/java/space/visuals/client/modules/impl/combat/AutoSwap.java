@@ -1,6 +1,7 @@
 package space.visuals.client.modules.impl.combat;
 
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.screen.slot.Slot;
@@ -19,11 +20,7 @@ import space.visuals.utility.game.player.PlayerInventoryUtil;
 
 import java.util.Comparator;
 
-@ModuleAnnotation(
-        name = "AutoSwap",
-        category = Category.COMBAT,
-        description = "Автоматический свап предметов"
-)
+@ModuleAnnotation(name = "AutoSwap", category = Category.COMBAT, description = "Автоматический свап предметов")
 public final class AutoSwap extends Module {
     public static final AutoSwap INSTANCE = new AutoSwap();
 
@@ -74,43 +71,21 @@ public final class AutoSwap extends Module {
     public void onTick(EventUpdate event) {
         if (!startSwap) return;
 
-        Slot first = PlayerInventoryUtil.getSlot(
-                getItemByType(itemType.get()),
-                Comparator.comparing(s -> s.getStack().hasEnchantments()),
-                s -> s.id != 46 && s.id != 45
-        );
-        Slot second = PlayerInventoryUtil.getSlot(
-                getItemByType(swapType.get()),
-                Comparator.comparing(s -> s.getStack().hasEnchantments()),
-                s -> s.id != 46 && s.id != 45
-        );
-
-        Slot validSlot = first != null && mc.player.getOffHandStack().getItem() != first.getStack().getItem()
-                ? first : second;
+        Slot first = PlayerInventoryUtil.getSlot(getItemByType(itemType.get()), Comparator.comparing(s -> s.getStack().hasEnchantments()), s -> s.id >= 9 && s.id <= 35);
+        Slot second = PlayerInventoryUtil.getSlot(getItemByType(swapType.get()), Comparator.comparing(s -> s.getStack().hasEnchantments()), s -> s.id >= 9 && s.id <= 35);
+        Slot validSlot = first != null && mc.player.getOffHandStack().getItem() != first.getStack().getItem() ? first : second;
 
         PlayerInventoryComponent.addTask(() -> {
-            if (isWPressed()) {
-                mc.options.forwardKey.setPressed(true);
-            }
-            if (isAPressed()) {
-                mc.options.leftKey.setPressed(true);
-            }
-            if (isDPressed()) {
-                mc.options.rightKey.setPressed(true);
-            }
-            if (isSPressed()) {
-                mc.options.backKey.setPressed(true);
-            }
-            if (isJumpPressed()) {
-                mc.options.jumpKey.setPressed(true);
-            }
+            if (isWPressed()) mc.options.forwardKey.setPressed(true);
+            if (isAPressed()) mc.options.leftKey.setPressed(true);
+            if (isDPressed()) mc.options.rightKey.setPressed(true);
+            if (isSPressed()) mc.options.backKey.setPressed(true);
+            if (isJumpPressed()) mc.options.jumpKey.setPressed(true);
 
             if (swapTick >= 1) {
-                // Сохраняем стек ДО свапа — это то что идёт в оффхенд
-                net.minecraft.item.ItemStack swappedStack = validSlot != null ? validSlot.getStack().copy() : net.minecraft.item.ItemStack.EMPTY;
+                ItemStack swappedStack = validSlot != null ? validSlot.getStack().copy() : ItemStack.EMPTY;
                 PlayerInventoryUtil.swapHand(validSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
-                // Уведомление о том что попало в оффхенд
                 if (!swappedStack.isEmpty()) {
                     Zenith.getInstance().getNotifyManager().addSwapNotification(swappedStack);
                 }
@@ -118,11 +93,11 @@ public final class AutoSwap extends Module {
                 swapTick = 0;
             } else {
                 swapTick++;
-                mc.options.jumpKey.setPressed(false); // Jump
-                mc.options.forwardKey.setPressed(false); // W
-                mc.options.leftKey.setPressed(false); // A
-                mc.options.rightKey.setPressed(false); // D
-                mc.options.backKey.setPressed(false); // S
+                mc.options.jumpKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
             }
         });
     }

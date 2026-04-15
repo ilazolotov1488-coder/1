@@ -42,8 +42,11 @@ public final class ItemScroller extends Module {
         }
     }
 
+    private boolean handlingClickSlot = false;
+
     @EventTarget
     public void onClickSlot(EventClickSlot e) {
+        if (handlingClickSlot) return; // защита от рекурсии
         if (e.getActionType() == SlotActionType.THROW) {
             return;
         }
@@ -54,8 +57,13 @@ public final class ItemScroller extends Module {
         Item item = slot.getStack().getItem();
 
         if (item != null && isCtrl() && timer.finished(50)) {
-            PlayerInventoryUtil.slots().filter(s -> s.getStack().getItem().equals(item) && s.inventory.equals(slot.inventory))
-                        .forEach(s -> mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, s.id, 1, e.getActionType(), mc.player));
+            handlingClickSlot = true;
+            try {
+                PlayerInventoryUtil.slots().filter(s -> s.getStack().getItem().equals(item) && s.inventory.equals(slot.inventory))
+                            .forEach(s -> mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, s.id, 1, e.getActionType(), mc.player));
+            } finally {
+                handlingClickSlot = false;
+            }
         }
     }
 

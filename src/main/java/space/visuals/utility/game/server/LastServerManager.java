@@ -52,10 +52,13 @@ public class LastServerManager implements IMinecraft {
         String currentIp     = currentIp();
 
         if (!currentServer.equals("Vanilla")) {
-            savedServer  = currentServer;
-            savedAnarchy = currentAnarchy;
-            savedIp      = currentIp;
-            save();
+            // Сохраняем только если что-то изменилось
+            if (!currentServer.equals(savedServer) || currentAnarchy != savedAnarchy || !currentIp.equals(savedIp)) {
+                savedServer  = currentServer;
+                savedAnarchy = currentAnarchy;
+                savedIp      = currentIp;
+                save();
+            }
         }
 
         // Автореконнект — один раз после входа на сервер

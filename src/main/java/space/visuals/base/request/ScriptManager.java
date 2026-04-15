@@ -119,7 +119,13 @@ public class ScriptManager {
             }
 
             boolean execute(Object event) {
-                return action.accept(eventClass.cast(event));
+                try {
+                    return action.accept(eventClass.cast(event));
+                } catch (Exception e) {
+                    // Если шаг бросил исключение — считаем его завершённым чтобы не зависнуть
+                    System.err.println("[ScriptManager] Step threw exception, skipping: " + e.getMessage());
+                    return true;
+                }
             }
         }
 

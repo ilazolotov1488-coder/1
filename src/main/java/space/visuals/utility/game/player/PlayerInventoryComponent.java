@@ -25,11 +25,12 @@ public class PlayerInventoryComponent implements IMinecraft {
     public void addTask(Runnable task) {
         if (mc.player == null) return;
 
-        // Добавляем задачу в очередь (как в zenith.pl - без проверки isFinished)
+        // Не добавляем если предыдущая задача ещё выполняется
+        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
+
         ScriptManager.ScriptTask newScript = new ScriptManager.ScriptTask();
         Zenith.getInstance().getScriptManager().addTask(newScript);
 
-        // Выполняем через ScriptTask на следующем тике (не напрямую на render thread)
         newScript.schedule(EventUpdate.class, eventUpdate -> {
             if (mc.player != null) task.run();
             return true;

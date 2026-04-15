@@ -86,15 +86,24 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         EventManager.call(event);
         if (event.isCancelled()) info.cancel();
     }
+    @org.spongepowered.asm.mixin.Unique
+    private boolean inMoveHook = false;
+
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/AbstractClientPlayerEntity;move(Lnet/minecraft/entity/MovementType;Lnet/minecraft/util/math/Vec3d;)V"), cancellable = true)
     public void onMoveHook(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-        EventMove event = new EventMove(movement);
-        EventManager.call(event);
-        double d = this.getX();
-        double e = this.getZ();
-        super.move(movementType, event.getMovePos());
-        this.autoJump((float) (this.getX() - d), (float) (this.getZ() - e));
-        ci.cancel();
+        if (inMoveHook) return; // защита от рекурсии
+        inMoveHook = true;
+        try {
+            EventMove event = new EventMove(movement);
+            EventManager.call(event);
+            double d = this.getX();
+            double e = this.getZ();
+            super.move(movementType, event.getMovePos());
+            this.autoJump((float) (this.getX() - d), (float) (this.getZ() - e));
+            ci.cancel();
+        } finally {
+            inMoveHook = false;
+        }
     }
 
 }
