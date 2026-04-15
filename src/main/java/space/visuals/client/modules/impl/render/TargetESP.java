@@ -1,8 +1,7 @@
 package space.visuals.client.modules.impl.render;
 
 import com.darkmagician6.eventapi.EventTarget;
-import com.mojang.blaze3d.platform.GlStateManager.DstFactor;
-import com.mojang.blaze3d.platform.GlStateManager.SrcFactor;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.ShaderProgramKeys;
@@ -17,6 +16,7 @@ import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
@@ -35,7 +35,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 public final class TargetESP extends Module {
     public static final TargetESP INSTANCE = new TargetESP();
 
-    private final ModeSetting mode = new ModeSetting("Режим", "Souls", "Ромб", "Кольцо");
+    private final ModeSetting mode = new ModeSetting("Режим", "Souls", "Ромб", "Кольцо", "Кубы");
     private final ColorSetting colorTarget = new ColorSetting("Цвет", new ColorRGBA(100, 180, 255));
     private final BooleanSetting changeColorOnDamage = new BooleanSetting("Цвет при уроне", true);
     private final NumberSetting speed = new NumberSetting("Скорость", 0.5f, 0.1f, 5.0f, 0.1f);
@@ -53,7 +53,6 @@ public final class TargetESP extends Module {
     private final Timer targetLostTimer = new Timer();
     private double rotationPhase = 0;
     private long lastRotationUpdateMs = 0;
-    private double ringProgress = 0;
 
     private TargetESP() {}
 
@@ -110,7 +109,7 @@ public final class TargetESP extends Module {
             MatrixStack ms = event.getMatrix();
             ms.push();
             RenderSystem.enableBlend();
-            RenderSystem.blendFunc(SrcFactor.SRC_ALPHA, DstFactor.ONE);
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
             RenderSystem.enableDepthTest();
             if (mc.world.raycast(new RaycastContext(
                     mc.gameRenderer.getCamera().getPos(),
@@ -124,9 +123,10 @@ public final class TargetESP extends Module {
             RenderSystem.depthMask(false);
 
             switch (mode.get()) {
-                case "Ромб"   -> drawRhombus(ms, prevTarget);
-                case "Кольцо" -> drawRing(ms, prevTarget);
-                default       -> drawGhosts(ms, prevTarget);
+                case "Ромб"     -> drawRhombus(ms, prevTarget);
+                case "Кольцо"   -> drawRing(ms, prevTarget);
+                case "Кубы"     -> drawCubes(ms, prevTarget);
+                default         -> drawGhosts(ms, prevTarget);
             }
 
             RenderSystem.depthMask(true);
@@ -137,8 +137,6 @@ public final class TargetESP extends Module {
             ms.pop();
         }
     }
-
-    // ── helpers ──────────────────────────────────────────────────────────────
 
     private Vec3d getRenderPos(LivingEntity target) {
         float td = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false);
@@ -159,52 +157,27 @@ public final class TargetESP extends Module {
         if (built != null) BufferRenderer.drawWithGlobalProgram(built);
     }
 
-    private void drawImage(MatrixStack ms, BufferBuilder buf, Identifier tex,
-                           float x, float y, float w, float h, ColorRGBA color) {
-        RenderSystem.setShaderTexture(0, tex);
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-        Camera cam = mc.gameRenderer.getCamera();
-        ms.push();
-        ms.multiply(cam.getRotation());
-        Matrix4f m = ms.peek().getPositionMatrix();
-        buf.vertex(m, x,     y,     0).texture(0, 1).color(color.getRGB());
-        buf.vertex(m, x + w, y,     0).texture(1, 1).color(color.getRGB());
-        buf.vertex(m, x + w, y + h, 0).texture(1, 0).color(color.getRGB());
-        buf.vertex(m, x,     y + h, 0).texture(0, 0).color(color.getRGB());
-        ms.pop();
-    }
-
-    // ── Rhombus (Ромб) ───────────────────────────────────────────────────────
-
+    // Rhombus
     private void drawRhombus(MatrixStack ms, LivingEntity target) {
         Camera cam = mc.gameRenderer.getCamera();
-
         double deltaTime = lastRotationUpdateMs == 0 ? 0 : (System.currentTimeMillis() - lastRotationUpdateMs) / 1000.0;
         lastRotationUpdateMs = System.currentTimeMillis();
         rotationPhase += 2.0 * deltaTime;
-
         float displayedSize = size.getCurrent() * 0.6f * alphaAnim.getValue();
         float halfSize = displayedSize / 2f;
-
         float hurtFactor = changeColorOnDamage.isEnabled() && target.hurtTime > 0
                 ? MathHelper.clamp((float) target.hurtTime / Math.max(1, target.maxHurtTime), 0f, 1f) : 0f;
         ColorRGBA color = colorTarget.getColor().mix(new ColorRGBA(255, 0, 0), hurtFactor)
                 .withAlpha((int)(alphaAnim.getValue() * 180));
-
         ms.push();
-        // позиционируем на середину тела цели
         prepareMatrices(ms, getRenderPos(target));
         ms.translate(0, target.getHeight() * 0.5, 0);
-        // billboard — поворачиваем к камере
         ms.multiply(cam.getRotation());
-        // вращение ромба
         ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float)(Math.sin(rotationPhase) * 180)));
-
         RenderSystem.disableDepthTest();
         RenderSystem.setShaderTexture(0, Zenith.id("textures/target.png"));
         RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-        RenderSystem.blendFunc(SrcFactor.SRC_ALPHA, DstFactor.ONE);
-
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
         Matrix4f m = ms.peek().getPositionMatrix();
         int c = color.getRGB();
         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
@@ -217,90 +190,65 @@ public final class TargetESP extends Module {
         ms.pop();
     }
 
-    // ── Ring (Кольцо) ────────────────────────────────────────────────────────
-
+    // Ring
     private void drawRing(MatrixStack ms, LivingEntity target) {
         float radius = target.getWidth() * 0.8F * size.getCurrent();
         float entityHeight = target.getHeight();
-
         double duration = 2000.0;
         double elapsedMillis = System.currentTimeMillis() % duration;
-        // MONOTON логика: 0→1 первую половину, 1→0 вторую
         double progress = elapsedMillis / (duration / 2);
         progress = elapsedMillis > duration / 2 ? progress - 1 : 1 - progress;
-        // ease in-out quad
         progress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-        // след: смещение вниз в первой половине, вверх во второй
         double heightOffset = (entityHeight / 2)
                 * (progress > 0.5 ? 1 - progress : progress)
                 * (elapsedMillis > duration / 2 ? -1 : 1);
-
         ColorRGBA base = getTargetColor();
         ColorRGBA dark = base.mix(new ColorRGBA(0, 0, 0), 0.5f);
-
         ms.push();
         prepareMatrices(ms, getRenderPos(target));
-
         RenderSystem.lineWidth(particleThickness.getCurrent() * 1.5f);
         RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.blendFunc(SrcFactor.SRC_ALPHA, DstFactor.ONE);
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
         RenderSystem.disableDepthTest();
-
         Matrix4f m = ms.peek().getPositionMatrix();
         float ringY = (float)(entityHeight * progress);
-
-        // лента: для каждого угла — две вершины (основная + хвост с alpha=0)
         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
         for (int deg = 0; deg <= 360; deg++) {
             double rad = Math.toRadians(deg);
             float cx = (float)(Math.cos(rad) * radius);
             float cz = (float)(Math.sin(rad) * radius);
-
-            // градиент по углу как в MONOTON
             float t2 = deg / 360.0f;
             ColorRGBA grad = base.mix(dark, t2);
-
-            // основная вершина кольца
             buf.vertex(m, cx, ringY, cz).color(grad.getRGB());
         }
         buildBuffer(buf);
-
-        // хвост — второй проход с прозрачностью
         buf = RenderSystem.renderThreadTesselator().begin(DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
         for (int deg = 0; deg <= 360; deg++) {
             double rad = Math.toRadians(deg);
             float cx = (float)(Math.cos(rad) * radius);
             float cz = (float)(Math.sin(rad) * radius);
-
             float t2 = deg / 360.0f;
             ColorRGBA grad = base.mix(dark, t2);
-
-            // вершина хвоста — смещена по Y, прозрачная
-            buf.vertex(m, cx, (float)(ringY + heightOffset), cz)
-               .color(grad.withAlpha(0).getRGB());
+            buf.vertex(m, cx, (float)(ringY + heightOffset), cz).color(grad.withAlpha(0).getRGB());
         }
         buildBuffer(buf);
-
         RenderSystem.enableDepthTest();
         ms.pop();
     }
 
-    // ── Ghosts (Souls) ───────────────────────────────────────────────────────
-
+    // Ghosts / Souls
     private void drawGhosts(MatrixStack ms, LivingEntity target) {
         Camera cam = mc.gameRenderer.getCamera();
         ColorRGBA color = getTargetColor();
-        float width = prevTarget.getWidth() * 0.8F * size.getCurrent();
+        float width = target.getWidth() * 0.8F * size.getCurrent();
         Identifier bloom = Zenith.id("textures/bloom.png");
         RenderSystem.setShaderTexture(0, bloom);
         RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
         ms.push();
-        prepareMatrices(ms, getRenderPos(prevTarget));
+        prepareMatrices(ms, getRenderPos(target));
         int step = 2, wormTick = 0, wormCD = 0;
         for (int i = 0; i < 360; i += step) {
-            // base particle size driven by thickness slider
             float sz    = (0.03F + 0.001F * wormTick) * particleThickness.getCurrent();
             float bigSz = (0.12F + 0.002F * wormTick) * particleThickness.getCurrent();
             if (wormCD > 0) {
@@ -311,8 +259,8 @@ public final class TargetESP extends Module {
                 else {
                     float sin = (float)(Math.sin(Math.toRadians(i + moving.getValue())) * width);
                     float cos = (float)(Math.cos(Math.toRadians(i + moving.getValue())) * width);
-                    float yy  = prevTarget.getHeight() * 0.5F
-                              + prevTarget.getHeight() * 0.3F
+                    float yy  = target.getHeight() * 0.5F
+                              + target.getHeight() * 0.3F
                               * (float)Math.sin(Math.toRadians(i / 2.0 + moving.getValue() / 5.0));
                     ms.push();
                     ms.translate(sin, yy, cos);
@@ -336,5 +284,138 @@ public final class TargetESP extends Module {
         ms.pop();
     }
 
-    private float easeOutCubic(float x) { return 1.0F - (float)Math.pow(1.0F - x, 3); }
+    // Cubes - вращающиеся кубы вокруг цели
+    private void drawCubes(MatrixStack ms, LivingEntity target) {
+        float alphaValue = animation.getValue();
+        if (alphaValue <= 0f) return;
+
+        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
+        Camera camera = mc.getEntityRenderDispatcher().camera;
+        Vec3d targetPos = new Vec3d(
+            MathHelper.lerp(tickDelta, target.prevX, target.getX()),
+            MathHelper.lerp(tickDelta, target.prevY, target.getY()),
+            MathHelper.lerp(tickDelta, target.prevZ, target.getZ())
+        );
+        Vec3d renderPos = targetPos.subtract(camera.getPos());
+
+        float cubeScaleFactor = size.getCurrent() * 0.12f;
+        float time = ((float) mc.player.age + tickDelta) * speed.getCurrent();
+        float entityHeight = target.getHeight();
+        float entityWidth = target.getWidth();
+        float halfWidth = entityWidth * 0.5f;
+        int cubeCount = (int) particleCount.getCurrent();
+        long now = System.currentTimeMillis();
+
+        ms.push();
+        ms.translate(renderPos.x, renderPos.y, renderPos.z);
+
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
+        RenderSystem.disableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+        BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+
+        for (int i = 0; i < cubeCount; i++) {
+            float seed1 = (float)Math.sin(i * 1.7f + 0.3f) * 0.5f + 0.5f;
+            float seed2 = (float)Math.cos(i * 2.3f + 0.7f) * 0.5f + 0.5f;
+            float seed3 = (float)Math.sin(i * 3.1f + 1.1f) * 0.5f + 0.5f;
+            
+            float angleOffset = i * (360.0f / cubeCount) + seed1 * 12.0f;
+            float angle = time + angleOffset;
+            float radius = (halfWidth + 0.25f + seed3 * 0.15f);
+            
+            float x = radius * (float)Math.cos(Math.toRadians(angle));
+            float z = radius * (float)Math.sin(Math.toRadians(angle));
+            float bobbing = (float)Math.sin(time * 0.05f + i * 0.3f) * 0.1f;
+            float y = seed2 * entityHeight * 1.05f + bobbing;
+            
+            int color = getThemeColorAngle(i * 26, now);
+            
+            drawCube(buf, ms, x, y, z, cubeScaleFactor, time * 4.0f, time * 3.0f, color, alphaValue * 0.5f);
+        }
+
+        BufferRenderer.drawWithGlobalProgram(buf.end());
+
+        ms.pop();
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    }
+
+    private void drawCube(BufferBuilder buf, MatrixStack ms, float x, float y, float z, 
+                          float size, float rotY, float rotX, int color, float alpha) {
+        if (size <= 0f) return;
+        
+        ms.push();
+        ms.translate(x, y, z);
+        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotY));
+        ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotX));
+        
+        Matrix4f m = ms.peek().getPositionMatrix();
+        
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        int a = (int)(255f * alpha);
+        
+        float s = size / 2f;
+        
+        // Передняя грань (яркая)
+        addCubeQuad(buf, m, -s, -s, s, s, -s, s, s, s, s, -s, s, s, r, g, b, a);
+        
+        // Задняя грань (темнее)
+        addCubeQuad(buf, m, -s, -s, -s, -s, s, -s, s, s, -s, s, -s, -s, 
+                    (int)(r*0.9), (int)(g*0.9), (int)(b*0.9), a);
+        
+        // Левая грань
+        addCubeQuad(buf, m, -s, -s, -s, -s, -s, s, -s, s, s, -s, s, -s, 
+                    (int)(r*0.8), (int)(g*0.8), (int)(b*0.8), a);
+        
+        // Правая грань
+        addCubeQuad(buf, m, s, -s, -s, s, s, -s, s, s, s, s, -s, s, 
+                    (int)(r*0.8), (int)(g*0.8), (int)(b*0.8), a);
+        
+        // Верхняя грань (светлее)
+        addCubeQuad(buf, m, -s, s, -s, -s, s, s, s, s, s, s, s, -s, 
+                    Math.min(255, (int)(r*1.1)), Math.min(255, (int)(g*1.1)), Math.min(255, (int)(b*1.1)), a);
+        
+        // Нижняя грань (темнее)
+        addCubeQuad(buf, m, -s, -s, -s, s, -s, -s, s, -s, s, -s, -s, s, 
+                    (int)(r*0.7), (int)(g*0.7), (int)(b*0.7), a);
+        
+        ms.pop();
+    }
+
+    private void addCubeQuad(BufferBuilder buf, Matrix4f matrix,
+                             float x1, float y1, float z1,
+                             float x2, float y2, float z2,
+                             float x3, float y3, float z3,
+                             float x4, float y4, float z4,
+                             int r, int g, int b, int a) {
+        // Первый треугольник
+        buf.vertex(matrix, x1, y1, z1).color(r, g, b, a);
+        buf.vertex(matrix, x2, y2, z2).color(r, g, b, a);
+        buf.vertex(matrix, x3, y3, z3).color(r, g, b, a);
+        
+        // Второй треугольник
+        buf.vertex(matrix, x1, y1, z1).color(r, g, b, a);
+        buf.vertex(matrix, x3, y3, z3).color(r, g, b, a);
+        buf.vertex(matrix, x4, y4, z4).color(r, g, b, a);
+    }
+
+    private int getThemeColorAngle(int offsetAngle, long now) {
+        float timeFactor = (float)(now % 3000L) / 3000f;
+        int angle = ((int)(timeFactor * 360f) + offsetAngle) % 360;
+        return Zenith.getInstance().getThemeManager().getClientColor(angle).getRGB();
+    }
+
+    private int applyAlpha(int color, float alpha) {
+        int a = MathHelper.clamp((int)(255f * alpha), 0, 255);
+        return (a << 24) | (color & 0xFFFFFF);
+    }
 }
