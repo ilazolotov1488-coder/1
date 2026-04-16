@@ -35,7 +35,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 public final class TargetESP extends Module {
     public static final TargetESP INSTANCE = new TargetESP();
 
-    private final ModeSetting mode = new ModeSetting("Режим", "Souls", "Ромб", "Кольцо", "Кубы");
+    private final ModeSetting mode = new ModeSetting("Режим", "Кристалы", "Souls", "Ромб", "Кольцо", "Кубы");
     private final ColorSetting colorTarget = new ColorSetting("Цвет", new ColorRGBA(100, 180, 255));
     private final BooleanSetting changeColorOnDamage = new BooleanSetting("Цвет при уроне", true);
     private final NumberSetting speed = new NumberSetting("Скорость", 0.5f, 0.1f, 5.0f, 0.1f);
@@ -123,10 +123,11 @@ public final class TargetESP extends Module {
             RenderSystem.depthMask(false);
 
             switch (mode.get()) {
-                case "Ромб"     -> drawRhombus(ms, prevTarget);
-                case "Кольцо"   -> drawRing(ms, prevTarget);
-                case "Кубы"     -> drawCubes(ms, prevTarget);
-                default         -> drawGhosts(ms, prevTarget);
+                case "Ромб"      -> drawRhombus(ms, prevTarget);
+                case "Кольцо"    -> drawRing(ms, prevTarget);
+                case "Кубы"      -> drawCubes(ms, prevTarget);
+                case "Кристалы"  -> drawCrystals(ms, prevTarget);
+                default          -> drawGhosts(ms, prevTarget);
             }
 
             RenderSystem.depthMask(true);
@@ -417,5 +418,156 @@ public final class TargetESP extends Module {
     private int applyAlpha(int color, float alpha) {
         int a = MathHelper.clamp((int)(255f * alpha), 0, 255);
         return (a << 24) | (color & 0xFFFFFF);
+    }
+
+    // ── Crystals ──────────────────────────────────────────────────────────────
+
+    // Вершины кристалла (октаэдр)
+    private static final org.joml.Vector3f[] CRYSTAL_VERTICES = {
+        new org.joml.Vector3f(0f,  1.5f, 0f),   // 0 top
+        new org.joml.Vector3f(0f, -1.5f, 0f),   // 1 bottom
+        new org.joml.Vector3f(1f,  0f,   0f),   // 2 right
+        new org.joml.Vector3f(-1f, 0f,   0f),   // 3 left
+        new org.joml.Vector3f(0f,  0f,   1f),   // 4 front
+        new org.joml.Vector3f(0f,  0f,  -1f),   // 5 back
+    };
+
+    private static final int[][] CRYSTAL_FACES = {
+        {0, 2, 4}, {0, 4, 3}, {0, 3, 5}, {0, 5, 2},
+        {1, 4, 2}, {1, 3, 4}, {1, 5, 3}, {1, 2, 5}
+    };
+
+    private void drawCrystals(MatrixStack ms, LivingEntity target) {
+        float alphaValue = animation.getValue();
+        if (alphaValue <= 0f) return;
+
+        float easedAnim = alphaValue; // easeOutCubic не нужен — animation уже плавная
+        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
+        Camera camera = mc.getEntityRenderDispatcher().camera;
+        Vec3d targetPos = new Vec3d(
+            MathHelper.lerp(tickDelta, target.prevX, target.getX()),
+            MathHelper.lerp(tickDelta, target.prevY, target.getY()),
+            MathHelper.lerp(tickDelta, target.prevZ, target.getZ())
+        );
+        Vec3d renderPos = targetPos.subtract(camera.getPos());
+
+        float time = ((float) mc.player.age + tickDelta) * 6.0f;
+        float entityHeight = target.getHeight();
+        float entityWidth = target.getWidth();
+        float halfWidth = entityWidth * 0.5f;
+        int crystalCount = 14;
+
+        ms.push();
+        ms.translate(renderPos.x, renderPos.y, renderPos.z);
+
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
+        RenderSystem.disableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+
+        // Glow billboards
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+        RenderSystem.setShaderTexture(0, Zenith.id("textures/bloom.png"));
+
+        BufferBuilder glowBuf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        for (int i = 0; i < crystalCount; i++) {
+            float seed1 = (float) Math.sin(i * 1.7f + 0.3f) * 0.5f + 0.5f;
+            float seed2 = (float) Math.cos(i * 2.3f + 0.7f) * 0.5f + 0.5f;
+            float seed3 = (float) Math.sin(i * 3.1f + 1.1f) * 0.5f + 0.5f;
+            float angleOffset = i * (360f / crystalCount) + seed1 * 12f;
+            float angle = time + angleOffset;
+            float radius = halfWidth + 0.25f + seed3 * 0.15f;
+            float x = radius * (float) Math.cos(Math.toRadians(angle));
+            float z = radius * (float) Math.sin(Math.toRadians(angle));
+            float y = seed2 * entityHeight;
+            float crystalScale = 0.18f * easedAnim;
+            int color = getThemeColorAngle(i * 26, System.currentTimeMillis());
+            drawCrystalBillboard(glowBuf, ms, camera, x, y, z, crystalScale * 3.6f, applyAlpha(color, alphaValue * 0.3f));
+        }
+        buildBuffer(glowBuf);
+
+        // Crystal meshes
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+        BufferBuilder crystalBuf = Tessellator.getInstance().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        for (int i = 0; i < crystalCount; i++) {
+            float seed1 = (float) Math.sin(i * 1.7f + 0.3f) * 0.5f + 0.5f;
+            float seed2 = (float) Math.cos(i * 2.3f + 0.7f) * 0.5f + 0.5f;
+            float seed3 = (float) Math.sin(i * 3.1f + 1.1f) * 0.5f + 0.5f;
+            float angleOffset = i * (360f / crystalCount) + seed1 * 12f;
+            float angle = time + angleOffset;
+            float radius = halfWidth + 0.25f + seed3 * 0.15f;
+            float x = radius * (float) Math.cos(Math.toRadians(angle));
+            float z = radius * (float) Math.sin(Math.toRadians(angle));
+            float y = seed2 * entityHeight;
+            float crystalScale = 0.18f * easedAnim;
+            int color = getThemeColorAngle(i * 26, System.currentTimeMillis());
+            drawCrystalH(crystalBuf, ms, x, y, z, crystalScale, angle, color, alphaValue * 0.7f);
+        }
+        net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(crystalBuf.end());
+
+        ms.pop();
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    }
+
+    private void drawCrystalBillboard(BufferBuilder buf, MatrixStack ms, Camera camera, float x, float y, float z, float size, int color) {
+        ms.push();
+        ms.translate(x, y, z);
+        ms.multiply(camera.getRotation());
+        Matrix4f m = ms.peek().getPositionMatrix();
+        float s = size / 2f;
+        buf.vertex(m, -s, -s, 0).texture(0, 1).color(color);
+        buf.vertex(m,  s, -s, 0).texture(1, 1).color(color);
+        buf.vertex(m,  s,  s, 0).texture(1, 0).color(color);
+        buf.vertex(m, -s,  s, 0).texture(0, 0).color(color);
+        ms.pop();
+    }
+
+    private void drawCrystalH(BufferBuilder buffer, MatrixStack matrices,
+                               float x, float y, float z, float scale,
+                               float yaw, int color, float alpha) {
+        matrices.push();
+        matrices.translate(x, y, z);
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw + 90f));
+        matrices.scale(scale, scale, scale);
+        MatrixStack.Entry entry = matrices.peek();
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        int a = (int)(180 * alpha);
+        int rL = Math.min(255, (int)(r * 1.3f));
+        int gL = Math.min(255, (int)(g * 1.3f));
+        int bL = Math.min(255, (int)(b * 1.3f));
+        int rD = (int)(r * 0.6f);
+        int gD = (int)(g * 0.6f);
+        int bD = (int)(b * 0.6f);
+        float w = 0.5f;
+        float h = 1.0f;
+        drawCrystalTriangle(buffer, entry, 0, 0, h, -w, 0, 0, 0, w, 0, rL, gL, bL, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, h, 0, w, 0, w, 0, 0, rL, gL, bL, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, h, w, 0, 0, 0, -w, 0, r, g, b, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, h, 0, -w, 0, -w, 0, 0, r, g, b, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, -h, 0, w, 0, -w, 0, 0, rD, gD, bD, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, -h, w, 0, 0, 0, w, 0, rD, gD, bD, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, -h, 0, -w, 0, w, 0, 0, rD, gD, bD, a);
+        drawCrystalTriangle(buffer, entry, 0, 0, -h, -w, 0, 0, 0, -w, 0, rD, gD, bD, a);
+        matrices.pop();
+    }
+
+    private void drawCrystalTriangle(BufferBuilder buffer, MatrixStack.Entry entry,
+                                     float x1, float y1, float z1,
+                                     float x2, float y2, float z2,
+                                     float x3, float y3, float z3,
+                                     int r, int g, int b, int a) {
+        Matrix4f matrix = entry.getPositionMatrix();
+        buffer.vertex(matrix, x1, y1, z1).color(r, g, b, a);
+        buffer.vertex(matrix, x2, y2, z2).color(r, g, b, a);
+        buffer.vertex(matrix, x3, y3, z3).color(r, g, b, a);
     }
 }

@@ -53,9 +53,14 @@ public class MenuModeSetting extends MenuSetting {
         float dropdownHeight = 13 + expandedAnimation.update(expanded ? 1 : 0) * setting.getValues().size() * 13;
         float dropdownX = x + moduleWidth - dropdownWidth - 8;
 
-        ctx.drawRoundedRect(dropdownX, settingY, dropdownWidth, dropdownHeight, BorderRadius.all(3), theme.getForegroundColor().mulAlpha(alpha));
-        ctx.drawRoundedRect(dropdownX, settingY, dropdownWidth, 13, expanded ? BorderRadius.top(3, 3) : BorderRadius.all(3), theme.getForegroundLight().mulAlpha(alpha));
+        // Рендерим вверх если дропдаун выходит за нижний край экрана
+        float screenHeight = space.visuals.utility.interfaces.IMinecraft.mc.getWindow().getScaledHeight();
+        boolean renderUp = settingY + dropdownHeight > screenHeight - 20;
+        float actualDropdownY = renderUp ? settingY - (dropdownHeight - 13) : settingY;
 
+        ctx.drawRoundedRect(dropdownX, actualDropdownY, dropdownWidth, dropdownHeight, BorderRadius.all(3), theme.getForegroundColor().mulAlpha(alpha));
+        // Кнопка с текущим значением всегда поверх
+        ctx.drawRoundedRect(dropdownX, settingY, dropdownWidth, 13, expanded ? (renderUp ? BorderRadius.bottom(3, 3) : BorderRadius.top(3, 3)) : BorderRadius.all(3), theme.getForegroundLight().mulAlpha(alpha));
 
         String currentModeText = setting.getValue().getName();
         ctx.drawText(optionFont, currentModeText, dropdownX + 6, settingY + (13 - optionFont.height()) / 2f, textColor);
@@ -94,31 +99,31 @@ public class MenuModeSetting extends MenuSetting {
         }
 
 
-        ctx.enableScissor((int) dropdownX-1, (int) settingY, (int) (dropdownX + dropdownWidth+1), (int) (settingY + dropdownHeight + 1));
+        ctx.enableScissor((int) dropdownX-1, (int) actualDropdownY, (int) (dropdownX + dropdownWidth+1), (int) (actualDropdownY + dropdownHeight + 1));
 
-        bounds = new Rect(dropdownX, settingY, dropdownWidth, dropdownHeight);
-
-
+        bounds = new Rect(dropdownX, actualDropdownY, dropdownWidth, dropdownHeight);
 
         if (expandedAnimation.getValue() != 0) {
+            // Отключаем внешний scissor и включаем на весь экран чтобы дропдаун не обрезался
+            ctx.disableScissor();
+            ctx.enableScissor(0, 0, (int)space.visuals.utility.interfaces.IMinecraft.mc.getWindow().getScaledWidth(), (int)space.visuals.utility.interfaces.IMinecraft.mc.getWindow().getScaledHeight());
+            
+            // Рисуем фон дропдауна поверх всего
+            ctx.drawRoundedRect(dropdownX, actualDropdownY, dropdownWidth, dropdownHeight, BorderRadius.all(3), theme.getForegroundColor().mulAlpha(alpha));
+
             List<ModeSetting.Value> modes = setting.getValues();
             ColorRGBA disableColor = theme.getGray().mix(theme.getGrayLight(), animEnable).mulAlpha(alpha);
             ColorRGBA enabledColor = theme.getForegroundGray().mix(theme.getColor(), animEnable).mulAlpha(alpha);
-            float optionY = settingY + 13;
+            float optionY = renderUp ? actualDropdownY : settingY + 13;
             for (ModeSetting.Value mode : modes) {
                 Rect optionRect = new Rect(dropdownX, optionY, dropdownWidth, 13);
-                if (optionY > settingY + dropdownHeight) break;
                 if (mode == setting.getValue()) {
                     ctx.drawRoundedRect(dropdownX+1f, optionY, dropdownWidth-2f, 13, mode == modes.getLast() ? BorderRadius.bottom(3, 3) : BorderRadius.all(0), enabledColor.mulAlpha(expandedAnimation.getValue()));
                     ctx.drawText(optionFont, mode.getName(), dropdownX + 6, optionY + (13 - optionFont.height()) / 2f,
                             textColor.mulAlpha(expandedAnimation.getValue()));
-
                 } else {
                     ctx.drawText(optionFont, mode.getName(), dropdownX + 6, optionY + (13 - optionFont.height()) / 2f, disableColor.mulAlpha(expandedAnimation.getValue()));
-
                 }
-
-
                 modeSettingOptionBounds.put(mode, optionRect);
                 optionY += 13;
             }
@@ -130,7 +135,7 @@ public class MenuModeSetting extends MenuSetting {
         ctx.disableScissor();
         DrawUtil.drawRoundedBorder(
                 ctx.getMatrices(),
-                dropdownX, settingY,
+                dropdownX, actualDropdownY,
                 dropdownWidth, dropdownHeight,
                 0.2f,
                 BorderRadius.all(3),
