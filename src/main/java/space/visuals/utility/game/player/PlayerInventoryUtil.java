@@ -58,7 +58,6 @@ public class PlayerInventoryUtil implements IClient {
     public void swapHand(Slot slot, Hand hand, boolean updateInventory) {
         if (slot == null || slot.id == -1 || (hand.equals(Hand.OFF_HAND) && !(slot.inventory instanceof PlayerInventory || slot.inventory instanceof EnderChestInventory))) return;
         int button = hand.equals(Hand.MAIN_HAND) ? mc.player.getInventory().selectedSlot : 40;
-
         swapHand(slot, button, updateInventory);
     }
     public void swapHand(Slot slot, int button, boolean updateInventory) {

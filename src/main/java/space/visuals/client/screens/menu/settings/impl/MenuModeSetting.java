@@ -28,6 +28,10 @@ public class MenuModeSetting extends MenuSetting {
     private float maxWidthText;
     private final Animation expandedAnimation = new Animation(200, 0, Easing.QUAD_IN_OUT);
 
+    // Отложенный рендер дропдауна поверх scissor
+    public record DeferredDropdown(Runnable render) {}
+    public static final java.util.List<DeferredDropdown> pendingDropdowns = new java.util.ArrayList<>();
+
     public MenuModeSetting(ModeSetting setting) {
 
         this.setting = setting;
@@ -104,11 +108,9 @@ public class MenuModeSetting extends MenuSetting {
         bounds = new Rect(dropdownX, actualDropdownY, dropdownWidth, dropdownHeight);
 
         if (expandedAnimation.getValue() != 0) {
-            // Отключаем внешний scissor и включаем на весь экран чтобы дропдаун не обрезался
-            ctx.disableScissor();
-            ctx.enableScissor(0, 0, (int)space.visuals.utility.interfaces.IMinecraft.mc.getWindow().getScaledWidth(), (int)space.visuals.utility.interfaces.IMinecraft.mc.getWindow().getScaledHeight());
+            // Полностью отключаем scissor через OpenGL напрямую
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
             
-            // Рисуем фон дропдауна поверх всего
             ctx.drawRoundedRect(dropdownX, actualDropdownY, dropdownWidth, dropdownHeight, BorderRadius.all(3), theme.getForegroundColor().mulAlpha(alpha));
 
             List<ModeSetting.Value> modes = setting.getValues();
@@ -127,6 +129,8 @@ public class MenuModeSetting extends MenuSetting {
                 modeSettingOptionBounds.put(mode, optionRect);
                 optionY += 13;
             }
+            
+            org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
         }
 //            totalHeight += optionsHeight;
 
