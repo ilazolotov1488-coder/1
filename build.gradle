@@ -115,3 +115,50 @@ publishing {
         // retrieving dependencies.
     }
 }
+
+// ─── Обфускация через ProGuard ────────────────────────────────────────────────
+// Запускается вручную: ./gradlew obfuscateJar
+// Создаёт build/libs/space-betka-1.0-SNAPSHOT-obf.jar
+// Исходники НЕ трогаются
+configurations {
+    proguardClasspath
+}
+
+dependencies {
+    proguardClasspath 'com.guardsquare:proguard-base:7.5.0'
+}
+
+tasks.register('obfuscateJar', JavaExec) {
+    dependsOn remapJar
+
+    def inputJar = remapJar.archiveFile.get().asFile
+    def outputJar = file("${buildDir}/libs/${project.archives_base_name}-${project.version}-obf.jar")
+
+    inputs.file inputJar
+    outputs.file outputJar
+
+    classpath = configurations.proguardClasspath
+    mainClass = 'proguard.ProGuard'
+
+    doFirst {
+        def mcLibs = configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts
+            .collect { it.file.absolutePath }
+            .join(File.pathSeparator)
+
+        args = [
+            '-injars', inputJar.absolutePath,
+            '-outjars', outputJar.absolutePath,
+            '-libraryjars', "<java.home>/jmods/java.base.jmod(!**.jar;!module-info.class)",
+            '-libraryjars', "<java.home>/jmods/java.desktop.jmod(!**.jar;!module-info.class)",
+            '-libraryjars', "<java.home>/jmods/java.logging.jmod(!**.jar;!module-info.class)",
+            '-libraryjars', "<java.home>/jmods/java.sql.jmod(!**.jar;!module-info.class)",
+            '-libraryjars', mcLibs,
+            '@' + file('proguard.pro').absolutePath
+        ]
+    }
+
+    doLast {
+        println "✅ Обфусцированный JAR: ${outputJar.absolutePath}"
+        println "   Размер: ${outputJar.length() / 1024 / 1024} MB"
+    }
+}
