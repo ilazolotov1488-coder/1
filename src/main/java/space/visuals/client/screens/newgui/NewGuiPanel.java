@@ -18,131 +18,90 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * 1:1 копия Panel.java из dart.ru clickgui.
- *
- * Panel constructor:
- *   this.x = passedX + 73
- *   this.y = passedY + 19
- *   this.width  = passedWidth  - 20  = 107
- *   this.height = passedHeight - 81  = 201
- *
- * Panel.render():
- *   bg: x+5, y, width-8=99, height-1+4+31=235, radius=5, rgba(0,0,0,190)
- *   header: centered at x+width/2, y+7, rgba(255,255,255,210)
- *   scissor: x, y+18, width, height+12
- *   offset=-4, off=11
- *   moduleY = y + off + offset + scrollingOut + 12.5
- *   off += (settingHeight + 9.5) * expandAnim  [per setting]
- *   off += offset + 20  [per module = 16]
- */
 public class NewGuiPanel {
 
-    // После конструктора Panel
-    private float x, y;       // = passedX+73, passedY+19
-    private float width;      // = passedWidth-20  = 107
-    private float height;     // = passedHeight-81 = 201
+    private static final float W          = NewClickGui.PANEL_W;
+    private static final float H          = NewClickGui.PANEL_H;
+    private static final float HEADER_H   = 26f;  // высота заголовка
+    private static final float ROW_H      = 18f;  // высота строки модуля
+    private static final float ROW_PAD    = 2f;   // отступ между строками
+
+    // Цвета — точно как в референсе
+    private static final ColorRGBA BG         = new ColorRGBA(18, 19, 25, 230);
+    private static final ColorRGBA DIVIDER    = new ColorRGBA(50, 52, 65, 200);
+    private static final ColorRGBA HDR_TEXT   = new ColorRGBA(255, 255, 255, 220);
 
     private final Category category;
     private final List<NewGuiModuleEntry> entries = new ArrayList<>();
 
-    private float scrolling    = 0f;
-    private float scrollingOut = 0f;
-
-    // Panel.java: scroll persistence
-    private float savedScrolling = 0f;
-    private boolean shouldRestoreScroll = false;
+    private float x, y;
+    private float scroll    = 0f;
+    private float scrollOut = 0f;
 
     public NewGuiPanel(Category category) {
         this.category = category;
         List<Module> mods = new ArrayList<>();
-        for (Module m : Zenith.getInstance().getModuleManager().getModules()) {
+        for (Module m : Zenith.getInstance().getModuleManager().getModules())
             if (m.getCategory() == category) mods.add(m);
-        }
         mods.sort(Comparator.comparing(m -> m.getName().toLowerCase()));
         for (Module m : mods) entries.add(new NewGuiModuleEntry(m));
     }
 
-    /** Прямое позиционирование без лишних смещений */
-    public void init(float passedX, float passedY, float passedW, float passedH) {
-        this.x      = passedX;
-        this.y      = passedY;
-        this.width  = passedW;
-        this.height = passedH;
-    }
-
-    // Для совместимости
     public void setPosition(float x, float y) { this.x = x; this.y = y; }
+    public void init(float x, float y, float w, float h) { this.x = x; this.y = y; }
 
-    public void render(UIContext ctx, float mouseX, float mouseY) {
+    public void render(UIContext ctx, float mx, float my) {
         MatrixStack ms = ctx.getMatrices();
+        scrollOut += (scroll - scrollOut) * 0.2f;
 
-        // Panel.java: restore scroll on first open
-        if (shouldRestoreScroll) {
-            scrolling = savedScrolling;
-            scrollingOut = savedScrolling;
-            shouldRestoreScroll = false;
-        }
+        // Фон панели
+        DrawUtil.drawRoundedRect(ms, x, y, W, H, BorderRadius.all(6f), BG);
 
-        // Panel.java: scrollingOut = AnimationMath.fast(out, in, 20) ≈ lerp 0.15
-        scrollingOut += (scrolling - scrollingOut) * 0.15f;
-
-        // Фон панели — прямые координаты
-        DrawUtil.drawRoundedRect(ms,
-                x, y, width, height,
-                BorderRadius.all(6f),
-                new ColorRGBA(18, 19, 25, 220));
-
-        // Заголовок по центру, y+10
-        String catName = category.getName();
-        float catW = Fonts.BOLD.getWidth(catName, 10f);
-        MsdfRenderer.renderText(Fonts.BOLD, catName, 10f,
-                new ColorRGBA(255, 255, 255, 220).getRGB(),
+        // Заголовок
+        String cat = category.getName();
+        float cw = Fonts.BOLD.getWidth(cat, 9.5f);
+        MsdfRenderer.renderText(Fonts.BOLD, cat, 9.5f, HDR_TEXT.getRGB(),
                 ms.peek().getPositionMatrix(),
-                x + width / 2f - catW / 2f, y + 10f, 0);
+                x + W / 2f - cw / 2f, y + 8f, 0);
 
-        // Scissor — контент начинается с y+26
-        ctx.enableScissor((int)x, (int)(y + 26), (int)(x + width), (int)(y + height));
+        // Разделитель под заголовком
+        DrawUtil.drawRect(ms, x + 8f, y + HEADER_H - 1f, W - 16f, 0.8f, DIVIDER);
 
-        float offset = -4f;
-        float off    = 11f;
+        // Scissor — контент
+        ctx.enableScissor((int)x, (int)(y + HEADER_H), (int)(x + W), (int)(y + H));
 
+        float rowY = y + HEADER_H + 4f + scrollOut;
         for (NewGuiModuleEntry e : entries) {
             if (NewClickGui.searching) {
                 if (!e.getModule().getName().toLowerCase()
                         .contains(NewClickGui.searchText.toLowerCase())) continue;
             }
-
-            // Первый модуль: y + 11 + (-4) + scroll + 12.5 = y + 19.5 + scroll
-            // Но без смещений: просто y + 26 + (off - 11) + scroll
-            float moduleY = y + 26f + (off - 11f) + offset + scrollingOut;
-
-            e.render(ctx, mouseX, mouseY, x, moduleY, width);
-
-            off += e.getSettingsExpandedOff() + offset + 20f;
+            e.render(ctx, mx, my, x, rowY, W);
+            rowY += e.getTotalHeight() + ROW_PAD;
         }
 
         ctx.disableScissor();
 
+        // Граница
+        DrawUtil.drawRoundedBorder(ms, x, y, W, H, 0.8f, BorderRadius.all(6f),
+                new ColorRGBA(45, 47, 58, 180));
+
         // Clamp scroll
-        float max2 = off - 37f;
-        float contentH = height - 26f;
-        if (max2 < contentH) scrolling = 0f;
-        else scrolling = MathHelper.clamp(scrolling, -(max2 - contentH + 16f), 0f);
+        float totalH = 0;
+        for (NewGuiModuleEntry e : entries) totalH += e.getTotalHeight() + ROW_PAD;
+        float contentH = H - HEADER_H - 8f;
+        if (totalH <= contentH) scroll = 0f;
+        else scroll = MathHelper.clamp(scroll, -(totalH - contentH), 0f);
     }
 
     public void onMouseClicked(float mx, float my, MouseButton btn) {
-        if (!inRegion(mx, my, x, y + 26f, width, height - 26f)) return;
-
-        float offset = -4f;
-        float off    = 11f;
+        if (mx < x || mx > x + W || my < y + HEADER_H || my > y + H) return;
+        float rowY = y + HEADER_H + 4f + scrollOut;
         for (NewGuiModuleEntry e : entries) {
             if (NewClickGui.searching && !e.getModule().getName().toLowerCase()
                     .contains(NewClickGui.searchText.toLowerCase())) continue;
-
-            float moduleY = y + 26f + (off - 11f) + offset + scrollingOut;
-            e.onMouseClicked(mx, my, btn, x, moduleY, width);
-            off += e.getSettingsExpandedOff() + offset + 20f;
+            e.onMouseClicked(mx, my, btn, x, rowY, W);
+            rowY += e.getTotalHeight() + ROW_PAD;
         }
     }
 
@@ -151,35 +110,15 @@ public class NewGuiPanel {
     }
 
     public void onScroll(float mx, float my, float delta) {
-        if (!inRegion(mx, my, x, y, width, height)) return;
-        scrolling += delta * 25f;
-        savedScrolling = scrolling;
-    }
-
-    public float getScroll() { return scrolling; }
-
-    public void setScroll(float scroll) {
-        this.scrolling = scroll;
-        this.savedScrolling = scroll;
-    }
-
-    public void saveScrollState() {
-        this.shouldRestoreScroll = true;
-        this.savedScrolling = this.scrolling;
-    }
-
-    public void loadScrollState(float scrollPosition) {
-        this.savedScrolling = scrollPosition;
-        this.shouldRestoreScroll = true;
+        if (mx < x || mx > x + W || my < y || my > y + H) return;
+        scroll += delta * 20f;
     }
 
     public void onKeyPressed(int key, int scan, int mods) {
         for (NewGuiModuleEntry e : entries) e.onKeyPressed(key, scan, mods);
     }
 
-    private boolean inRegion(float mx, float my, float rx, float ry, float rw, float rh) {
-        return mx >= rx && mx <= rx + rw && my >= ry && my <= ry + rh;
-    }
-
-    public Category getCategory() { return category; }
+    public float    getScroll()              { return scroll; }
+    public void     setScroll(float s)       { scroll = s; scrollOut = s; }
+    public Category getCategory()            { return category; }
 }
