@@ -14,6 +14,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.display.shader.DrawUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -48,6 +49,8 @@ public class NewClickGui extends CustomScreen {
 
     private boolean initialized = false;
     private final List<NewGuiPanel> panels = new ArrayList<>();
+    // Window.java: panelScrollStates HashMap for scroll persistence
+    private final HashMap<Category, Float> panelScrollStates = new HashMap<>();
 
     public NewClickGui() {}
 
@@ -65,6 +68,12 @@ public class NewClickGui extends CustomScreen {
         searchText = "";
         if (!initialized) { initialize(); initialized = true; }
         repositionPanels();
+        // Window.java: restore scroll states on re-open
+        for (NewGuiPanel p : panels) {
+            if (panelScrollStates.containsKey(p.getCategory())) {
+                p.setScroll(panelScrollStates.get(p.getCategory()));
+            }
+        }
     }
 
     private void repositionPanels() {
@@ -117,6 +126,10 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     public void close() {
+        // Window.java: save scroll states on close
+        for (NewGuiPanel p : panels) {
+            panelScrollStates.put(p.getCategory(), p.getScroll());
+        }
         var menu = space.visuals.client.modules.impl.render.Menu.INSTANCE;
         if (menu != null && menu.isEnabled()) { menu.setEnabled(false); menu.onDisable(); }
         super.close();

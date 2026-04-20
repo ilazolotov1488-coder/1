@@ -49,6 +49,10 @@ public class NewGuiPanel {
     private float scrolling    = 0f;
     private float scrollingOut = 0f;
 
+    // Panel.java: scroll persistence
+    private float savedScrolling = 0f;
+    private boolean shouldRestoreScroll = false;
+
     public NewGuiPanel(Category category) {
         this.category = category;
         List<Module> mods = new ArrayList<>();
@@ -72,6 +76,13 @@ public class NewGuiPanel {
 
     public void render(UIContext ctx, float mouseX, float mouseY) {
         MatrixStack ms = ctx.getMatrices();
+
+        // Panel.java: restore scroll on first open
+        if (shouldRestoreScroll) {
+            scrolling = savedScrolling;
+            scrollingOut = savedScrolling;
+            shouldRestoreScroll = false;
+        }
 
         // Panel.java: scrollingOut = AnimationMath.fast(out, in, 20) ≈ lerp 0.15
         scrollingOut += (scrolling - scrollingOut) * 0.15f;
@@ -147,6 +158,24 @@ public class NewGuiPanel {
         // Panel.java: isInRegion(x, y, width, height+32)
         if (!inRegion(mx, my, x, y, width, height + 32f)) return;
         scrolling += delta * 25f;
+        savedScrolling = scrolling;
+    }
+
+    public float getScroll() { return scrolling; }
+
+    public void setScroll(float scroll) {
+        this.scrolling = scroll;
+        this.savedScrolling = scroll;
+    }
+
+    public void saveScrollState() {
+        this.shouldRestoreScroll = true;
+        this.savedScrolling = this.scrolling;
+    }
+
+    public void loadScrollState(float scrollPosition) {
+        this.savedScrolling = scrollPosition;
+        this.shouldRestoreScroll = true;
     }
 
     public void onKeyPressed(int key, int scan, int mods) {
@@ -156,4 +185,6 @@ public class NewGuiPanel {
     private boolean inRegion(float mx, float my, float rx, float ry, float rw, float rh) {
         return mx >= rx && mx <= rx + rw && my >= ry && my <= ry + rh;
     }
+
+    public Category getCategory() { return category; }
 }
