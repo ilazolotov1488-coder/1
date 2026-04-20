@@ -180,6 +180,12 @@ public class NewClickGui extends CustomScreen {
         return false;
     }
 
+    // Убираем стандартный Minecraft blur/dim фон
+    @Override
+    public void renderBackground(net.minecraft.client.gui.DrawContext context, int mouseX, int mouseY, float delta) {
+        // ничего не рисуем — фон рисуют сами панели
+    }
+
     public String getSearchText() {
         return searching ? searchText : "";
     }
