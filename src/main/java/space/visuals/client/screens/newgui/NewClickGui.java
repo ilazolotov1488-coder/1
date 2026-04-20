@@ -16,18 +16,35 @@ import space.visuals.utility.render.display.shader.DrawUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 1:1 копия Window.java из dart.ru clickgui, адаптированная под ZENITH/Fabric.
+ *
+ * Window.java init():
+ *   width2 = 127, height2 = 282
+ *   position.x = scaledWidth/2 - n*width2/2 - 30
+ *   position.y = scaledHeight/2 - height2/2
+ *   offset = 10 (начальный), step = width2 - 23 = 104
+ *   Panel(position.x + offset, position.y, width2, height2)
+ *
+ * Panel constructor:
+ *   this.x = x + 73
+ *   this.y = y + 19
+ *   this.width = width - 20 = 107
+ *   this.height = height - 81 = 201
+ */
 public class NewClickGui extends CustomScreen {
 
-    // Window.java: width2=127, height2=282, step=width2-23=104
-    // Panel.java: panel.x = x+73, panel.y = y+19, panel.width = width-20=107, panel.height = height-81=201
-    // Итого: каждая панель занимает 104px по горизонтали, рисует rect шириной 107
-    public static final float PANEL_STEP = 104f;  // offset += width2 - 23
-    public static final float PANEL_W    = 107f;  // width - 20
-    public static final float PANEL_H    = 282f;  // полная высота (height2)
-    public static final float PANEL_INNER_H = 201f; // height - 81 (контентная зона)
+    // Window.java constants
+    public static final float WIDTH2  = 127f;
+    public static final float HEIGHT2 = 282f;
+    public static final float STEP    = WIDTH2 - 23f; // 104
+
+    // Panel constructor adjustments (applied inside NewGuiPanel)
+    // panel.x = passedX + 73, panel.y = passedY + 19
+    // panel.width = WIDTH2 - 20 = 107, panel.height = HEIGHT2 - 81 = 201
 
     public static boolean searching = false;
-    public static String searchText = "";
+    public static String  searchText = "";
 
     private boolean initialized = false;
     private final List<NewGuiPanel> panels = new ArrayList<>();
@@ -44,7 +61,7 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     protected void init() {
-        searching = false;
+        searching  = false;
         searchText = "";
         if (!initialized) { initialize(); initialized = true; }
         repositionPanels();
@@ -53,13 +70,14 @@ public class NewClickGui extends CustomScreen {
     private void repositionPanels() {
         int n = panels.size();
         // Window.java: position.x = scaledWidth/2 - n*width2/2 - 30
-        float startX = width / 2f - n * PANEL_STEP / 2f - 30f;
-        float startY = height / 2f - PANEL_H / 2f;
-        float offset = 10f; // Window.java: float offset = 10.0f
+        float posX = width  / 2f - n * WIDTH2 / 2f - 30f;
+        float posY = height / 2f - HEIGHT2 / 2f;
+        float offset = 10f;
         for (int i = 0; i < n; i++) {
-            // Panel.java: this.x = x + 73, this.y = y + 19
-            panels.get(i).setPosition(startX + offset + 73f, startY + 19f);
-            offset += PANEL_STEP;
+            // Window передаёт (position.x + offset, position.y, width2, height2)
+            // Panel constructor делает: this.x = x+73, this.y = y+19
+            panels.get(i).init(posX + offset, posY, WIDTH2, HEIGHT2);
+            offset += STEP;
         }
     }
 
@@ -67,28 +85,25 @@ public class NewClickGui extends CustomScreen {
     public void render(UIContext ctx, float mouseX, float mouseY) {
         MatrixStack ms = ctx.getMatrices();
 
-        for (NewGuiPanel panel : panels) {
-            panel.render(ctx, mouseX, mouseY);
-        }
+        for (NewGuiPanel p : panels) p.render(ctx, mouseX, mouseY);
 
-        // Window.java: search box at sr.scaledWidth()/2-55, sr.scaledHeight()/1.17f-60, 110x15
-        float sbX = width / 2f - 55f;
+        // Window.java render():
+        // Search box: sr.scaledWidth()/2 - 55, sr.scaledHeight()/1.17f - 60, 110x15, rgba(0,0,0,200)
+        float sbX = width  / 2f - 55f;
         float sbY = height / 1.17f - 60f;
-
         DrawUtil.drawRoundedRect(ms, sbX, sbY, 110f, 15f,
                 BorderRadius.all(2f), new ColorRGBA(0, 0, 0, 200));
 
-        // Текст поиска
-        String display = (!searching && searchText.isEmpty())
-                ? "Поиск"
+        // Текст поиска: centered in box, y - 54.5
+        String display = (!searching && searchText.isEmpty()) ? "Поиск"
                 : searchText + (searching && System.currentTimeMillis() % 1000L > 500L ? "_" : "");
         float dw = Fonts.REGULAR.getWidth(display, 8f);
         MsdfRenderer.renderText(Fonts.REGULAR, display, 8f,
                 new ColorRGBA(200, 200, 200, 200).getRGB(),
                 ms.peek().getPositionMatrix(),
-                sbX + 55f - dw / 2f, sbY + 3.5f, 0);
+                sbX + 55f - dw / 2f, sbY + 3f, 0);
 
-        // Подсказка: "Для активации поиска нажмите CTRL + F"
+        // Hint: "Для активации поиска нажмите CTRL + F", y = height/1.17f - 38
         String hint = "Для активации поиска нажмите CTRL + F";
         float hw = Fonts.REGULAR.getWidth(hint, 7.5f);
         MsdfRenderer.renderText(Fonts.REGULAR, hint, 7.5f,
@@ -102,12 +117,8 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     public void close() {
-        space.visuals.client.modules.impl.render.Menu menu =
-                space.visuals.client.modules.impl.render.Menu.INSTANCE;
-        if (menu != null && menu.isEnabled()) {
-            menu.setEnabled(false);
-            menu.onDisable();
-        }
+        var menu = space.visuals.client.modules.impl.render.Menu.INSTANCE;
+        if (menu != null && menu.isEnabled()) { menu.setEnabled(false); menu.onDisable(); }
         super.close();
     }
 
@@ -116,8 +127,7 @@ public class NewClickGui extends CustomScreen {
         // Клик по полю поиска
         float sbX = width / 2f - 55f, sbY = height / 1.17f - 55f;
         if (mx >= sbX && mx <= sbX + 110 && my >= sbY && my <= sbY + 13) {
-            searching = !searching;
-            return;
+            searching = !searching; return;
         }
         for (NewGuiPanel p : panels) p.onMouseClicked((float)mx, (float)my, btn);
     }
@@ -152,14 +162,13 @@ public class NewClickGui extends CustomScreen {
         return true;
     }
 
-    @Override
-    public boolean shouldPause() { return false; }
+    @Override public boolean shouldPause() { return false; }
 
     @Override
     public void renderBackground(DrawContext ctx, int mx, int my, float delta) {
         // Убираем стандартный Minecraft blur/dim — НЕ вызываем super
     }
 
-    public String getSearchText() { return searching ? searchText : ""; }
-    public boolean isSearching() { return searching; }
+    public String  getSearchText() { return searching ? searchText : ""; }
+    public boolean isSearching()   { return searching; }
 }
