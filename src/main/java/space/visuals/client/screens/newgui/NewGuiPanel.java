@@ -63,12 +63,12 @@ public class NewGuiPanel {
         for (Module m : mods) entries.add(new NewGuiModuleEntry(m));
     }
 
-    /** Window передаёт (position.x + offset, position.y, width2, height2) */
+    /** Прямое позиционирование без лишних смещений */
     public void init(float passedX, float passedY, float passedW, float passedH) {
-        this.x      = passedX + 73f;
-        this.y      = passedY + 19f;
-        this.width  = passedW - 20f;   // 107
-        this.height = passedH - 81f;   // 201
+        this.x      = passedX;
+        this.y      = passedY;
+        this.width  = passedW;
+        this.height = passedH;
     }
 
     // Для совместимости
@@ -87,26 +87,23 @@ public class NewGuiPanel {
         // Panel.java: scrollingOut = AnimationMath.fast(out, in, 20) ≈ lerp 0.15
         scrollingOut += (scrolling - scrollingOut) * 0.15f;
 
-        // Panel.java: drawRoundedRect(x+5, y, width-8, height-1+4+31, 5, rgba(0,0,0,190))
-        // = x+5, y, 99, 235, r=5
+        // Фон панели — прямые координаты
         DrawUtil.drawRoundedRect(ms,
-                x + 5f, y,
-                width - 8f, height - 1f + 4f + 31f,
+                x, y, width, height,
                 BorderRadius.all(6f),
                 new ColorRGBA(18, 19, 25, 220));
 
-        // Panel.java: Fonts[18].drawCenteredString(typeList.name(), x+width/2, y+7, rgba(255,255,255,210))
+        // Заголовок по центру, y+10
         String catName = category.getName();
         float catW = Fonts.BOLD.getWidth(catName, 10f);
         MsdfRenderer.renderText(Fonts.BOLD, catName, 10f,
                 new ColorRGBA(255, 255, 255, 220).getRGB(),
                 ms.peek().getPositionMatrix(),
-                x + width / 2f - catW / 2f, y + 7f, 0);
+                x + width / 2f - catW / 2f, y + 10f, 0);
 
-        // Panel.java: scissor x, y+18, width, height+12
-        ctx.enableScissor((int)x, (int)(y + 18), (int)(x + width), (int)(y + height + 12f));
+        // Scissor — контент начинается с y+26
+        ctx.enableScissor((int)x, (int)(y + 26), (int)(x + width), (int)(y + height));
 
-        // Panel.java: offset=-4, off=11
         float offset = -4f;
         float off    = 11f;
 
@@ -116,35 +113,34 @@ public class NewGuiPanel {
                         .contains(NewClickGui.searchText.toLowerCase())) continue;
             }
 
-            // Panel.java: m.x = this.x+1, m.y = y+off+offset+scrollingOut+12.5
-            float moduleY = y + off + offset + scrollingOut + 12.5f;
+            // Первый модуль: y + 11 + (-4) + scroll + 12.5 = y + 19.5 + scroll
+            // Но без смещений: просто y + 26 + (off - 11) + scroll
+            float moduleY = y + 26f + (off - 11f) + offset + scrollingOut;
 
             e.render(ctx, mouseX, mouseY, x, moduleY, width);
 
-            // Panel.java: off += (object.height+9.5)*expand_anim  [per setting]
-            //             off += offset + 20  [per module]
             off += e.getSettingsExpandedOff() + offset + 20f;
         }
 
         ctx.disableScissor();
 
-        // Panel.java: clamp scroll
+        // Clamp scroll
         float max2 = off - 37f;
-        if (max2 < height - 6f) scrolling = 0f;
-        else scrolling = MathHelper.clamp(scrolling, -(max2 - (height - 16f)), 0f);
+        float contentH = height - 26f;
+        if (max2 < contentH) scrolling = 0f;
+        else scrolling = MathHelper.clamp(scrolling, -(max2 - contentH + 16f), 0f);
     }
 
     public void onMouseClicked(float mx, float my, MouseButton btn) {
-        // Panel.java: зона x, y+18, width, height+12
-        if (!inRegion(mx, my, x, y + 18f, width, height + 12f)) return;
+        if (!inRegion(mx, my, x, y + 26f, width, height - 26f)) return;
 
-        float offset = -2f;
-        float off    = 15f;
+        float offset = -4f;
+        float off    = 11f;
         for (NewGuiModuleEntry e : entries) {
             if (NewClickGui.searching && !e.getModule().getName().toLowerCase()
                     .contains(NewClickGui.searchText.toLowerCase())) continue;
 
-            float moduleY = y + off + offset + scrollingOut + 12.5f;
+            float moduleY = y + 26f + (off - 11f) + offset + scrollingOut;
             e.onMouseClicked(mx, my, btn, x, moduleY, width);
             off += e.getSettingsExpandedOff() + offset + 20f;
         }
@@ -155,8 +151,7 @@ public class NewGuiPanel {
     }
 
     public void onScroll(float mx, float my, float delta) {
-        // Panel.java: isInRegion(x, y, width, height+32)
-        if (!inRegion(mx, my, x, y, width, height + 32f)) return;
+        if (!inRegion(mx, my, x, y, width, height)) return;
         scrolling += delta * 25f;
         savedScrolling = scrolling;
     }

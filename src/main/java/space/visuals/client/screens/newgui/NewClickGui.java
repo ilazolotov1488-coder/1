@@ -78,15 +78,14 @@ public class NewClickGui extends CustomScreen {
 
     private void repositionPanels() {
         int n = panels.size();
-        // Window.java: position.x = scaledWidth/2 - n*width2/2 - 30
-        float posX = width  / 2f - n * WIDTH2 / 2f - 30f;
-        float posY = height / 2f - HEIGHT2 / 2f;
-        float offset = 10f;
+        // Панели вплотную по центру экрана
+        float panelW = 130f;
+        float panelH = 260f;
+        float totalW = n * panelW;
+        float startX = width  / 2f - totalW / 2f;
+        float startY = height / 2f - panelH / 2f;
         for (int i = 0; i < n; i++) {
-            // Window передаёт (position.x + offset, position.y, width2, height2)
-            // Panel constructor делает: this.x = x+73, this.y = y+19
-            panels.get(i).init(posX + offset, posY, WIDTH2, HEIGHT2);
-            offset += STEP;
+            panels.get(i).init(startX + i * panelW, startY, panelW, panelH);
         }
     }
 

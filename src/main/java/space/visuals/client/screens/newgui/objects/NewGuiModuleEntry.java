@@ -89,42 +89,34 @@ public class NewGuiModuleEntry implements IMinecraft {
 
         boolean on = module.isEnabled();
 
-        // Panel.java: m.x = panelX+1, m.width = panelW-1
-        float mx0 = panelX + 1f;
-        float mw  = panelW - 1f;
-
-        // Panel.java: totalHeight = expanded ? (height + settingsH) : height
+        // Фон строки модуля
         float settingsH = getSettingsExpandedOff();
         float totalH    = ROW_H + settingsH;
 
-        // Panel.java: drawRoundedRect(m.x+6.5, m.y, m.width-12, moduleHeight-2.3, 3.2, rgba(0,0,0,60))
         DrawUtil.drawRoundedRect(mat,
-                mx0 + 6.5f, moduleY,
-                mw - 12f, totalH - 2.3f,
-                BorderRadius.all(3.2f),
+                panelX + 6f, moduleY,
+                panelW - 12f, totalH - 2f,
+                BorderRadius.all(3f),
                 new ColorRGBA(0, 0, 0, 60));
 
-        // Panel.java: Fonts[15].drawString(name, panelX+12, moduleY+5.7)
-        // enabled: rgba(255,255,255,255), disabled: rgba(140,140,140,128)
+        // Название модуля
         String name = isBinding ? "..." : module.getName();
         int textColor = on
                 ? new ColorRGBA(255, 255, 255, 255).getRGB()
                 : new ColorRGBA(140, 140, 140, 128).getRGB();
 
-        // Включённые — SEMIBOLD (жирные), выключенные — REGULAR (как в референсе)
         var nameFont = on ? Fonts.SEMIBOLD : Fonts.REGULAR;
         float nameSz  = on ? 8.5f : 8f;
         MsdfRenderer.renderText(nameFont, name, nameSz, textColor,
                 mat.peek().getPositionMatrix(),
-                panelX + 12f, moduleY + 5.7f, 0);
+                panelX + 10f, moduleY + 5f, 0);
 
-        // Panel.java: Fonts[12].drawCenteredString("...", m.x+m.width-size+2, m.y+5)
-        // size=10, GL11.glTranslatef(-5,0,0) → effective x = mx0+mw-10+2-5 = panelX+1+mw-13
+        // "..." справа
         if (!settingEntries.isEmpty()) {
             int dotsColor = on
                     ? new ColorRGBA(255, 255, 255, 200).getRGB()
                     : new ColorRGBA(140, 140, 140, 128).getRGB();
-            float dotsX = mx0 + mw - 13f;
+            float dotsX = panelX + panelW - 14f;
             MsdfRenderer.renderText(Fonts.REGULAR, "...", 7f, dotsColor,
                     mat.peek().getPositionMatrix(), dotsX, moduleY + 5f, 0);
         }
@@ -156,10 +148,7 @@ public class NewGuiModuleEntry implements IMinecraft {
 
     public void onMouseClicked(float mx, float my, MouseButton btn,
                                float panelX, float moduleY, float panelW) {
-        // Panel.java: isInRegion(mx, my, m.x+8, m.y, m.width-20+4, m.height) && button==1 → expand
-        float mx0 = panelX + 1f;
-        float mw  = panelW - 1f;
-        boolean inRow = mx >= mx0 + 8f && mx <= mx0 + mw - 16f
+        boolean inRow = mx >= panelX + 6f && mx <= panelX + panelW - 6f
                 && my >= moduleY && my <= moduleY + ROW_H;
 
         if (inRow) {
