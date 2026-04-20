@@ -157,21 +157,52 @@ public final class ClickAction extends Module {
         } else {
             // Своп пакетом в хотбар (без открытия инвентаря)
             task.schedule(EventUpdate.class, ev -> {
+                mc.options.sprintKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
                 mc.interactionManager.clickSlot(
                     mc.player.currentScreenHandler.syncId,
                     finalSlot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
                 PlayerInventoryUtil.closeScreen(true);
                 return true;
             });
-            task.schedule(EventUpdate.class, ev -> true); // +1 тик
+            // +1 тик ожидания, движение заблокировано
+            task.schedule(EventUpdate.class, ev -> {
+                mc.options.sprintKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
+                return true;
+            });
             // Использовать
             task.schedule(EventUpdate.class, ev -> {
+                mc.options.sprintKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
                 mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
                 return true;
             });
-            task.schedule(EventUpdate.class, ev -> true); // +1 тик после броска
-            // Вернуть предмет пакетом
+            // +1 тик после броска, движение заблокировано
             task.schedule(EventUpdate.class, ev -> {
+                mc.options.sprintKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
+                return true;
+            });
+            // Вернуть предмет пакетом — движение всё ещё заблокировано
+            task.schedule(EventUpdate.class, ev -> {
+                mc.options.sprintKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
                 mc.interactionManager.clickSlot(
                     mc.player.currentScreenHandler.syncId,
                     finalSlot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
@@ -180,11 +211,11 @@ public final class ClickAction extends Module {
             });
         }
 
-        // 4 тика ожидания после возврата предмета — только потом восстанавливаем спринт
-        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
-        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
-        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
-        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        // 4 тика после возврата — предмет 100% вернулся, только потом восстанавливаем движение
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); mc.options.forwardKey.setPressed(false); mc.options.backKey.setPressed(false); mc.options.leftKey.setPressed(false); mc.options.rightKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); mc.options.forwardKey.setPressed(false); mc.options.backKey.setPressed(false); mc.options.leftKey.setPressed(false); mc.options.rightKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); mc.options.forwardKey.setPressed(false); mc.options.backKey.setPressed(false); mc.options.leftKey.setPressed(false); mc.options.rightKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); mc.options.forwardKey.setPressed(false); mc.options.backKey.setPressed(false); mc.options.leftKey.setPressed(false); mc.options.rightKey.setPressed(false); return true; });
         task.schedule(EventUpdate.class, ev -> { restoreMoveKeys(); return true; });
     }
 
