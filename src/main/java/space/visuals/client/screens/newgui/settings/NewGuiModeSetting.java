@@ -60,10 +60,10 @@ public class NewGuiModeSetting extends NewGuiSettingEntry {
                        float x, float y, float width, float alpha) {
         MatrixStack matrices = ctx.getMatrices();
 
-        // Название
+        // ModeObject.java: name at x+11, y+2, Font[13]
         MsdfRenderer.renderText(Fonts.REGULAR, setting.getName(), 7.5f,
-                new ColorRGBA(200, 202, 215, (int)(255 * alpha)).getRGB(),
-                matrices.peek().getPositionMatrix(), x + 4f, y + 1f, 0);
+                new ColorRGBA(240, 240, 240, (int)(255 * alpha)).getRGB(),
+                matrices.peek().getPositionMatrix(), x + 11f, y + 2f, 0);
 
         float startX = x + 4f;
         float startY = y + 11f;

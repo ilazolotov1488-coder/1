@@ -40,42 +40,41 @@ public class NewGuiBooleanSetting extends NewGuiSettingEntry {
         enableAnim.update(setting.isEnabled() ? 1f : 0f);
         float val = enableAnim.getValue();
 
-        // Иконка
-        float iconSize = 7f;
-        float iconX = x + 4f;
-        float iconY = y + getHeight() / 2f - iconSize / 2f;
+        // BooleanObject.java: outline at x+12, y+3, 9x9, r=1.8, rgba(255,255,255,100)
+        float cbX = x + 12f, cbY = y + 3f;
+        DrawUtil.drawRoundedBorder(matrices, cbX, cbY, 9f, 9f,
+                1.8f, BorderRadius.all(1.8f),
+                new ColorRGBA(255, 255, 255, (int)(100 * alpha)));
 
+        // BooleanObject.java: check icon green rgba(165,255,0), x icon red rgba(255,50,50)
+        float iconSize = 7.5f;
         int checkAlpha = (int)(255 * val * alpha);
         int crossAlpha = (int)(255 * (1f - val) * alpha);
 
-        // Рамка чекбокса
-        DrawUtil.drawRoundedBorder(matrices, iconX - 0.5f, iconY - 0.5f, iconSize + 1f, iconSize + 1f,
-                0.8f, BorderRadius.all(2f), new ColorRGBA(100, 102, 120, (int)(150 * alpha)));
-
         if (crossAlpha > 5) {
-            DrawUtil.drawTexture(matrices, ICON_X, iconX, iconY, iconSize, iconSize,
-                    new ColorRGBA(220, 60, 60, crossAlpha));
+            DrawUtil.drawTexture(matrices, ICON_X, cbX + 0.75f, cbY + 0.75f, iconSize, iconSize,
+                    new ColorRGBA(255, 50, 50, crossAlpha));
         }
         if (checkAlpha > 5) {
-            DrawUtil.drawTexture(matrices, ICON_CHECK, iconX, iconY, iconSize, iconSize,
-                    new ColorRGBA(120, 220, 80, checkAlpha));
+            DrawUtil.drawTexture(matrices, ICON_CHECK, cbX + 0.75f, cbY + 0.75f, iconSize, iconSize,
+                    new ColorRGBA(165, 255, 0, checkAlpha));
         }
 
-        // Название
-        ColorRGBA textColor = ColorRGBA.lerp(
-                new ColorRGBA(110, 112, 125, 255),
-                new ColorRGBA(220, 222, 235, 255),
+        // BooleanObject.java: text at x+24, y+7, Font[12], color lerp white/gray
+        int colorfont = ColorRGBA.lerp(
+                new ColorRGBA(255, 255, 255, 100),
+                new ColorRGBA(255, 255, 255, 255),
                 val
-        ).withAlpha((int)(255 * alpha));
+        ).withAlpha((int)(255 * alpha)).getRGB();
 
-        MsdfRenderer.renderText(Fonts.REGULAR, setting.getName(), 7.5f, textColor.getRGB(),
-                matrices.peek().getPositionMatrix(), x + 14f, y + getHeight() / 2f - 3.5f, 0);
+        MsdfRenderer.renderText(Fonts.REGULAR, setting.getName(), 7.5f, colorfont,
+                matrices.peek().getPositionMatrix(), x + 24f, y + 4f, 0);
     }
 
     @Override
     public void onMouseClicked(float mouseX, float mouseY, MouseButton button,
                                float x, float y, float width) {
-        if (button == MouseButton.LEFT && isHovered(mouseX, mouseY, x + 3f, y, 11f, getHeight())) {
+        if (button == MouseButton.LEFT && isHovered(mouseX, mouseY, x + 12f, y + 3f, 9f, 9f)) {
             setting.toggle();
         }
     }

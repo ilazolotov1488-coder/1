@@ -111,7 +111,10 @@ public class NewGuiModuleEntry implements IMinecraft {
                 ? new ColorRGBA(255, 255, 255, 255).getRGB()
                 : new ColorRGBA(140, 140, 140, 128).getRGB();
 
-        MsdfRenderer.renderText(Fonts.REGULAR, name, 8f, textColor,
+        // Включённые — SEMIBOLD (жирные), выключенные — REGULAR (как в референсе)
+        var nameFont = on ? Fonts.SEMIBOLD : Fonts.REGULAR;
+        float nameSz  = on ? 8.5f : 8f;
+        MsdfRenderer.renderText(nameFont, name, nameSz, textColor,
                 mat.peek().getPositionMatrix(),
                 panelX + 12f, moduleY + 5.7f, 0);
 

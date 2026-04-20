@@ -81,14 +81,14 @@ public class NewGuiPanel {
         DrawUtil.drawRoundedRect(ms,
                 x + 5f, y,
                 width - 8f, height - 1f + 4f + 31f,
-                BorderRadius.all(5f),
-                new ColorRGBA(0, 0, 0, 190));
+                BorderRadius.all(6f),
+                new ColorRGBA(18, 19, 25, 220));
 
         // Panel.java: Fonts[18].drawCenteredString(typeList.name(), x+width/2, y+7, rgba(255,255,255,210))
         String catName = category.getName();
-        float catW = Fonts.SEMIBOLD.getWidth(catName, 9f);
-        MsdfRenderer.renderText(Fonts.SEMIBOLD, catName, 9f,
-                new ColorRGBA(255, 255, 255, 210).getRGB(),
+        float catW = Fonts.BOLD.getWidth(catName, 10f);
+        MsdfRenderer.renderText(Fonts.BOLD, catName, 10f,
+                new ColorRGBA(255, 255, 255, 220).getRGB(),
                 ms.peek().getPositionMatrix(),
                 x + width / 2f - catW / 2f, y + 7f, 0);
 

@@ -1,8 +1,6 @@
 package space.visuals.client.screens.newgui.settings;
 
 import net.minecraft.client.util.math.MatrixStack;
-import space.visuals.base.animations.base.Animation;
-import space.visuals.base.animations.base.Easing;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.font.MsdfRenderer;
 import space.visuals.client.modules.api.setting.Setting;
@@ -18,8 +16,6 @@ public class NewGuiSliderSetting extends NewGuiSettingEntry {
     private final NumberSetting setting;
     private boolean sliding = false;
 
-    private final Animation fillAnim = new Animation(100, 0f, Easing.LINEAR);
-
     public NewGuiSliderSetting(NumberSetting setting) {
         this.setting = setting;
     }
@@ -28,7 +24,7 @@ public class NewGuiSliderSetting extends NewGuiSettingEntry {
     public Setting getSetting() { return setting; }
 
     @Override
-    public float getHeight() { return 20f; }
+    public float getHeight() { return 17f; }
 
     @Override
     public void render(UIContext ctx, float mouseX, float mouseY,
@@ -36,65 +32,65 @@ public class NewGuiSliderSetting extends NewGuiSettingEntry {
         MatrixStack matrices = ctx.getMatrices();
 
         if (sliding) {
-            float sliderX = x + 4f;
-            float sliderW = width - 8f;
+            float sliderX = x + 14f;
+            float sliderW = width - 38f + 10f;
             float raw = ((mouseX - sliderX) / sliderW) * (setting.getMax() - setting.getMin()) + setting.getMin();
             float clamped = net.minecraft.util.math.MathHelper.clamp(raw, setting.getMin(), setting.getMax());
-            // Округляем до шага
             float step = setting.getIncrement();
-            if (step > 0) {
-                clamped = Math.round(clamped / step) * step;
-            }
+            if (step > 0) clamped = Math.round(clamped / step) * step;
             setting.setCurrent(clamped);
         }
 
         float min = setting.getMin();
         float max = setting.getMax();
         float cur = setting.getCurrent();
-        float progress = (cur - min) / (max - min);
 
-        float sliderX = x + 4f;
-        float sliderY = y + 13f;
-        float sliderW = width - 8f;
-        float sliderH = 3f;
-
-        // Название + значение
-        String valStr = (cur == (int) cur) ? String.valueOf((int) cur) : String.format("%.1f", cur);
+        // SliderObject.java: name at x+10, y+3, Font[13]
         MsdfRenderer.renderText(Fonts.REGULAR, setting.getName(), 7.5f,
-                new ColorRGBA(200, 202, 215, (int)(255 * alpha)).getRGB(),
-                matrices.peek().getPositionMatrix(), x + 4f, y + 2f, 0);
+                new ColorRGBA(255, 255, 255, (int)(255 * alpha)).getRGB(),
+                matrices.peek().getPositionMatrix(), x + 10f, y + 3f, 0);
 
-        float valW = Fonts.REGULAR.getWidth(valStr, 7f);
-        MsdfRenderer.renderText(Fonts.REGULAR, valStr, 7f,
-                new ColorRGBA(140, 180, 255, (int)(255 * alpha)).getRGB(),
-                matrices.peek().getPositionMatrix(), x + width - valW - 4f, y + 2f, 0);
+        // SliderObject.java: sliderY = y + height/2 + 6, track: x+6+8, sliderY, width-38+10, 3
+        float sliderH = 3f;
+        float sliderY = y + getHeight() / 2f + 6f;
+        float sliderX = x + 6f + 8f;
+        float sliderW = width - 38f + 10f;
 
-        // Трек
+        float progress = (cur - min) / (max - min);
+        float fillW = Math.max(0, progress * sliderW);
+
+        // Track: rgba(100,100,100,100)
         DrawUtil.drawRoundedRect(matrices, sliderX, sliderY, sliderW, sliderH,
-                BorderRadius.all(1.5f), new ColorRGBA(45, 47, 60, (int)(200 * alpha)));
+                BorderRadius.all(0.8f), new ColorRGBA(100, 100, 100, (int)(100 * alpha)));
 
-        // Заполнение
-        fillAnim.update(progress * sliderW);
-        float fillW = Math.max(0, fillAnim.getValue());
+        // Fill: theme color (accent blue)
         if (fillW > 0) {
             DrawUtil.drawRoundedRect(matrices, sliderX, sliderY, fillW, sliderH,
-                    BorderRadius.all(1.5f), new ColorRGBA(100, 160, 255, (int)(220 * alpha)));
+                    BorderRadius.all(0.8f), new ColorRGBA(100, 160, 255, (int)(220 * alpha)));
         }
 
-        // Ползунок
+        // Thumb: 6.5x6.5, radius 3.2, white
         float thumbX = sliderX + fillW - 3f;
-        DrawUtil.drawRoundedRect(matrices, thumbX, sliderY - 1.5f, 6f, 6f,
-                BorderRadius.all(3f), new ColorRGBA(220, 225, 240, (int)(255 * alpha)));
+        DrawUtil.drawRoundedRect(matrices, thumbX, sliderY - 1.4f, 6.5f, 6.5f,
+                BorderRadius.all(3.2f), new ColorRGBA(255, 255, 255, (int)(255 * alpha)));
+
+        // Value text: centered above thumb
+        String valStr = (cur == (int)cur) ? String.valueOf((int)cur) : String.format("%.1f", cur);
+        float textX = sliderX + sliderW + 4f;
+        float textY = sliderY - 7f;
+        MsdfRenderer.renderText(Fonts.REGULAR, valStr, 7f,
+                new ColorRGBA(255, 255, 255, (int)(255 * alpha)).getRGB(),
+                matrices.peek().getPositionMatrix(), textX, textY, 0);
     }
 
     @Override
     public void onMouseClicked(float mouseX, float mouseY, MouseButton button,
                                float x, float y, float width) {
         if (button == MouseButton.LEFT) {
-            float sliderX = x + 4f;
-            float sliderY = y + 11f;
-            float sliderW = width - 8f;
-            if (isHovered(mouseX, mouseY, sliderX, sliderY, sliderW, 8f)) {
+            float sliderX = x + 6f + 8f;
+            float sliderY = y + getHeight() / 2f + 6f;
+            float sliderW = width - 38f + 10f;
+            if (isHovered(mouseX, mouseY, sliderX, sliderY - 3f, sliderW, 9f)) {
                 sliding = true;
             }
         }
