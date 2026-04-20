@@ -41,6 +41,7 @@ public class NewClickGui extends CustomScreen {
     public void initialize() {
         panels.clear();
         for (Category cat : Category.values()) {
+            if (cat == Category.PLAYER) continue; // empty category
             panels.add(new NewGuiPanel(cat));
         }
     }
@@ -78,17 +79,17 @@ public class NewClickGui extends CustomScreen {
             panel.render(ctx, mouseX, mouseY, alpha);
         }
 
-        // Подсказка поиска
+        // Подсказка поиска (dart.ru style)
         String hint = searching
-                ? "Поиск: " + searchText + (System.currentTimeMillis() % 1000L > 500L ? "_" : "")
-                : "CTRL+F — поиск";
+                ? searchText + (System.currentTimeMillis() % 1000L > 500L ? "_" : "")
+                : "для поиска нажми CTRL+F";
         float hintW = Fonts.REGULAR.getWidth(hint, 8f);
         float hintX = width / 2f - hintW / 2f;
         float hintY = height - 20f;
-        DrawUtil.drawRoundedRect(matrices, hintX - 6, hintY - 3, hintW + 12, 14,
-                BorderRadius.all(3f), new ColorRGBA(0, 0, 0, (int)(140 * alpha)));
+        DrawUtil.drawRoundedRect(matrices, hintX - 8, hintY - 4, hintW + 16, 16,
+                BorderRadius.all(4f), new ColorRGBA(0, 0, 0, (int)(200 * alpha)));
         MsdfRenderer.renderText(Fonts.REGULAR, hint, 8f,
-                new ColorRGBA(180, 180, 190, (int)(200 * alpha)).getRGB(),
+                new ColorRGBA(200, 200, 200, (int)(200 * alpha)).getRGB(),
                 matrices.peek().getPositionMatrix(), hintX, hintY, 0);
     }
 

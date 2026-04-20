@@ -1,7 +1,6 @@
 package space.visuals.client.screens.newgui.objects;
 
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
 import space.visuals.base.font.Fonts;
@@ -21,48 +20,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Элемент модуля в новом Click GUI.
- * Отображает название, статус и настройки при раскрытии.
+ * Элемент модуля в новом Click GUI (dart.ru style).
+ * Текст белый если включён, серый если выключен.
+ * "..." справа если есть настройки (ПКМ для раскрытия).
  */
 public class NewGuiModuleEntry implements IMinecraft {
 
-    private static final float MODULE_HEIGHT = 18f;
+    private static final float MODULE_HEIGHT = 20f;
     private static final float SETTING_HEIGHT = 16f;
     private static final float SETTING_PADDING = 1.5f;
 
-    private static final ColorRGBA MODULE_BG = new ColorRGBA(22, 23, 30, 0);
-    private static final ColorRGBA MODULE_BG_HOVER = new ColorRGBA(35, 37, 50, 180);
-    private static final ColorRGBA TEXT_ACTIVE = new ColorRGBA(255, 255, 255, 255);
-    private static final ColorRGBA TEXT_INACTIVE = new ColorRGBA(120, 122, 135, 255);
-    private static final ColorRGBA ACCENT = new ColorRGBA(100, 180, 255, 255);
-    private static final ColorRGBA SEPARATOR = new ColorRGBA(35, 37, 50, 255);
-
-    private static final Identifier ICON_CHECK = Identifier.of("space", "textures/check.png");
-    private static final Identifier ICON_X = Identifier.of("space", "textures/x.png");
+    // dart.ru colors
+    private static final ColorRGBA TEXT_ACTIVE   = new ColorRGBA(255, 255, 255, 255);
+    private static final ColorRGBA TEXT_INACTIVE = new ColorRGBA(140, 140, 140, 128);
+    private static final ColorRGBA MODULE_BG_HOVER = new ColorRGBA(25, 26, 33, 100);
+    private static final ColorRGBA SETTINGS_BG   = new ColorRGBA(0, 0, 0, 60);
 
     private final Module module;
     private final List<NewGuiSettingEntry> settingEntries = new ArrayList<>();
 
     private boolean expanded = false;
     private boolean isBinding = false;
-    /** Если true — ЛКМ переключает на Zenith GUI вместо toggle() */
-    private final boolean isMenuSwitch;
 
     private final Animation expandAnim = new Animation(200, 0f, Easing.CUBIC_IN_OUT);
-    private final Animation enableAnim;
-    private final Animation hoverAnim = new Animation(150, 0f, Easing.LINEAR);
+    private final Animation hoverAnim  = new Animation(150, 0f, Easing.LINEAR);
 
     // Кэшированные bounds для hit-test
     private float lastX, lastY, lastWidth;
 
     public NewGuiModuleEntry(Module module) {
-        this(module, false);
-    }
-
-    public NewGuiModuleEntry(Module module, boolean isMenuSwitch) {
         this.module = module;
-        this.isMenuSwitch = isMenuSwitch;
-        this.enableAnim = new Animation(200, module.isEnabled() ? 1f : 0f, Easing.LINEAR);
 
         for (Setting setting : module.getSettings()) {
             if (setting instanceof NumberSetting s) {
@@ -92,8 +79,7 @@ public class NewGuiModuleEntry implements IMinecraft {
         float h = MODULE_HEIGHT;
         float expandVal = expandAnim.getValue();
         if (expandVal > 0.01f) {
-            float settingsH = getSettingsHeight();
-            h += settingsH * expandVal;
+            h += getSettingsHeight() * expandVal;
         }
         return h;
     }
@@ -110,68 +96,40 @@ public class NewGuiModuleEntry implements IMinecraft {
 
     public void render(UIContext ctx, float mouseX, float mouseY, float panelX, float y, float panelWidth, float alpha) {
         MatrixStack matrices = ctx.getMatrices();
-        lastX = panelX + 5f;
+        lastX = panelX + 4f;
         lastY = y;
-        lastWidth = panelWidth - 10f;
+        lastWidth = panelWidth - 8f;
 
         boolean hovered = isHovered(mouseX, mouseY);
         hoverAnim.update(hovered ? 1f : 0f);
         float hoverVal = hoverAnim.getValue();
 
-        // Фон модуля
-        int bgAlpha = (int)((40 + 60 * hoverVal) * alpha);
-        DrawUtil.drawRoundedRect(matrices, lastX, y, lastWidth, MODULE_HEIGHT - 2f,
-                BorderRadius.all(3f), new ColorRGBA(30, 32, 42, bgAlpha));
-
-        if (isMenuSwitch) {
-            // Специальная кнопка переключения на Zenith GUI
-            ColorRGBA btnColor = new ColorRGBA(180, 140, 255, (int)(220 * alpha));
-            String label = "→ Zenith GUI";
-            float tw = Fonts.REGULAR.getWidth(label, 8f);
-            MsdfRenderer.renderText(Fonts.REGULAR, label, 8f, btnColor.getRGB(),
-                    matrices.peek().getPositionMatrix(),
-                    lastX + lastWidth / 2f - tw / 2f,
-                    y + MODULE_HEIGHT / 2f - 4f, 0);
-            return;
-        }
-
-        // Анимации
-        enableAnim.update(module.isEnabled() ? 1f : 0f);
         expandAnim.update(expanded ? 1f : 0f);
+        float expandVal = expandAnim.getValue();
 
-        float enableVal = enableAnim.getValue();
-
-        // Иконка статуса (check/x)
-        float iconSize = 7.5f;
-        float iconX = lastX + 4f;
-        float iconY = y + MODULE_HEIGHT / 2f - iconSize / 2f - 1f;
-
-        // Цвет иконки с анимацией
-        int checkAlpha = (int)(255 * enableVal * alpha);
-        int crossAlpha = (int)(255 * (1f - enableVal) * alpha);
-
-        if (crossAlpha > 5) {
-            ColorRGBA crossColor = new ColorRGBA(220, 60, 60, crossAlpha);
-            DrawUtil.drawTexture(matrices, ICON_X, iconX, iconY, iconSize, iconSize, crossColor);
-        }
-        if (checkAlpha > 5) {
-            ColorRGBA checkColor = new ColorRGBA(120, 220, 80, checkAlpha);
-            DrawUtil.drawTexture(matrices, ICON_CHECK, iconX, iconY, iconSize, iconSize, checkColor);
+        // Фон модуля при наведении (dart.ru: rgba(25,26,33,100))
+        if (hoverVal > 0.01f) {
+            DrawUtil.drawRoundedRect(matrices, lastX, y, lastWidth, MODULE_HEIGHT - 2f,
+                    BorderRadius.all(3f),
+                    new ColorRGBA(25, 26, 33, (int)(100 * hoverVal * alpha)));
         }
 
-        // Название модуля
+        // Название модуля — белый если включён, серый если нет (dart.ru style)
         String displayName = isBinding ? "..." : module.getName();
-        ColorRGBA textColor = ColorRGBA.lerp(TEXT_INACTIVE, TEXT_ACTIVE, enableVal).withAlpha((int)(255 * alpha));
+        ColorRGBA textColor = module.isEnabled()
+                ? new ColorRGBA(255, 255, 255, (int)(255 * alpha))
+                : new ColorRGBA(140, 140, 140, (int)(128 * alpha));
 
-        float textX = lastX + 14f;
         float textY = y + MODULE_HEIGHT / 2f - 4f;
         MsdfRenderer.renderText(Fonts.REGULAR, displayName, 8f, textColor.getRGB(),
-                matrices.peek().getPositionMatrix(), textX, textY, 0);
+                matrices.peek().getPositionMatrix(), lastX + 6f, textY, 0);
 
-        // Индикатор настроек (три точки если есть настройки)
+        // "..." справа если есть настройки
         if (!settingEntries.isEmpty()) {
-            ColorRGBA dotsColor = new ColorRGBA(100, 102, 120, (int)(180 * alpha));
-            float dotsX = lastX + lastWidth - 10f;
+            ColorRGBA dotsColor = module.isEnabled()
+                    ? new ColorRGBA(255, 255, 255, (int)(200 * alpha))
+                    : new ColorRGBA(140, 140, 140, (int)(128 * alpha));
+            float dotsX = lastX + lastWidth - 12f;
             float dotsY = y + MODULE_HEIGHT / 2f - 1.5f;
             for (int i = 0; i < 3; i++) {
                 DrawUtil.drawRoundedRect(matrices, dotsX + i * 3f, dotsY, 1.5f, 1.5f,
@@ -179,17 +137,18 @@ public class NewGuiModuleEntry implements IMinecraft {
             }
         }
 
-        // Настройки (раскрытые)
-        float expandVal = expandAnim.getValue();
+        // Настройки (раскрытые) — фон rgba(0,0,0,60)
         if (expandVal > 0.01f) {
+            float settingsH = getSettingsHeight() * expandVal;
+            DrawUtil.drawRoundedRect(matrices, lastX, y + MODULE_HEIGHT - 1f, lastWidth, settingsH,
+                    BorderRadius.all(3f), new ColorRGBA(0, 0, 0, (int)(60 * alpha)));
+
             float settingY = y + MODULE_HEIGHT;
             for (NewGuiSettingEntry entry : settingEntries) {
                 if (entry.getSetting() != null && !entry.getSetting().isVisible()) continue;
                 float entryH = entry.getHeight();
-                // Scissor по высоте анимации
-                float visibleH = getSettingsHeight() * expandVal;
                 ctx.enableScissor((int) panelX, (int)(y + MODULE_HEIGHT - 1),
-                        (int)(panelX + panelWidth), (int)(y + MODULE_HEIGHT + visibleH + 1));
+                        (int)(panelX + panelWidth), (int)(y + MODULE_HEIGHT + settingsH + 1));
                 entry.render(ctx, mouseX, mouseY, lastX, settingY, lastWidth, alpha * expandVal);
                 ctx.disableScissor();
                 settingY += entryH + SETTING_PADDING;
@@ -198,23 +157,13 @@ public class NewGuiModuleEntry implements IMinecraft {
     }
 
     public void onMouseClicked(float mouseX, float mouseY, MouseButton button, float panelX, float y, float panelWidth) {
-        lastX = panelX + 5f;
+        lastX = panelX + 4f;
         lastY = y;
-        lastWidth = panelWidth - 10f;
+        lastWidth = panelWidth - 8f;
 
         if (isHovered(mouseX, mouseY)) {
             if (button == MouseButton.LEFT) {
-                if (isMenuSwitch) {
-                    // Переключаем на Zenith GUI
-                    space.visuals.client.modules.impl.render.Menu menu =
-                            space.visuals.client.modules.impl.render.Menu.INSTANCE;
-                    menu.guiMode.set("Zenith");
-                    if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui gui) {
-                        gui.close();
-                    }
-                } else {
-                    module.toggle();
-                }
+                module.toggle();
             } else if (button == MouseButton.RIGHT) {
                 if (!settingEntries.isEmpty()) {
                     expanded = !expanded;
