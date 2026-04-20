@@ -19,194 +19,160 @@ import space.visuals.utility.render.display.shader.DrawUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Элемент модуля в новом Click GUI (dart.ru style).
- * Текст белый если включён, серый если выключен.
- * "..." справа если есть настройки (ПКМ для раскрытия).
- */
 public class NewGuiModuleEntry implements IMinecraft {
 
-    private static final float MODULE_HEIGHT = 20f;
-    private static final float SETTING_HEIGHT = 16f;
-    private static final float SETTING_PADDING = 1.5f;
+    private static final float ROW_H = 22f;
+    private static final float SETTING_PAD = 1f;
 
-    // dart.ru colors
-    private static final ColorRGBA TEXT_ACTIVE   = new ColorRGBA(255, 255, 255, 255);
-    private static final ColorRGBA TEXT_INACTIVE = new ColorRGBA(140, 140, 140, 128);
-    private static final ColorRGBA MODULE_BG_HOVER = new ColorRGBA(25, 26, 33, 100);
-    private static final ColorRGBA SETTINGS_BG   = new ColorRGBA(0, 0, 0, 60);
+    // Цвета как в референсе
+    private static final ColorRGBA TEXT_ON  = new ColorRGBA(255, 255, 255, 255);
+    private static final ColorRGBA TEXT_OFF = new ColorRGBA(140, 140, 140, 180);
+    private static final ColorRGBA DOTS_ON  = new ColorRGBA(200, 200, 210, 200);
+    private static final ColorRGBA DOTS_OFF = new ColorRGBA(100, 100, 110, 160);
+    private static final ColorRGBA HOVER_BG = new ColorRGBA(35, 37, 48, 120);
+    private static final ColorRGBA SET_BG   = new ColorRGBA(12, 13, 18, 180);
 
     private final Module module;
-    private final List<NewGuiSettingEntry> settingEntries = new ArrayList<>();
+    private final List<NewGuiSettingEntry> settings = new ArrayList<>();
 
     private boolean expanded = false;
-    private boolean isBinding = false;
+    private boolean binding = false;
 
-    private final Animation expandAnim = new Animation(200, 0f, Easing.CUBIC_IN_OUT);
-    private final Animation hoverAnim  = new Animation(150, 0f, Easing.LINEAR);
+    private final Animation expandAnim = new Animation(180, 0f, Easing.CUBIC_IN_OUT);
+    private final Animation hoverAnim  = new Animation(120, 0f, Easing.LINEAR);
 
-    // Кэшированные bounds для hit-test
-    private float lastX, lastY, lastWidth;
+    private float lastX, lastY, lastW;
 
     public NewGuiModuleEntry(Module module) {
         this.module = module;
-
-        for (Setting setting : module.getSettings()) {
-            if (setting instanceof NumberSetting s) {
-                settingEntries.add(new NewGuiSliderSetting(s));
-            } else if (setting instanceof ModeSetting s) {
-                settingEntries.add(new NewGuiModeSetting(s));
-            } else if (setting instanceof BooleanSetting s) {
-                settingEntries.add(new NewGuiBooleanSetting(s));
-            } else if (setting instanceof MultiBooleanSetting s) {
-                settingEntries.add(new NewGuiMultiSetting(s));
-            } else if (setting instanceof ButtonSetting s) {
-                settingEntries.add(new NewGuiButtonSetting(s));
-            } else if (setting instanceof KeySetting s) {
-                settingEntries.add(new NewGuiKeySetting(s));
-            }
+        for (Setting s : module.getSettings()) {
+            if      (s instanceof NumberSetting      ns) settings.add(new NewGuiSliderSetting(ns));
+            else if (s instanceof ModeSetting        ms) settings.add(new NewGuiModeSetting(ms));
+            else if (s instanceof BooleanSetting     bs) settings.add(new NewGuiBooleanSetting(bs));
+            else if (s instanceof MultiBooleanSetting mb) settings.add(new NewGuiMultiSetting(mb));
+            else if (s instanceof ButtonSetting      bt) settings.add(new NewGuiButtonSetting(bt));
+            else if (s instanceof KeySetting         ks) settings.add(new NewGuiKeySetting(ks));
         }
     }
 
-    public Module getModule() {
-        return module;
-    }
+    public Module getModule() { return module; }
 
-    /**
-     * Полная высота элемента (модуль + раскрытые настройки).
-     */
     public float getTotalHeight() {
-        float h = MODULE_HEIGHT;
-        float expandVal = expandAnim.getValue();
-        if (expandVal > 0.01f) {
-            h += getSettingsHeight() * expandVal;
-        }
+        float h = ROW_H;
+        float ev = expandAnim.getValue();
+        if (ev > 0.01f) h += getSettingsH() * ev;
         return h;
     }
 
-    private float getSettingsHeight() {
-        float h = 0;
-        for (NewGuiSettingEntry entry : settingEntries) {
-            if (entry.getSetting() == null || entry.getSetting().isVisible()) {
-                h += entry.getHeight() + SETTING_PADDING;
-            }
+    private float getSettingsH() {
+        float h = 4f;
+        for (NewGuiSettingEntry s : settings) {
+            if (s.getSetting() == null || s.getSetting().isVisible()) h += s.getHeight() + SETTING_PAD;
         }
-        return h;
+        return h + 4f;
     }
 
-    public void render(UIContext ctx, float mouseX, float mouseY, float panelX, float y, float panelWidth, float alpha) {
-        MatrixStack matrices = ctx.getMatrices();
-        lastX = panelX + 4f;
+    public void render(UIContext ctx, float mx, float my, float panelX, float y, float panelW, float alpha) {
+        MatrixStack mat = ctx.getMatrices();
+        lastX = panelX + 8f;
         lastY = y;
-        lastWidth = panelWidth - 8f;
+        lastW = panelW - 16f;
 
-        boolean hovered = isHovered(mouseX, mouseY);
+        boolean hovered = isHovered(mx, my);
         hoverAnim.update(hovered ? 1f : 0f);
-        float hoverVal = hoverAnim.getValue();
-
         expandAnim.update(expanded ? 1f : 0f);
-        float expandVal = expandAnim.getValue();
 
-        // Фон модуля при наведении (dart.ru: rgba(25,26,33,100))
-        if (hoverVal > 0.01f) {
-            DrawUtil.drawRoundedRect(matrices, lastX, y, lastWidth, MODULE_HEIGHT - 2f,
+        float hv = hoverAnim.getValue();
+        float ev = expandAnim.getValue();
+        boolean on = module.isEnabled();
+
+        // Hover фон строки
+        if (hv > 0.01f) {
+            DrawUtil.drawRoundedRect(mat, lastX, y, lastW, ROW_H - 1f,
                     BorderRadius.all(3f),
-                    new ColorRGBA(25, 26, 33, (int)(100 * hoverVal * alpha)));
+                    new ColorRGBA(HOVER_BG.getRed(), HOVER_BG.getGreen(), HOVER_BG.getBlue(),
+                            (int)(HOVER_BG.getAlpha() * hv * alpha)));
         }
 
-        // Название модуля — белый если включён, серый если нет (dart.ru style)
-        String displayName = isBinding ? "..." : module.getName();
-        ColorRGBA textColor = module.isEnabled()
-                ? new ColorRGBA(255, 255, 255, (int)(255 * alpha))
-                : new ColorRGBA(140, 140, 140, (int)(128 * alpha));
+        // Название модуля — жирный если включён
+        String name = binding ? "..." : module.getName();
+        ColorRGBA textColor = on
+                ? new ColorRGBA(TEXT_ON.getRed(), TEXT_ON.getGreen(), TEXT_ON.getBlue(), (int)(TEXT_ON.getAlpha() * alpha))
+                : new ColorRGBA(TEXT_OFF.getRed(), TEXT_OFF.getGreen(), TEXT_OFF.getBlue(), (int)(TEXT_OFF.getAlpha() * alpha));
 
-        float textY = y + MODULE_HEIGHT / 2f - 4f;
-        MsdfRenderer.renderText(Fonts.REGULAR, displayName, 8f, textColor.getRGB(),
-                matrices.peek().getPositionMatrix(), lastX + 6f, textY, 0);
+        // Включённые — SEMIBOLD, выключенные — REGULAR (как в референсе)
+        var font = on ? Fonts.SEMIBOLD : Fonts.REGULAR;
+        MsdfRenderer.renderText(font, name, 8.5f, textColor.getRGB(),
+                mat.peek().getPositionMatrix(), lastX + 4f, y + ROW_H / 2f - 4.5f, 0);
 
         // "..." справа если есть настройки
-        if (!settingEntries.isEmpty()) {
-            ColorRGBA dotsColor = module.isEnabled()
-                    ? new ColorRGBA(255, 255, 255, (int)(200 * alpha))
-                    : new ColorRGBA(140, 140, 140, (int)(128 * alpha));
-            float dotsX = lastX + lastWidth - 12f;
-            float dotsY = y + MODULE_HEIGHT / 2f - 1.5f;
-            for (int i = 0; i < 3; i++) {
-                DrawUtil.drawRoundedRect(matrices, dotsX + i * 3f, dotsY, 1.5f, 1.5f,
-                        BorderRadius.all(0.75f), dotsColor);
-            }
+        if (!settings.isEmpty()) {
+            ColorRGBA dotsC = on
+                    ? new ColorRGBA(DOTS_ON.getRed(), DOTS_ON.getGreen(), DOTS_ON.getBlue(), (int)(DOTS_ON.getAlpha() * alpha))
+                    : new ColorRGBA(DOTS_OFF.getRed(), DOTS_OFF.getGreen(), DOTS_OFF.getBlue(), (int)(DOTS_OFF.getAlpha() * alpha));
+            MsdfRenderer.renderText(Fonts.REGULAR, "...", 8f, dotsC.getRGB(),
+                    mat.peek().getPositionMatrix(),
+                    lastX + lastW - Fonts.REGULAR.getWidth("...", 8f) - 2f,
+                    y + ROW_H / 2f - 4.5f, 0);
         }
 
-        // Настройки (раскрытые) — фон rgba(0,0,0,60)
-        if (expandVal > 0.01f) {
-            float settingsH = getSettingsHeight() * expandVal;
-            DrawUtil.drawRoundedRect(matrices, lastX, y + MODULE_HEIGHT - 1f, lastWidth, settingsH,
-                    BorderRadius.all(3f), new ColorRGBA(0, 0, 0, (int)(60 * alpha)));
+        // Раскрытые настройки
+        if (ev > 0.01f) {
+            float settH = getSettingsH() * ev;
+            float settY = y + ROW_H;
 
-            float settingY = y + MODULE_HEIGHT;
-            for (NewGuiSettingEntry entry : settingEntries) {
-                if (entry.getSetting() != null && !entry.getSetting().isVisible()) continue;
-                float entryH = entry.getHeight();
-                ctx.enableScissor((int) panelX, (int)(y + MODULE_HEIGHT - 1),
-                        (int)(panelX + panelWidth), (int)(y + MODULE_HEIGHT + settingsH + 1));
-                entry.render(ctx, mouseX, mouseY, lastX, settingY, lastWidth, alpha * expandVal);
-                ctx.disableScissor();
-                settingY += entryH + SETTING_PADDING;
+            // Фон настроек
+            DrawUtil.drawRoundedRect(mat, lastX, settY, lastW, settH,
+                    BorderRadius.bottom(3f, 3f),
+                    new ColorRGBA(SET_BG.getRed(), SET_BG.getGreen(), SET_BG.getBlue(),
+                            (int)(SET_BG.getAlpha() * ev * alpha)));
+
+            ctx.enableScissor((int)panelX, (int)settY, (int)(panelX + panelW), (int)(settY + settH));
+            float sy = settY + 4f;
+            for (NewGuiSettingEntry se : settings) {
+                if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
+                se.render(ctx, mx, my, lastX, sy, lastW, alpha * ev);
+                sy += se.getHeight() + SETTING_PAD;
             }
+            ctx.disableScissor();
         }
     }
 
-    public void onMouseClicked(float mouseX, float mouseY, MouseButton button, float panelX, float y, float panelWidth) {
-        lastX = panelX + 4f;
+    public void onMouseClicked(float mx, float my, MouseButton btn, float panelX, float y, float panelW) {
+        lastX = panelX + 8f;
         lastY = y;
-        lastWidth = panelWidth - 8f;
+        lastW = panelW - 16f;
 
-        if (isHovered(mouseX, mouseY)) {
-            if (button == MouseButton.LEFT) {
-                module.toggle();
-            } else if (button == MouseButton.RIGHT) {
-                if (!settingEntries.isEmpty()) {
-                    expanded = !expanded;
-                }
-            } else if (button == MouseButton.MIDDLE) {
-                isBinding = !isBinding;
-            }
+        if (isHovered(mx, my)) {
+            if (btn == MouseButton.LEFT)   module.toggle();
+            else if (btn == MouseButton.RIGHT && !settings.isEmpty()) expanded = !expanded;
+            else if (btn == MouseButton.MIDDLE) binding = !binding;
         }
 
-        // Передаём клик в настройки
         if (expanded) {
-            float settingY = y + MODULE_HEIGHT;
-            for (NewGuiSettingEntry entry : settingEntries) {
-                if (entry.getSetting() != null && !entry.getSetting().isVisible()) continue;
-                entry.onMouseClicked(mouseX, mouseY, button, lastX, settingY, lastWidth);
-                settingY += entry.getHeight() + SETTING_PADDING;
+            float sy = y + ROW_H + 4f;
+            for (NewGuiSettingEntry se : settings) {
+                if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
+                se.onMouseClicked(mx, my, btn, lastX, sy, lastW);
+                sy += se.getHeight() + SETTING_PAD;
             }
         }
     }
 
-    public void onMouseReleased(float mouseX, float mouseY, MouseButton button) {
-        for (NewGuiSettingEntry entry : settingEntries) {
-            entry.onMouseReleased(mouseX, mouseY, button);
-        }
+    public void onMouseReleased(float mx, float my, MouseButton btn) {
+        for (NewGuiSettingEntry se : settings) se.onMouseReleased(mx, my, btn);
     }
 
-    public void onKeyPressed(int keyCode, int scanCode, int modifiers) {
-        if (isBinding) {
-            if (keyCode == 256 || keyCode == 259 || keyCode == 261) {
-                module.setKeyCode(-1);
-            } else {
-                module.setKeyCode(keyCode);
-            }
-            isBinding = false;
+    public void onKeyPressed(int key, int scan, int mods) {
+        if (binding) {
+            module.setKeyCode(key == 256 || key == 259 || key == 261 ? -1 : key);
+            binding = false;
             return;
         }
-        for (NewGuiSettingEntry entry : settingEntries) {
-            entry.onKeyPressed(keyCode, scanCode, modifiers);
-        }
+        for (NewGuiSettingEntry se : settings) se.onKeyPressed(key, scan, mods);
     }
 
-    private boolean isHovered(float mouseX, float mouseY) {
-        return mouseX >= lastX && mouseX <= lastX + lastWidth
-                && mouseY >= lastY && mouseY <= lastY + MODULE_HEIGHT - 2f;
+    private boolean isHovered(float mx, float my) {
+        return mx >= lastX && mx <= lastX + lastW && my >= lastY && my <= lastY + ROW_H - 1f;
     }
 }

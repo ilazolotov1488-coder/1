@@ -18,133 +18,119 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Панель одной категории в новом Click GUI (dart.ru style).
- */
 public class NewGuiPanel {
 
-    private static final float PANEL_WIDTH = 127f;
-    private static final float PANEL_HEIGHT = 282f;
-    private static final float HEADER_HEIGHT = 20f;
-    private static final float MODULE_HEIGHT = 20f;
-    private static final float MODULE_PADDING = 2f;
+    private static final float W = NewClickGui.PANEL_W;
+    private static final float H = NewClickGui.PANEL_H;
+    private static final float HEADER_H = 30f;
+    private static final float ROW_H = 22f;
+    private static final float ROW_PAD = 0f;
 
-    private static final ColorRGBA BG = new ColorRGBA(0, 0, 0, 190);
-    private static final ColorRGBA HEADER_TEXT = new ColorRGBA(255, 255, 255, 255);
+    // Цвета как в референсе
+    private static final ColorRGBA BG       = new ColorRGBA(18, 19, 24, 230);
+    private static final ColorRGBA HEADER_BG= new ColorRGBA(22, 23, 30, 255);
+    private static final ColorRGBA DIVIDER  = new ColorRGBA(45, 47, 58, 255);
+    private static final ColorRGBA BORDER   = new ColorRGBA(40, 42, 52, 255);
 
     private final Category category;
-    private final List<NewGuiModuleEntry> moduleEntries = new ArrayList<>();
+    private final List<NewGuiModuleEntry> entries = new ArrayList<>();
 
     private float x, y;
-    private float scrollOffset = 0f;
-    private float scrollOffsetSmooth = 0f;
+    private float scroll = 0f;
+    private float scrollSmooth = 0f;
 
     public NewGuiPanel(Category category) {
         this.category = category;
-        List<Module> sorted = new ArrayList<>();
-        for (Module module : Zenith.getInstance().getModuleManager().getModules()) {
-            if (module.getCategory() == category) {
-                sorted.add(module);
-            }
+        List<Module> mods = new ArrayList<>();
+        for (Module m : Zenith.getInstance().getModuleManager().getModules()) {
+            if (m.getCategory() == category) mods.add(m);
         }
-        sorted.sort(Comparator.comparing(m -> m.getName().toLowerCase()));
-        for (Module module : sorted) {
-            moduleEntries.add(new NewGuiModuleEntry(module));
-        }
+        // Сортировка по алфавиту как в референсе
+        mods.sort(Comparator.comparing(m -> m.getName().toLowerCase()));
+        for (Module m : mods) entries.add(new NewGuiModuleEntry(m));
     }
 
-    public void setPosition(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
+    public void setPosition(float x, float y) { this.x = x; this.y = y; }
 
     public void render(UIContext ctx, float mouseX, float mouseY, float alpha) {
-        MatrixStack matrices = ctx.getMatrices();
+        MatrixStack ms = ctx.getMatrices();
+        scrollSmooth += (scroll - scrollSmooth) * 0.25f;
 
-        // Плавный скролл
-        scrollOffsetSmooth += (scrollOffset - scrollOffsetSmooth) * 0.2f;
+        // Фон панели
+        DrawUtil.drawRoundedRect(ms, x, y, W, H, BorderRadius.all(6f),
+                new ColorRGBA(BG.getRed(), BG.getGreen(), BG.getBlue(), (int)(BG.getAlpha() * alpha)));
 
-        // Фон панели (dart.ru: rgba(0,0,0,190) с gaussian blur)
-        DrawUtil.drawRoundedRect(matrices, x, y, PANEL_WIDTH, PANEL_HEIGHT,
-                BorderRadius.all(5f), new ColorRGBA(0, 0, 0, (int)(190 * alpha)));
+        // Заголовок
+        DrawUtil.drawRoundedRect(ms, x, y, W, HEADER_H,
+                BorderRadius.top(6f, 6f),
+                new ColorRGBA(HEADER_BG.getRed(), HEADER_BG.getGreen(), HEADER_BG.getBlue(), (int)(HEADER_BG.getAlpha() * alpha)));
 
-        // Заголовок — название категории по центру, белый текст size 9f
         String catName = category.getName();
-        float catTextWidth = Fonts.REGULAR.getWidth(catName, 9f);
-        MsdfRenderer.renderText(Fonts.REGULAR, catName, 9f,
-                new ColorRGBA(255, 255, 255, (int)(210 * alpha)).getRGB(),
-                matrices.peek().getPositionMatrix(),
-                x + PANEL_WIDTH / 2f - catTextWidth / 2f,
-                y + HEADER_HEIGHT / 2f - 4.5f,
-                0);
+        float catW = Fonts.SEMIBOLD.getWidth(catName, 9f);
+        MsdfRenderer.renderText(Fonts.SEMIBOLD, catName, 9f,
+                new ColorRGBA(220, 222, 230, (int)(240 * alpha)).getRGB(),
+                ms.peek().getPositionMatrix(),
+                x + W / 2f - catW / 2f, y + HEADER_H / 2f - 4.5f, 0);
 
-        // Scissor — обрезаем контент панели
-        ctx.enableScissor((int) x, (int)(y + HEADER_HEIGHT), (int)(x + PANEL_WIDTH), (int)(y + PANEL_HEIGHT));
+        // Разделитель
+        DrawUtil.drawRect(ms, x + 8f, y + HEADER_H, W - 16f, 0.8f,
+                new ColorRGBA(DIVIDER.getRed(), DIVIDER.getGreen(), DIVIDER.getBlue(), (int)(DIVIDER.getAlpha() * alpha)));
 
-        float offsetY = y + HEADER_HEIGHT + 2f + scrollOffsetSmooth;
+        // Контент со scissor
+        ctx.enableScissor((int)x, (int)(y + HEADER_H + 1), (int)(x + W), (int)(y + H));
 
-        for (NewGuiModuleEntry entry : moduleEntries) {
-            // Фильтр поиска
+        float offsetY = y + HEADER_H + 4f + scrollSmooth;
+        for (NewGuiModuleEntry e : entries) {
+            // Поиск
             NewClickGui gui = getGui();
             if (gui != null && gui.isSearching()) {
-                String search = gui.getSearchText().toLowerCase();
-                if (!search.isEmpty() && !entry.getModule().getName().toLowerCase().contains(search)) {
-                    continue;
-                }
+                String q = gui.getSearchText().toLowerCase();
+                if (!q.isEmpty() && !e.getModule().getName().toLowerCase().contains(q)) continue;
             }
-
-            entry.render(ctx, mouseX, mouseY, x, offsetY, PANEL_WIDTH, alpha);
-            offsetY += entry.getTotalHeight() + MODULE_PADDING;
+            e.render(ctx, mouseX, mouseY, x, offsetY, W, alpha);
+            offsetY += e.getTotalHeight() + ROW_PAD;
         }
 
         ctx.disableScissor();
+
+        // Граница панели
+        DrawUtil.drawRoundedBorder(ms, x, y, W, H, 0.8f, BorderRadius.all(6f),
+                new ColorRGBA(BORDER.getRed(), BORDER.getGreen(), BORDER.getBlue(), (int)(BORDER.getAlpha() * alpha)));
     }
 
-    public void onMouseClicked(float mouseX, float mouseY, MouseButton button) {
-        if (mouseX < x || mouseX > x + PANEL_WIDTH || mouseY < y + HEADER_HEIGHT || mouseY > y + PANEL_HEIGHT) return;
-
-        float offsetY = y + HEADER_HEIGHT + 2f + scrollOffsetSmooth;
-        for (NewGuiModuleEntry entry : moduleEntries) {
-            entry.onMouseClicked(mouseX, mouseY, button, x, offsetY, PANEL_WIDTH);
-            offsetY += entry.getTotalHeight() + MODULE_PADDING;
+    public void onMouseClicked(float mx, float my, MouseButton btn) {
+        if (mx < x || mx > x + W || my < y + HEADER_H || my > y + H) return;
+        float offsetY = y + HEADER_H + 4f + scrollSmooth;
+        for (NewGuiModuleEntry e : entries) {
+            e.onMouseClicked(mx, my, btn, x, offsetY, W);
+            offsetY += e.getTotalHeight() + ROW_PAD;
         }
     }
 
-    public void onMouseReleased(float mouseX, float mouseY, MouseButton button) {
-        for (NewGuiModuleEntry entry : moduleEntries) {
-            entry.onMouseReleased(mouseX, mouseY, button);
-        }
+    public void onMouseReleased(float mx, float my, MouseButton btn) {
+        for (NewGuiModuleEntry e : entries) e.onMouseReleased(mx, my, btn);
     }
 
-    public void onScroll(float mouseX, float mouseY, float delta) {
-        if (mouseX < x || mouseX > x + PANEL_WIDTH || mouseY < y || mouseY > y + PANEL_HEIGHT) return;
-        scrollOffset += delta * 18f;
+    public void onScroll(float mx, float my, float delta) {
+        if (mx < x || mx > x + W || my < y || my > y + H) return;
+        scroll += delta * 20f;
         clampScroll();
     }
 
-    public void onKeyPressed(int keyCode, int scanCode, int modifiers) {
-        for (NewGuiModuleEntry entry : moduleEntries) {
-            entry.onKeyPressed(keyCode, scanCode, modifiers);
-        }
+    public void onKeyPressed(int key, int scan, int mods) {
+        for (NewGuiModuleEntry e : entries) e.onKeyPressed(key, scan, mods);
     }
 
     private void clampScroll() {
-        float totalHeight = 0;
-        for (NewGuiModuleEntry entry : moduleEntries) {
-            totalHeight += entry.getTotalHeight() + MODULE_PADDING;
-        }
-        float maxScroll = Math.max(0, totalHeight - (PANEL_HEIGHT - HEADER_HEIGHT - 6f));
-        scrollOffset = MathHelper.clamp(scrollOffset, -maxScroll, 0f);
+        float total = 0;
+        for (NewGuiModuleEntry e : entries) total += e.getTotalHeight() + ROW_PAD;
+        float maxScroll = Math.max(0, total - (H - HEADER_H - 8f));
+        scroll = MathHelper.clamp(scroll, -maxScroll, 0f);
     }
 
     private NewClickGui getGui() {
         try {
-            space.visuals.client.modules.impl.render.Menu menu =
-                    space.visuals.client.modules.impl.render.Menu.INSTANCE;
-            if (menu != null) {
-                return menu.getNewClickGui();
-            }
-        } catch (Exception ignored) {}
-        return null;
+            return space.visuals.client.modules.impl.render.Menu.INSTANCE.getNewClickGui();
+        } catch (Exception e) { return null; }
     }
 }
