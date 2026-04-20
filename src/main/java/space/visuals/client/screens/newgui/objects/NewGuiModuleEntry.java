@@ -11,6 +11,7 @@ import space.visuals.client.modules.api.setting.Setting;
 import space.visuals.client.modules.api.setting.impl.*;
 import space.visuals.client.screens.newgui.settings.*;
 import space.visuals.utility.game.other.MouseButton;
+import space.visuals.utility.interfaces.IMinecraft;
 import space.visuals.utility.render.display.base.BorderRadius;
 import space.visuals.utility.render.display.base.UIContext;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
@@ -23,7 +24,7 @@ import java.util.List;
  * Элемент модуля в новом Click GUI.
  * Отображает название, статус и настройки при раскрытии.
  */
-public class NewGuiModuleEntry {
+public class NewGuiModuleEntry implements IMinecraft {
 
     private static final float MODULE_HEIGHT = 18f;
     private static final float SETTING_HEIGHT = 16f;
@@ -44,6 +45,8 @@ public class NewGuiModuleEntry {
 
     private boolean expanded = false;
     private boolean isBinding = false;
+    /** Если true — ЛКМ переключает на Zenith GUI вместо toggle() */
+    private final boolean isMenuSwitch;
 
     private final Animation expandAnim = new Animation(200, 0f, Easing.CUBIC_IN_OUT);
     private final Animation enableAnim;
@@ -53,7 +56,12 @@ public class NewGuiModuleEntry {
     private float lastX, lastY, lastWidth;
 
     public NewGuiModuleEntry(Module module) {
+        this(module, false);
+    }
+
+    public NewGuiModuleEntry(Module module, boolean isMenuSwitch) {
         this.module = module;
+        this.isMenuSwitch = isMenuSwitch;
         this.enableAnim = new Animation(200, module.isEnabled() ? 1f : 0f, Easing.LINEAR);
 
         for (Setting setting : module.getSettings()) {
@@ -106,20 +114,32 @@ public class NewGuiModuleEntry {
         lastY = y;
         lastWidth = panelWidth - 10f;
 
-        // Анимации
-        enableAnim.update(module.isEnabled() ? 1f : 0f);
-        expandAnim.update(expanded ? 1f : 0f);
-
         boolean hovered = isHovered(mouseX, mouseY);
         hoverAnim.update(hovered ? 1f : 0f);
-
-        float enableVal = enableAnim.getValue();
         float hoverVal = hoverAnim.getValue();
 
         // Фон модуля
         int bgAlpha = (int)((40 + 60 * hoverVal) * alpha);
         DrawUtil.drawRoundedRect(matrices, lastX, y, lastWidth, MODULE_HEIGHT - 2f,
                 BorderRadius.all(3f), new ColorRGBA(30, 32, 42, bgAlpha));
+
+        if (isMenuSwitch) {
+            // Специальная кнопка переключения на Zenith GUI
+            ColorRGBA btnColor = new ColorRGBA(180, 140, 255, (int)(220 * alpha));
+            String label = "→ Zenith GUI";
+            float tw = Fonts.REGULAR.getWidth(label, 8f);
+            MsdfRenderer.renderText(Fonts.REGULAR, label, 8f, btnColor.getRGB(),
+                    matrices.peek().getPositionMatrix(),
+                    lastX + lastWidth / 2f - tw / 2f,
+                    y + MODULE_HEIGHT / 2f - 4f, 0);
+            return;
+        }
+
+        // Анимации
+        enableAnim.update(module.isEnabled() ? 1f : 0f);
+        expandAnim.update(expanded ? 1f : 0f);
+
+        float enableVal = enableAnim.getValue();
 
         // Иконка статуса (check/x)
         float iconSize = 7.5f;
@@ -184,7 +204,17 @@ public class NewGuiModuleEntry {
 
         if (isHovered(mouseX, mouseY)) {
             if (button == MouseButton.LEFT) {
-                module.toggle();
+                if (isMenuSwitch) {
+                    // Переключаем на Zenith GUI
+                    space.visuals.client.modules.impl.render.Menu menu =
+                            space.visuals.client.modules.impl.render.Menu.INSTANCE;
+                    menu.guiMode.set("Zenith");
+                    if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui gui) {
+                        gui.close();
+                    }
+                } else {
+                    module.toggle();
+                }
             } else if (button == MouseButton.RIGHT) {
                 if (!settingEntries.isEmpty()) {
                     expanded = !expanded;

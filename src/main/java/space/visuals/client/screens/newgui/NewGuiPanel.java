@@ -46,8 +46,15 @@ public class NewGuiPanel {
         this.category = category;
         for (Module module : Zenith.getInstance().getModuleManager().getModules()) {
             if (module.getCategory() == category) {
+                // Модуль Menu пропускаем — он управляет самим GUI
+                if (module instanceof space.visuals.client.modules.impl.render.Menu) continue;
                 moduleEntries.add(new NewGuiModuleEntry(module));
             }
+        }
+        // В категории RENDER добавляем специальную кнопку переключения на Zenith GUI
+        if (category == Category.RENDER) {
+            moduleEntries.add(0, new NewGuiModuleEntry(
+                    space.visuals.client.modules.impl.render.Menu.INSTANCE, true));
         }
     }
 

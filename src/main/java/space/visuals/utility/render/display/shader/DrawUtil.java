@@ -671,6 +671,11 @@ public class DrawUtil implements IWindow {
 
 
     public void drawBlurHud(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color) {
+        // Не рисуем блюр HUD-элементов когда открыт новый Click GUI
+        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) {
+            drawBlurHudBooleanCheck(matrices, x, y, width, height, blurRadius, borderRadius, color, false, Interface.INSTANCE.isGlow());
+            return;
+        }
         drawBlurHudBooleanCheck(matrices,x,y,width,height,blurRadius,borderRadius,color,Interface.INSTANCE.isBlur(),Interface.INSTANCE.isGlow());
     }
     public void drawBlurHudBooleanCheck(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color,boolean blur,boolean glow) {
