@@ -18,13 +18,17 @@ import java.util.List;
 
 public class NewClickGui extends CustomScreen {
 
-    // Точные размеры из Panel.java референса
-    public static final float PANEL_W  = 107f; // width - 20 (127-20)
-    public static final float PANEL_H  = 201f; // height - 81 (282-81)
-    public static final float PANEL_GAP = 0f;  // панели вплотную
+    // Window.java: width2=127, height2=282, step=width2-23=104
+    // Panel.java: panel.x = x+73, panel.y = y+19, panel.width = width-20=107, panel.height = height-81=201
+    // Итого: каждая панель занимает 104px по горизонтали, рисует rect шириной 107
+    public static final float PANEL_STEP = 104f;  // offset += width2 - 23
+    public static final float PANEL_W    = 107f;  // width - 20
+    public static final float PANEL_H    = 282f;  // полная высота (height2)
+    public static final float PANEL_INNER_H = 201f; // height - 81 (контентная зона)
 
-    private boolean searching = false;
-    private String searchText = "";
+    public static boolean searching = false;
+    public static String searchText = "";
+
     private boolean initialized = false;
     private final List<NewGuiPanel> panels = new ArrayList<>();
 
@@ -40,17 +44,22 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     protected void init() {
+        searching = false;
+        searchText = "";
         if (!initialized) { initialize(); initialized = true; }
         repositionPanels();
     }
 
     private void repositionPanels() {
         int n = panels.size();
-        float totalW = n * PANEL_W;
-        float startX = (width - totalW) / 2f;
-        float startY = (height - PANEL_H) / 2f - 20f; // чуть выше центра как в референсе
+        // Window.java: position.x = scaledWidth/2 - n*width2/2 - 30
+        float startX = width / 2f - n * PANEL_STEP / 2f - 30f;
+        float startY = height / 2f - PANEL_H / 2f;
+        float offset = 10f; // Window.java: float offset = 10.0f
         for (int i = 0; i < n; i++) {
-            panels.get(i).setPosition(startX + i * PANEL_W, startY);
+            // Panel.java: this.x = x + 73, this.y = y + 19
+            panels.get(i).setPosition(startX + offset + 73f, startY + 19f);
+            offset += PANEL_STEP;
         }
     }
 
@@ -62,34 +71,30 @@ public class NewClickGui extends CustomScreen {
             panel.render(ctx, mouseX, mouseY);
         }
 
-        // Поиск — точно как в Window.java: позиция width/2-55, height/1.17f-60, размер 110x15
-        float searchBoxX = width / 2f - 55f;
-        float searchBoxY = height / 1.17f - 60f;
-        float searchBoxW  = 110f;
-        float searchBoxH  = 15f;
+        // Window.java: search box at sr.scaledWidth()/2-55, sr.scaledHeight()/1.17f-60, 110x15
+        float sbX = width / 2f - 55f;
+        float sbY = height / 1.17f - 60f;
 
-        DrawUtil.drawRoundedRect(ms, searchBoxX, searchBoxY, searchBoxW, searchBoxH,
+        DrawUtil.drawRoundedRect(ms, sbX, sbY, 110f, 15f,
                 BorderRadius.all(2f), new ColorRGBA(0, 0, 0, 200));
 
-        // Текст в поле поиска
-        String searchDisplay = searching || !searchText.isEmpty()
-                ? searchText + (searching && System.currentTimeMillis() % 1000L > 500L ? "_" : "")
-                : "Поиск";
-        float sdW = Fonts.REGULAR.getWidth(searchDisplay, 8f);
-        MsdfRenderer.renderText(Fonts.REGULAR, searchDisplay, 8f,
+        // Текст поиска
+        String display = (!searching && searchText.isEmpty())
+                ? "Поиск"
+                : searchText + (searching && System.currentTimeMillis() % 1000L > 500L ? "_" : "");
+        float dw = Fonts.REGULAR.getWidth(display, 8f);
+        MsdfRenderer.renderText(Fonts.REGULAR, display, 8f,
                 new ColorRGBA(200, 200, 200, 200).getRGB(),
                 ms.peek().getPositionMatrix(),
-                searchBoxX + searchBoxW / 2f - sdW / 2f,
-                searchBoxY + searchBoxH / 2f - 4f, 0);
+                sbX + 55f - dw / 2f, sbY + 3.5f, 0);
 
-        // Подсказка под полем — как в Window.java
+        // Подсказка: "Для активации поиска нажмите CTRL + F"
         String hint = "Для активации поиска нажмите CTRL + F";
-        float hintW = Fonts.REGULAR.getWidth(hint, 7.5f);
+        float hw = Fonts.REGULAR.getWidth(hint, 7.5f);
         MsdfRenderer.renderText(Fonts.REGULAR, hint, 7.5f,
                 new ColorRGBA(255, 255, 255, 220).getRGB(),
                 ms.peek().getPositionMatrix(),
-                width / 2f - hintW / 2f + 1f,
-                height / 1.17f - 38f, 0);
+                width / 2f - hw / 2f + 1f, height / 1.17f - 38f, 0);
     }
 
     public void renderTop(UIContext ctx, float mouseX, float mouseY) {}
@@ -109,8 +114,8 @@ public class NewClickGui extends CustomScreen {
     @Override
     public void onMouseClicked(double mx, double my, MouseButton btn) {
         // Клик по полю поиска
-        float sx = width / 2f - 55f, sy = height / 1.17f - 55f;
-        if (mx >= sx && mx <= sx + 110 && my >= sy && my <= sy + 13) {
+        float sbX = width / 2f - 55f, sbY = height / 1.17f - 55f;
+        if (mx >= sbX && mx <= sbX + 110 && my >= sbY && my <= sbY + 13) {
             searching = !searching;
             return;
         }
@@ -130,15 +135,13 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
-        if (key == 341 || key == 345) { /* ctrl */ }
         if ((mods & GLFW.GLFW_MOD_CONTROL) != 0 && key == GLFW.GLFW_KEY_F) {
             searching = true; searchText = ""; return true;
         }
         for (NewGuiPanel p : panels) p.onKeyPressed(key, scan, mods);
         if (key == GLFW.GLFW_KEY_ESCAPE) { close(); return true; }
-        if (key == GLFW.GLFW_KEY_BACKSPACE && searching && !searchText.isEmpty()) {
+        if (key == GLFW.GLFW_KEY_BACKSPACE && searching && !searchText.isEmpty())
             searchText = searchText.substring(0, searchText.length() - 1);
-        }
         if (key == GLFW.GLFW_KEY_ENTER) { searchText = ""; searching = false; }
         return true;
     }
@@ -154,7 +157,7 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     public void renderBackground(DrawContext ctx, int mx, int my, float delta) {
-        // Убираем стандартный Minecraft blur/dim
+        // Убираем стандартный Minecraft blur/dim — НЕ вызываем super
     }
 
     public String getSearchText() { return searching ? searchText : ""; }

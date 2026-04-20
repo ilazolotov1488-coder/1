@@ -1,8 +1,6 @@
 package space.visuals.client.screens.newgui.objects;
 
 import net.minecraft.client.util.math.MatrixStack;
-import space.visuals.base.animations.base.Animation;
-import space.visuals.base.animations.base.Easing;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.font.MsdfRenderer;
 import space.visuals.client.modules.api.Module;
@@ -21,19 +19,19 @@ import java.util.List;
 
 public class NewGuiModuleEntry implements IMinecraft {
 
-    // Из Panel.java: originalHeight = 18f
+    // Panel.java: originalHeight = 18f
     private static final float ROW_H = 18f;
-    // Из Panel.java: object.height = 8f, gap = 9.5f
-    private static final float SET_H_UNIT = 8f;
-    private static final float SET_GAP    = 9.5f;
+    // Panel.java: object.height = 8f, gap = 9.5f
+    private static final float OBJ_H   = 8f;
+    private static final float OBJ_GAP = 9.5f;
 
     private final Module module;
-    private final List<NewGuiSettingEntry> settings = new ArrayList<>();
+    private final List<NewGuiSettingEntry> settingEntries = new ArrayList<>();
 
     private boolean expanded = false;
     private boolean isBinding = false;
 
-    // expand_anim из Panel.java: AnimationMath.fast(anim, target, 20)
+    // Panel.java: expand_anim = AnimationMath.fast(anim, target, 20) → lerp ~0.15
     private float expandAnim = 0f;
 
     private float lastX, lastY, lastW;
@@ -41,39 +39,40 @@ public class NewGuiModuleEntry implements IMinecraft {
     public NewGuiModuleEntry(Module module) {
         this.module = module;
         for (Setting s : module.getSettings()) {
-            if      (s instanceof NumberSetting      ns) settings.add(new NewGuiSliderSetting(ns));
-            else if (s instanceof ModeSetting        ms) settings.add(new NewGuiModeSetting(ms));
-            else if (s instanceof BooleanSetting     bs) settings.add(new NewGuiBooleanSetting(bs));
-            else if (s instanceof MultiBooleanSetting mb) settings.add(new NewGuiMultiSetting(mb));
-            else if (s instanceof ButtonSetting      bt) settings.add(new NewGuiButtonSetting(bt));
-            else if (s instanceof KeySetting         ks) settings.add(new NewGuiKeySetting(ks));
+            if      (s instanceof NumberSetting      ns) settingEntries.add(new NewGuiSliderSetting(ns));
+            else if (s instanceof ModeSetting        ms) settingEntries.add(new NewGuiModeSetting(ms));
+            else if (s instanceof BooleanSetting     bs) settingEntries.add(new NewGuiBooleanSetting(bs));
+            else if (s instanceof MultiBooleanSetting mb) settingEntries.add(new NewGuiMultiSetting(mb));
+            else if (s instanceof ButtonSetting      bt) settingEntries.add(new NewGuiButtonSetting(bt));
+            else if (s instanceof KeySetting         ks) settingEntries.add(new NewGuiKeySetting(ks));
         }
     }
 
     public Module getModule() { return module; }
+    public boolean isExpanded() { return expanded; }
+    public List<NewGuiSettingEntry> getSettingEntries() { return settingEntries; }
 
-    public float getTotalHeight() {
-        float h = ROW_H;
-        if (expandAnim > 0.01f) h += getSettingsH() * expandAnim;
-        return h;
-    }
-
-    private float getSettingsH() {
+    /** Высота раскрытых настроек с анимацией — для расчёта off в Panel */
+    public float getSettingsExpandedHeight() {
         float h = 0;
-        for (NewGuiSettingEntry s : settings) {
+        for (NewGuiSettingEntry s : settingEntries) {
             if (s.getSetting() == null || s.getSetting().isVisible()) {
-                h += s.getHeight() + SET_GAP;
+                h += (s.getHeight() + OBJ_GAP) * expandAnim;
             }
         }
         return h;
     }
 
+    public float getTotalHeight() {
+        return ROW_H + getSettingsExpandedHeight();
+    }
+
     public void render(UIContext ctx, float mx, float my, float panelX, float y, float panelW) {
         MatrixStack mat = ctx.getMatrices();
 
-        // expand_anim: fast lerp к target
+        // expand_anim lerp
         float target = expanded ? 1f : 0f;
-        expandAnim += (target - expandAnim) * 0.2f;
+        expandAnim += (target - expandAnim) * 0.15f;
 
         lastX = panelX + 1f;
         lastY = y;
@@ -81,16 +80,16 @@ public class NewGuiModuleEntry implements IMinecraft {
 
         boolean on = module.isEnabled();
 
-        // Фон строки модуля — из Panel.java: rgba(0,0,0,60), radius=3.2, x+6.5, y, width-12, height-2.3
-        float totalH = on && expanded ? (ROW_H + getSettingsH() * expandAnim) : ROW_H;
+        // Panel.java: drawRoundedRect(m.x+6.5, m.y, m.width-12, moduleHeight-2.3, 3.2, rgba(0,0,0,60))
+        float totalH = ROW_H + getSettingsExpandedHeight();
         DrawUtil.drawRoundedRect(mat,
                 panelX + 6.5f, y,
                 panelW - 12f, totalH - 2.3f,
                 BorderRadius.all(3.2f),
                 new ColorRGBA(0, 0, 0, 60));
 
-        // Название — из Panel.java: Fonts[15], x+12, y+off+scroll+18.2 → относительно y: +6.2
-        // включён: rgba(255,255,255,255), выключен: rgba(140,140,140,128)
+        // Panel.java: Fonts[15].drawString(name, x+12, y+off+offset+scroll+18.2)
+        // Относительно y модуля: текст на y+5.7 (18.2 - 12.5 = 5.7)
         String name = isBinding ? "..." : module.getName();
         int textColor = on
                 ? new ColorRGBA(255, 255, 255, 255).getRGB()
@@ -100,30 +99,34 @@ public class NewGuiModuleEntry implements IMinecraft {
                 mat.peek().getPositionMatrix(),
                 panelX + 12f, y + 5.7f, 0);
 
-        // "..." справа — из Panel.java: Fonts[12], x+width-10+2, y+5
-        if (!settings.isEmpty()) {
+        // Panel.java: Fonts[12].drawCenteredString("...", m.x+m.width-size+2, m.y+5)
+        // size=10, translate(-5,0) → x = panelX+panelW-10+2-5 = panelX+panelW-13
+        if (!settingEntries.isEmpty()) {
             int dotsColor = on
                     ? new ColorRGBA(255, 255, 255, 200).getRGB()
                     : new ColorRGBA(140, 140, 140, 128).getRGB();
-            float dotsX = panelX + panelW - 10f + 2f - 5f; // -5 компенсация translate
+            float dotsX = panelX + panelW - 13f;
             MsdfRenderer.renderText(Fonts.REGULAR, "...", 7f, dotsColor,
-                    mat.peek().getPositionMatrix(),
-                    dotsX, y + 5f, 0);
+                    mat.peek().getPositionMatrix(), dotsX, y + 5f, 0);
         }
 
         // Настройки раскрытые
         if (expandAnim > 0.01f) {
-            float settH = getSettingsH() * expandAnim;
-            float sy = y + ROW_H;
-
-            ctx.enableScissor((int)panelX, (int)sy, (int)(panelX + panelW), (int)(sy + settH + 2));
             float yd = 6f;
-            for (NewGuiSettingEntry se : settings) {
+            float sy = y + ROW_H;
+            float visH = getSettingsExpandedHeight();
+
+            ctx.enableScissor((int)panelX, (int)sy, (int)(panelX + panelW), (int)(sy + visH + 2f));
+
+            for (NewGuiSettingEntry se : settingEntries) {
                 if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
-                // Из Panel.java: object.x=this.x, object.y=y+yd+off+scroll+25, object.width=this.width, object.height=8
-                se.render(ctx, mx, my, panelX, sy + yd - ROW_H, panelW, expandAnim);
-                yd += (se.getHeight() + SET_GAP) * expandAnim;
+                // Panel.java: object.x=this.x, object.y=y+yd+off+offset+scroll+25, object.width=this.width, object.height=8
+                // Относительно sy: object.y = sy + yd - ROW_H + (25-12.5) = sy + yd - ROW_H + 12.5
+                float objY = sy + yd - ROW_H + 12.5f;
+                se.render(ctx, mx, my, panelX, objY, panelW, expandAnim);
+                yd += (se.getHeight() + OBJ_GAP) * expandAnim;
             }
+
             ctx.disableScissor();
         }
     }
@@ -133,29 +136,31 @@ public class NewGuiModuleEntry implements IMinecraft {
         lastY = y;
         lastW = panelW - 1f;
 
-        // Из Panel.java: isInRegion(mx, my, m.x+8, m.y, m.width-20+4, m.height) && button==1 → expand
+        // Panel.java: isInRegion(mx, my, m.x+8, m.y, m.width-20+4, m.height) && button==1 → expand
         boolean inRow = mx >= panelX + 8f && mx <= panelX + panelW - 16f
                 && my >= y && my <= y + ROW_H;
 
         if (inRow) {
             if (btn == MouseButton.LEFT) module.toggle();
-            else if (btn == MouseButton.RIGHT && !settings.isEmpty()) expanded = !expanded;
+            else if (btn == MouseButton.RIGHT && !settingEntries.isEmpty()) expanded = !expanded;
             else if (btn == MouseButton.MIDDLE) isBinding = !isBinding;
         }
 
+        // Передаём клик в настройки
         if (expanded && expandAnim > 0.5f) {
             float yd = 6f;
             float sy = y + ROW_H;
-            for (NewGuiSettingEntry se : settings) {
+            for (NewGuiSettingEntry se : settingEntries) {
                 if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
-                se.onMouseClicked(mx, my, btn, panelX, sy + yd - ROW_H, panelW);
-                yd += se.getHeight() + SET_GAP;
+                float objY = sy + yd - ROW_H + 12.5f;
+                se.onMouseClicked(mx, my, btn, panelX, objY, panelW);
+                yd += se.getHeight() + OBJ_GAP;
             }
         }
     }
 
     public void onMouseReleased(float mx, float my, MouseButton btn) {
-        for (NewGuiSettingEntry se : settings) se.onMouseReleased(mx, my, btn);
+        for (NewGuiSettingEntry se : settingEntries) se.onMouseReleased(mx, my, btn);
     }
 
     public void onKeyPressed(int key, int scan, int mods) {
@@ -164,6 +169,6 @@ public class NewGuiModuleEntry implements IMinecraft {
             isBinding = false;
             return;
         }
-        for (NewGuiSettingEntry se : settings) se.onKeyPressed(key, scan, mods);
+        for (NewGuiSettingEntry se : settingEntries) se.onKeyPressed(key, scan, mods);
     }
 }
