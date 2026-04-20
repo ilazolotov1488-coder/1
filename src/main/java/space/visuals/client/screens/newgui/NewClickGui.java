@@ -17,11 +17,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Порт Window.java.
+ *
+ * Window.java init():
+ *   width2=127, height2=282
+ *   position.x = scaledWidth/2 - n*width2/2 - 30
+ *   position.y = scaledHeight/2 - height2/2
+ *   offset=10, step=width2-23=104
+ *   Panel(position.x+offset, position.y, width2, height2)
+ *
+ * Panel constructor: this.x=x+73, this.y=y+19, this.width=width-20=107, this.height=height-81=201
+ *
+ * Итого финальная x панели = position.x + offset + 73
+ * Финальная y = position.y + 19
+ *
+ * Чтобы не применять смещения дважды — передаём финальные координаты напрямую.
+ */
 public class NewClickGui extends CustomScreen {
 
-    // Размеры панели — подобраны под референс
-    public static final float PANEL_W = 130f;
-    public static final float PANEL_H = 300f;
+    // Window.java constants
+    private static final float WIDTH2  = 127f;
+    private static final float HEIGHT2 = 282f;
+    private static final float STEP    = WIDTH2 - 23f; // 104
+
+    // Panel final dimensions after constructor
+    // panel.width = 107, panel.height = 201
+    // Rect drawn: x+5, y, 99, 235
 
     public static boolean searching  = false;
     public static String  searchText = "";
@@ -54,11 +76,19 @@ public class NewClickGui extends CustomScreen {
 
     private void repositionPanels() {
         int n = panels.size();
-        float totalW = n * PANEL_W;
-        float startX = (width  - totalW) / 2f;
-        float startY = (height - PANEL_H) / 2f;
-        for (int i = 0; i < n; i++)
-            panels.get(i).setPosition(startX + i * PANEL_W, startY);
+        // Window.java: position.x = scaledWidth/2 - n*width2/2 - 30
+        float posX = width  / 2f - n * WIDTH2 / 2f - 30f;
+        float posY = height / 2f - HEIGHT2 / 2f;
+        float offset = 10f;
+        for (int i = 0; i < n; i++) {
+            // Window passes (posX+offset, posY, width2, height2) to Panel
+            // Panel does: this.x = x+73, this.y = y+19
+            // So final panel x = posX + offset + 73
+            float finalX = posX + offset + 73f;
+            float finalY = posY + 19f;
+            panels.get(i).setPosition(finalX, finalY);
+            offset += STEP;
+        }
     }
 
     @Override
@@ -66,26 +96,28 @@ public class NewClickGui extends CustomScreen {
         MatrixStack ms = ctx.getMatrices();
         for (NewGuiPanel p : panels) p.render(ctx, mouseX, mouseY);
 
-        // Поиск внизу по центру
-        float sbX = width / 2f - 55f;
+        // Window.java: search box at width/2-55, height/1.17f-60, 110x15, rgba(0,0,0,200)
+        float sbX = width  / 2f - 55f;
         float sbY = height / 1.17f - 60f;
-        DrawUtil.drawRoundedRect(ms, sbX, sbY, 110f, 16f,
-                BorderRadius.all(3f), new ColorRGBA(18, 19, 25, 220));
+        DrawUtil.drawRoundedRect(ms, sbX, sbY, 110f, 15f,
+                BorderRadius.all(2f), new ColorRGBA(0, 0, 0, 200));
 
+        // Search text
         String display = (!searching && searchText.isEmpty()) ? "Поиск"
                 : searchText + (searching && System.currentTimeMillis() % 1000L > 500L ? "_" : "");
         float dw = Fonts.REGULAR.getWidth(display, 8f);
         MsdfRenderer.renderText(Fonts.REGULAR, display, 8f,
                 new ColorRGBA(200, 200, 200, 200).getRGB(),
                 ms.peek().getPositionMatrix(),
-                sbX + 55f - dw / 2f, sbY + 4f, 0);
+                sbX + 55f - dw / 2f, sbY + 3f, 0);
 
+        // Hint
         String hint = "Для активации поиска нажмите CTRL + F";
         float hw = Fonts.REGULAR.getWidth(hint, 7.5f);
         MsdfRenderer.renderText(Fonts.REGULAR, hint, 7.5f,
-                new ColorRGBA(255, 255, 255, 180).getRGB(),
+                new ColorRGBA(255, 255, 255, 220).getRGB(),
                 ms.peek().getPositionMatrix(),
-                width / 2f - hw / 2f, height / 1.17f - 38f, 0);
+                width / 2f - hw / 2f + 1f, height / 1.17f - 38f, 0);
     }
 
     public void renderTop(UIContext ctx, float mx, float my) {}
@@ -102,7 +134,7 @@ public class NewClickGui extends CustomScreen {
     @Override
     public void onMouseClicked(double mx, double my, MouseButton btn) {
         float sbX = width / 2f - 55f, sbY = height / 1.17f - 55f;
-        if (mx >= sbX && mx <= sbX + 110 && my >= sbY && my <= sbY + 16) {
+        if (mx >= sbX && mx <= sbX + 110 && my >= sbY && my <= sbY + 13) {
             searching = !searching; return;
         }
         for (NewGuiPanel p : panels) p.onMouseClicked((float)mx, (float)my, btn);
@@ -134,7 +166,7 @@ public class NewClickGui extends CustomScreen {
 
     @Override
     public boolean charTyped(char c, int mods) {
-        if (searching && searchText.length() < 20) searchText += c;
+        if (searching && searchText.length() < 13) searchText += c;
         return true;
     }
 

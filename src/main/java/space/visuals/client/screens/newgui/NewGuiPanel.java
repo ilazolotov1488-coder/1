@@ -18,25 +18,33 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Точный порт Panel.java без dart.ru-специфичных смещений.
+ *
+ * Panel.java render():
+ *   bg:     x+5, y,  width-8, height+34,  r=5, rgba(0,0,0,190)
+ *   header: centered at x+width/2, y+7,   rgba(255,255,255,210)
+ *   scissor: x, y+18, width, height+12
+ *   offset=-4, off=11
+ *   moduleY = y + off + offset + scrollOut + 12.5
+ *   per module: off += settingsExpandedH + offset + 20  (= settingsH + 16)
+ */
 public class NewGuiPanel {
 
-    private static final float W          = NewClickGui.PANEL_W;
-    private static final float H          = NewClickGui.PANEL_H;
-    private static final float HEADER_H   = 26f;  // высота заголовка
-    private static final float ROW_H      = 18f;  // высота строки модуля
-    private static final float ROW_PAD    = 2f;   // отступ между строками
-
-    // Цвета — точно как в референсе
-    private static final ColorRGBA BG         = new ColorRGBA(18, 19, 25, 230);
-    private static final ColorRGBA DIVIDER    = new ColorRGBA(50, 52, 65, 200);
-    private static final ColorRGBA HDR_TEXT   = new ColorRGBA(255, 255, 255, 220);
+    // Размеры панели — как в Window.java: width2=127, height2=282
+    // Panel: width=107 (127-20), height=201 (282-81)
+    // Rect: width-8=99, height+34=235
+    private static final float PW = 107f;  // panel width
+    private static final float PH = 201f;  // panel height (content zone)
 
     private final Category category;
     private final List<NewGuiModuleEntry> entries = new ArrayList<>();
 
     private float x, y;
-    private float scroll    = 0f;
-    private float scrollOut = 0f;
+    private float scrolling    = 0f;
+    private float scrollingOut = 0f;
+    private float savedScrolling = 0f;
+    private boolean shouldRestoreScroll = false;
 
     public NewGuiPanel(Category category) {
         this.category = category;
@@ -50,58 +58,74 @@ public class NewGuiPanel {
     public void setPosition(float x, float y) { this.x = x; this.y = y; }
     public void init(float x, float y, float w, float h) { this.x = x; this.y = y; }
 
-    public void render(UIContext ctx, float mx, float my) {
+    public void render(UIContext ctx, float mouseX, float mouseY) {
         MatrixStack ms = ctx.getMatrices();
-        scrollOut += (scroll - scrollOut) * 0.2f;
 
-        // Фон панели
-        DrawUtil.drawRoundedRect(ms, x, y, W, H, BorderRadius.all(6f), BG);
+        if (shouldRestoreScroll) {
+            scrolling = savedScrolling;
+            scrollingOut = savedScrolling;
+            shouldRestoreScroll = false;
+        }
 
-        // Заголовок
-        String cat = category.getName();
-        float cw = Fonts.BOLD.getWidth(cat, 9.5f);
-        MsdfRenderer.renderText(Fonts.BOLD, cat, 9.5f, HDR_TEXT.getRGB(),
+        // Panel.java: scrollingOut = AnimationMath.fast(out, in, 20) ≈ lerp 0.15
+        scrollingOut += (scrolling - scrollingOut) * 0.15f;
+
+        // Panel.java: drawRoundedRect(x+5, y, width-8, height+34, 5, rgba(0,0,0,190))
+        DrawUtil.drawRoundedRect(ms,
+                x + 5f, y,
+                PW - 8f, PH + 34f,
+                BorderRadius.all(5f),
+                new ColorRGBA(0, 0, 0, 190));
+
+        // Panel.java: header centered at x+width/2, y+7, rgba(255,255,255,210)
+        String catName = category.getName();
+        float catW = Fonts.SEMIBOLD.getWidth(catName, 9f);
+        MsdfRenderer.renderText(Fonts.SEMIBOLD, catName, 9f,
+                new ColorRGBA(255, 255, 255, 210).getRGB(),
                 ms.peek().getPositionMatrix(),
-                x + W / 2f - cw / 2f, y + 8f, 0);
+                x + PW / 2f - catW / 2f, y + 7f, 0);
 
-        // Разделитель под заголовком
-        DrawUtil.drawRect(ms, x + 8f, y + HEADER_H - 1f, W - 16f, 0.8f, DIVIDER);
+        // Panel.java: scissor x, y+18, width, height+12
+        ctx.enableScissor((int)x, (int)(y + 18), (int)(x + PW), (int)(y + PH + 12f));
 
-        // Scissor — контент
-        ctx.enableScissor((int)x, (int)(y + HEADER_H), (int)(x + W), (int)(y + H));
+        // Panel.java: offset=-4, off=11
+        float offset = -4f;
+        float off    = 11f;
 
-        float rowY = y + HEADER_H + 4f + scrollOut;
         for (NewGuiModuleEntry e : entries) {
             if (NewClickGui.searching) {
                 if (!e.getModule().getName().toLowerCase()
                         .contains(NewClickGui.searchText.toLowerCase())) continue;
             }
-            e.render(ctx, mx, my, x, rowY, W);
-            rowY += e.getTotalHeight() + ROW_PAD;
+
+            // Panel.java: moduleY = y + off + offset + scrollingOut + 12.5
+            float moduleY = y + off + offset + scrollingOut + 12.5f;
+            e.render(ctx, mouseX, mouseY, x, moduleY, PW);
+
+            // Panel.java: off += settingsExpandedH + offset + 20
+            off += e.getSettingsExpandedOff() + offset + 20f;
         }
 
         ctx.disableScissor();
 
-        // Граница
-        DrawUtil.drawRoundedBorder(ms, x, y, W, H, 0.8f, BorderRadius.all(6f),
-                new ColorRGBA(45, 47, 58, 180));
-
-        // Clamp scroll
-        float totalH = 0;
-        for (NewGuiModuleEntry e : entries) totalH += e.getTotalHeight() + ROW_PAD;
-        float contentH = H - HEADER_H - 8f;
-        if (totalH <= contentH) scroll = 0f;
-        else scroll = MathHelper.clamp(scroll, -(totalH - contentH), 0f);
+        // Panel.java: clamp scroll
+        float max2 = off - 37f;
+        if (max2 < PH - 6f) scrolling = 0f;
+        else scrolling = MathHelper.clamp(scrolling, -(max2 - (PH - 16f)), 0f);
     }
 
     public void onMouseClicked(float mx, float my, MouseButton btn) {
-        if (mx < x || mx > x + W || my < y + HEADER_H || my > y + H) return;
-        float rowY = y + HEADER_H + 4f + scrollOut;
+        // Panel.java: zone x, y+18, width, height+12
+        if (mx < x || mx > x + PW || my < y + 18f || my > y + PH + 12f) return;
+
+        float offset = -2f;
+        float off    = 15f;
         for (NewGuiModuleEntry e : entries) {
             if (NewClickGui.searching && !e.getModule().getName().toLowerCase()
                     .contains(NewClickGui.searchText.toLowerCase())) continue;
-            e.onMouseClicked(mx, my, btn, x, rowY, W);
-            rowY += e.getTotalHeight() + ROW_PAD;
+            float moduleY = y + off + offset + scrollingOut + 12.5f;
+            e.onMouseClicked(mx, my, btn, x, moduleY, PW);
+            off += e.getSettingsExpandedOff() + offset + 20f;
         }
     }
 
@@ -110,15 +134,17 @@ public class NewGuiPanel {
     }
 
     public void onScroll(float mx, float my, float delta) {
-        if (mx < x || mx > x + W || my < y || my > y + H) return;
-        scroll += delta * 20f;
+        // Panel.java: zone x, y, width, height+32
+        if (mx < x || mx > x + PW || my < y || my > y + PH + 32f) return;
+        scrolling += delta * 25f;
+        savedScrolling = scrolling;
     }
 
     public void onKeyPressed(int key, int scan, int mods) {
         for (NewGuiModuleEntry e : entries) e.onKeyPressed(key, scan, mods);
     }
 
-    public float    getScroll()              { return scroll; }
-    public void     setScroll(float s)       { scroll = s; scrollOut = s; }
-    public Category getCategory()            { return category; }
+    public float    getScroll()        { return scrolling; }
+    public void     setScroll(float s) { scrolling = s; scrollingOut = s; savedScrolling = s; }
+    public Category getCategory()      { return category; }
 }
