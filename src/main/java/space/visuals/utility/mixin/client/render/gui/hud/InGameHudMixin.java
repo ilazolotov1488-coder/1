@@ -34,14 +34,14 @@ public abstract class InGameHudMixin {
 
     @Inject(method = "render", at = @At("HEAD"))
     public void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
-        // Рисуем блюр только если Interface включен, блюр активен,
-        // и НЕ открыт инвентарь с включённой анимацией
         Interface interfaceModule = Interface.INSTANCE;
         if (interfaceModule.isEnabled() && interfaceModule.isBlur()) {
             boolean inventoryOpen = mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
             boolean newGuiOpen = mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui;
+            boolean anyGuiOpen = mc.currentScreen != null && !inventoryOpen;
             boolean animHidesBlur = AnimationModule.INSTANCE.isEnabled() && AnimationModule.INSTANCE.animateInventory.isEnabled();
-            if (!(inventoryOpen && animHidesBlur) && !newGuiOpen) {
+            // Блюр только когда нет открытых экранов (кроме инвентаря без анимации)
+            if (!anyGuiOpen || (inventoryOpen && !animHidesBlur)) {
                 DrawUtil.blurProgram.draw();
             }
         }
