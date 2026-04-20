@@ -21,25 +21,20 @@ import java.util.List;
 
 public class NewGuiModuleEntry implements IMinecraft {
 
-    private static final float ROW_H = 22f;
-    private static final float SETTING_PAD = 1f;
-
-    // Цвета как в референсе
-    private static final ColorRGBA TEXT_ON  = new ColorRGBA(255, 255, 255, 255);
-    private static final ColorRGBA TEXT_OFF = new ColorRGBA(140, 140, 140, 180);
-    private static final ColorRGBA DOTS_ON  = new ColorRGBA(200, 200, 210, 200);
-    private static final ColorRGBA DOTS_OFF = new ColorRGBA(100, 100, 110, 160);
-    private static final ColorRGBA HOVER_BG = new ColorRGBA(35, 37, 48, 120);
-    private static final ColorRGBA SET_BG   = new ColorRGBA(12, 13, 18, 180);
+    // Из Panel.java: originalHeight = 18f
+    private static final float ROW_H = 18f;
+    // Из Panel.java: object.height = 8f, gap = 9.5f
+    private static final float SET_H_UNIT = 8f;
+    private static final float SET_GAP    = 9.5f;
 
     private final Module module;
     private final List<NewGuiSettingEntry> settings = new ArrayList<>();
 
     private boolean expanded = false;
-    private boolean binding = false;
+    private boolean isBinding = false;
 
-    private final Animation expandAnim = new Animation(180, 0f, Easing.CUBIC_IN_OUT);
-    private final Animation hoverAnim  = new Animation(120, 0f, Easing.LINEAR);
+    // expand_anim из Panel.java: AnimationMath.fast(anim, target, 20)
+    private float expandAnim = 0f;
 
     private float lastX, lastY, lastW;
 
@@ -59,102 +54,102 @@ public class NewGuiModuleEntry implements IMinecraft {
 
     public float getTotalHeight() {
         float h = ROW_H;
-        float ev = expandAnim.getValue();
-        if (ev > 0.01f) h += getSettingsH() * ev;
+        if (expandAnim > 0.01f) h += getSettingsH() * expandAnim;
         return h;
     }
 
     private float getSettingsH() {
-        float h = 4f;
+        float h = 0;
         for (NewGuiSettingEntry s : settings) {
-            if (s.getSetting() == null || s.getSetting().isVisible()) h += s.getHeight() + SETTING_PAD;
+            if (s.getSetting() == null || s.getSetting().isVisible()) {
+                h += s.getHeight() + SET_GAP;
+            }
         }
-        return h + 4f;
+        return h;
     }
 
-    public void render(UIContext ctx, float mx, float my, float panelX, float y, float panelW, float alpha) {
+    public void render(UIContext ctx, float mx, float my, float panelX, float y, float panelW) {
         MatrixStack mat = ctx.getMatrices();
-        lastX = panelX + 8f;
+
+        // expand_anim: fast lerp к target
+        float target = expanded ? 1f : 0f;
+        expandAnim += (target - expandAnim) * 0.2f;
+
+        lastX = panelX + 1f;
         lastY = y;
-        lastW = panelW - 16f;
+        lastW = panelW - 1f;
 
-        boolean hovered = isHovered(mx, my);
-        hoverAnim.update(hovered ? 1f : 0f);
-        expandAnim.update(expanded ? 1f : 0f);
-
-        float hv = hoverAnim.getValue();
-        float ev = expandAnim.getValue();
         boolean on = module.isEnabled();
 
-        // Hover фон строки
-        if (hv > 0.01f) {
-            DrawUtil.drawRoundedRect(mat, lastX, y, lastW, ROW_H - 1f,
-                    BorderRadius.all(3f),
-                    new ColorRGBA(HOVER_BG.getRed(), HOVER_BG.getGreen(), HOVER_BG.getBlue(),
-                            (int)(HOVER_BG.getAlpha() * hv * alpha)));
-        }
+        // Фон строки модуля — из Panel.java: rgba(0,0,0,60), radius=3.2, x+6.5, y, width-12, height-2.3
+        float totalH = on && expanded ? (ROW_H + getSettingsH() * expandAnim) : ROW_H;
+        DrawUtil.drawRoundedRect(mat,
+                panelX + 6.5f, y,
+                panelW - 12f, totalH - 2.3f,
+                BorderRadius.all(3.2f),
+                new ColorRGBA(0, 0, 0, 60));
 
-        // Название модуля — жирный если включён
-        String name = binding ? "..." : module.getName();
-        ColorRGBA textColor = on
-                ? new ColorRGBA(TEXT_ON.getRed(), TEXT_ON.getGreen(), TEXT_ON.getBlue(), (int)(TEXT_ON.getAlpha() * alpha))
-                : new ColorRGBA(TEXT_OFF.getRed(), TEXT_OFF.getGreen(), TEXT_OFF.getBlue(), (int)(TEXT_OFF.getAlpha() * alpha));
+        // Название — из Panel.java: Fonts[15], x+12, y+off+scroll+18.2 → относительно y: +6.2
+        // включён: rgba(255,255,255,255), выключен: rgba(140,140,140,128)
+        String name = isBinding ? "..." : module.getName();
+        int textColor = on
+                ? new ColorRGBA(255, 255, 255, 255).getRGB()
+                : new ColorRGBA(140, 140, 140, 128).getRGB();
 
-        // Включённые — SEMIBOLD, выключенные — REGULAR (как в референсе)
-        var font = on ? Fonts.SEMIBOLD : Fonts.REGULAR;
-        MsdfRenderer.renderText(font, name, 8.5f, textColor.getRGB(),
-                mat.peek().getPositionMatrix(), lastX + 4f, y + ROW_H / 2f - 4.5f, 0);
+        MsdfRenderer.renderText(Fonts.REGULAR, name, 8f, textColor,
+                mat.peek().getPositionMatrix(),
+                panelX + 12f, y + 5.7f, 0);
 
-        // "..." справа если есть настройки
+        // "..." справа — из Panel.java: Fonts[12], x+width-10+2, y+5
         if (!settings.isEmpty()) {
-            ColorRGBA dotsC = on
-                    ? new ColorRGBA(DOTS_ON.getRed(), DOTS_ON.getGreen(), DOTS_ON.getBlue(), (int)(DOTS_ON.getAlpha() * alpha))
-                    : new ColorRGBA(DOTS_OFF.getRed(), DOTS_OFF.getGreen(), DOTS_OFF.getBlue(), (int)(DOTS_OFF.getAlpha() * alpha));
-            MsdfRenderer.renderText(Fonts.REGULAR, "...", 8f, dotsC.getRGB(),
+            int dotsColor = on
+                    ? new ColorRGBA(255, 255, 255, 200).getRGB()
+                    : new ColorRGBA(140, 140, 140, 128).getRGB();
+            float dotsX = panelX + panelW - 10f + 2f - 5f; // -5 компенсация translate
+            MsdfRenderer.renderText(Fonts.REGULAR, "...", 7f, dotsColor,
                     mat.peek().getPositionMatrix(),
-                    lastX + lastW - Fonts.REGULAR.getWidth("...", 8f) - 2f,
-                    y + ROW_H / 2f - 4.5f, 0);
+                    dotsX, y + 5f, 0);
         }
 
-        // Раскрытые настройки
-        if (ev > 0.01f) {
-            float settH = getSettingsH() * ev;
-            float settY = y + ROW_H;
+        // Настройки раскрытые
+        if (expandAnim > 0.01f) {
+            float settH = getSettingsH() * expandAnim;
+            float sy = y + ROW_H;
 
-            // Фон настроек
-            DrawUtil.drawRoundedRect(mat, lastX, settY, lastW, settH,
-                    BorderRadius.bottom(3f, 3f),
-                    new ColorRGBA(SET_BG.getRed(), SET_BG.getGreen(), SET_BG.getBlue(),
-                            (int)(SET_BG.getAlpha() * ev * alpha)));
-
-            ctx.enableScissor((int)panelX, (int)settY, (int)(panelX + panelW), (int)(settY + settH));
-            float sy = settY + 4f;
+            ctx.enableScissor((int)panelX, (int)sy, (int)(panelX + panelW), (int)(sy + settH + 2));
+            float yd = 6f;
             for (NewGuiSettingEntry se : settings) {
                 if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
-                se.render(ctx, mx, my, lastX, sy, lastW, alpha * ev);
-                sy += se.getHeight() + SETTING_PAD;
+                // Из Panel.java: object.x=this.x, object.y=y+yd+off+scroll+25, object.width=this.width, object.height=8
+                se.render(ctx, mx, my, panelX, sy + yd - ROW_H, panelW, expandAnim);
+                yd += (se.getHeight() + SET_GAP) * expandAnim;
             }
             ctx.disableScissor();
         }
     }
 
     public void onMouseClicked(float mx, float my, MouseButton btn, float panelX, float y, float panelW) {
-        lastX = panelX + 8f;
+        lastX = panelX + 1f;
         lastY = y;
-        lastW = panelW - 16f;
+        lastW = panelW - 1f;
 
-        if (isHovered(mx, my)) {
-            if (btn == MouseButton.LEFT)   module.toggle();
+        // Из Panel.java: isInRegion(mx, my, m.x+8, m.y, m.width-20+4, m.height) && button==1 → expand
+        boolean inRow = mx >= panelX + 8f && mx <= panelX + panelW - 16f
+                && my >= y && my <= y + ROW_H;
+
+        if (inRow) {
+            if (btn == MouseButton.LEFT) module.toggle();
             else if (btn == MouseButton.RIGHT && !settings.isEmpty()) expanded = !expanded;
-            else if (btn == MouseButton.MIDDLE) binding = !binding;
+            else if (btn == MouseButton.MIDDLE) isBinding = !isBinding;
         }
 
-        if (expanded) {
-            float sy = y + ROW_H + 4f;
+        if (expanded && expandAnim > 0.5f) {
+            float yd = 6f;
+            float sy = y + ROW_H;
             for (NewGuiSettingEntry se : settings) {
                 if (se.getSetting() != null && !se.getSetting().isVisible()) continue;
-                se.onMouseClicked(mx, my, btn, lastX, sy, lastW);
-                sy += se.getHeight() + SETTING_PAD;
+                se.onMouseClicked(mx, my, btn, panelX, sy + yd - ROW_H, panelW);
+                yd += se.getHeight() + SET_GAP;
             }
         }
     }
@@ -164,15 +159,11 @@ public class NewGuiModuleEntry implements IMinecraft {
     }
 
     public void onKeyPressed(int key, int scan, int mods) {
-        if (binding) {
+        if (isBinding) {
             module.setKeyCode(key == 256 || key == 259 || key == 261 ? -1 : key);
-            binding = false;
+            isBinding = false;
             return;
         }
         for (NewGuiSettingEntry se : settings) se.onKeyPressed(key, scan, mods);
-    }
-
-    private boolean isHovered(float mx, float my) {
-        return mx >= lastX && mx <= lastX + lastW && my >= lastY && my <= lastY + ROW_H - 1f;
     }
 }
