@@ -159,9 +159,6 @@ public final class Interface extends Module {
 
     @EventTarget
     public void onRender(EventHudRender event) {
-        // Не рисуем HUD поверх нового Click GUI
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return;
-
         if (!(mc.currentScreen instanceof ChatScreen)) {
             if(draggingElement!=null){
                 draggingElement.release();
@@ -207,8 +204,6 @@ public final class Interface extends Module {
 
 
     private boolean shouldRender(DraggableHudElement element) {
-        // Не рисуем HUD поверх нового Click GUI
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return false;
         int index = elements.indexOf(element);
         if (index < 0 || index >= elementsSetting.getBooleanSettings().size()) return false;
         return elementsSetting.getBooleanSettings().get(index).isEnabled();
