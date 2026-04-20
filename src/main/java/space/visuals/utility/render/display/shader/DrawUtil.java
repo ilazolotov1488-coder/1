@@ -618,6 +618,7 @@ public class DrawUtil implements IWindow {
     }
 
     public void drawBlur(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, float squirt, BorderRadius borderRadius, ColorRGBA color) {
+        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return;
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
         float smoothness = 0.03f;
@@ -671,14 +672,14 @@ public class DrawUtil implements IWindow {
 
 
     public void drawBlurHud(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color) {
-        // Не рисуем блюр HUD-элементов когда открыт новый Click GUI
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) {
-            drawBlurHudBooleanCheck(matrices, x, y, width, height, blurRadius, borderRadius, color, false, Interface.INSTANCE.isGlow());
-            return;
-        }
         drawBlurHudBooleanCheck(matrices,x,y,width,height,blurRadius,borderRadius,color,Interface.INSTANCE.isBlur(),Interface.INSTANCE.isGlow());
     }
+
     public void drawBlurHudBooleanCheck(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color,boolean blur,boolean glow) {
+        // Глобальная блокировка блюра когда открыт новый Click GUI
+        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) {
+            blur = false;
+        }
         if(blur) {
 
             matrices.push();
@@ -734,6 +735,7 @@ public class DrawUtil implements IWindow {
 
     }
     public void drawBlur(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color) {
+        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return;
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
 
