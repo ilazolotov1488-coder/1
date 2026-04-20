@@ -6,8 +6,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Hand;
+import org.lwjgl.glfw.GLFW;
 import space.visuals.base.events.impl.player.EventUpdate;
-import space.visuals.base.request.ScriptManager;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
@@ -37,10 +37,12 @@ public final class AutoTotem extends Module {
     private final NumberSetting fallDistance = new NumberSetting("При падении", 20f, 10, 50, 0.1f, fall::isEnabled);
 
     private final BooleanSetting saveEnchanted = new BooleanSetting("Сохранять зачарованные", false);
+    private final BooleanSetting returnTotem = new BooleanSetting("Возвращать тотем", true);
 
-    // Кулдаун между свапами для легитимности (тики)
-    private int cooldownTicks = 0;
-    private static final int SWAP_COOLDOWN = 3;
+    // Состояние свапа (как в AutoSwap)
+    private boolean swapping = false;
+    private int swapTick = 0;
+    private Slot pendingSlot = null;
 
     // Сохраняем копию предмета который был в оффхенде до тотема
     private ItemStack savedOffhand = ItemStack.EMPTY;
@@ -51,23 +53,60 @@ public final class AutoTotem extends Module {
     public void onPlayerTick(EventUpdate event) {
         if (mc.player == null || mc.world == null) return;
         if (mc.currentScreen != null) return;
-
-        // Не мешаем свапу элитры
         if (ElytraHelper.INSTANCE.isSwapping()) return;
 
-        // Не мешаем если ScriptManager занят
-        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
-
-        if (cooldownTicks > 0) {
-            cooldownTicks--;
+        // Обрабатываем текущий свап
+        if (swapping && pendingSlot != null) {
+            PlayerInventoryComponent.addTask(() -> {
+                if (swapTick >= 2) {
+                    PlayerInventoryUtil.swapHand(pendingSlot, Hand.OFF_HAND, false);
+                    PlayerInventoryUtil.closeScreen(true);
+                    swapping = false;
+                    swapTick = 0;
+                    pendingSlot = null;
+                } else {
+                    swapTick++;
+                    mc.options.jumpKey.setPressed(false);
+                    mc.options.forwardKey.setPressed(false);
+                    mc.options.leftKey.setPressed(false);
+                    mc.options.rightKey.setPressed(false);
+                    mc.options.backKey.setPressed(false);
+                    mc.options.sneakKey.setPressed(false);
+                    mc.options.sprintKey.setPressed(false);
+                }
+            });
             return;
         }
+
+        // Не запускаем новый свап пока идёт предыдущий
+        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
 
         final ItemStack offhandStack = mc.player.getOffHandStack();
         final Item current = offhandStack.isEmpty() ? null : offhandStack.getItem();
 
+        // Если тотем был взят нами, но оффхенд уже пустой —
+        // значит обычный тотем сработал. Возвращаем сохранённый предмет (зачарованный тотем).
+        if (totemTaken && current != TOTEM_OF_UNDYING && !swapping) {
+            totemTaken = false;
+            if (!savedOffhand.isEmpty() && returnTotem.isEnabled()) {
+                Slot returnSlot = PlayerInventoryUtil.getSlot(
+                        s -> !s.getStack().isEmpty()
+                            && ItemStack.areItemsAndComponentsEqual(s.getStack(), savedOffhand)
+                            && s.id != 45 && s.id != 46
+                );
+                if (returnSlot == null) {
+                    returnSlot = PlayerInventoryUtil.getSlot(
+                            savedOffhand.getItem(),
+                            Comparator.comparingInt(s -> s.id),
+                            s -> s.id != 45 && s.id != 46
+                    );
+                }
+                if (returnSlot != null) doSwap(returnSlot);
+            }
+            savedOffhand = ItemStack.EMPTY;
+        }
+
         if (shouldUseTotem()) {
-            // Если нужен тотем и в руке зачарованный — свапаем на обычный (если включено)
             if (saveEnchanted.isEnabled() && current == TOTEM_OF_UNDYING) {
                 boolean isEnchanted = offhandStack.get(DataComponentTypes.ENCHANTMENTS) != null
                         && !offhandStack.get(DataComponentTypes.ENCHANTMENTS).isEmpty();
@@ -81,56 +120,56 @@ public final class AutoTotem extends Module {
                                     || s.getStack().get(DataComponentTypes.ENCHANTMENTS).isEmpty())
                     );
                     if (plainTotem != null) {
+                        // Сохраняем зачарованный тотем для возврата
+                        savedOffhand = offhandStack.copy();
+                        totemTaken = true;
                         doSwap(plainTotem);
                         return;
                     }
                 }
             }
-
-            // Если тотема нет в руке — берём
             if (current != TOTEM_OF_UNDYING) {
                 Slot slot = PlayerInventoryUtil.getSlot(TOTEM_OF_UNDYING);
                 if (slot != null) {
-                    // Сохраняем что было в оффхенде
                     savedOffhand = offhandStack.copy();
                     totemTaken = true;
                     doSwap(slot);
                 }
             }
         } else {
-            // Условие пропало — возвращаем предмет если мы его убирали
-            if (totemTaken && current == TOTEM_OF_UNDYING) {
-                totemTaken = false;
-                if (!savedOffhand.isEmpty()) {
-                    // Ищем слот с сохранённым предметом
+            // Условие пропало — возвращаем зачарованный тотем
+            if (totemTaken && returnTotem.isEnabled() && !swapping) {
+                // Проверяем что в оффхенде сейчас НЕ тот предмет что мы сохранили
+                boolean offhandChanged = !ItemStack.areItemsAndComponentsEqual(offhandStack, savedOffhand);
+                if (offhandChanged && !savedOffhand.isEmpty()) {
+                    totemTaken = false;
                     Slot returnSlot = PlayerInventoryUtil.getSlot(
-                            savedOffhand.getItem(),
-                            Comparator.comparingInt(s -> s.id),
-                            s -> s.id != 45 && s.id != 46
+                            s -> !s.getStack().isEmpty()
+                                && ItemStack.areItemsAndComponentsEqual(s.getStack(), savedOffhand)
+                                && s.id != 45 && s.id != 46
                     );
-                    if (returnSlot != null) {
-                        doSwap(returnSlot);
+                    if (returnSlot == null) {
+                        returnSlot = PlayerInventoryUtil.getSlot(
+                                savedOffhand.getItem(),
+                                Comparator.comparingInt(s -> s.id),
+                                s -> s.id != 45 && s.id != 46
+                        );
                     }
+                    if (returnSlot != null) doSwap(returnSlot);
                     savedOffhand = ItemStack.EMPTY;
                 }
+            } else if (totemTaken && !returnTotem.isEnabled()) {
+                totemTaken = false;
+                savedOffhand = ItemStack.EMPTY;
             }
         }
     }
 
     private void doSwap(Slot slot) {
-        // Легитимный свап через ScriptTask с задержкой
-        ScriptManager.ScriptTask task = new ScriptManager.ScriptTask();
-        Zenith.getInstance().getScriptManager().addTask(task);
-
-        // Тик 1: свап
-        task.schedule(EventUpdate.class, ev -> {
-            if (mc.player == null) return true;
-            PlayerInventoryUtil.swapHand(slot, Hand.OFF_HAND, false);
-            PlayerInventoryUtil.closeScreen(true);
-            return true;
-        });
-
-        cooldownTicks = SWAP_COOLDOWN;
+        if (swapping) return;
+        pendingSlot = slot;
+        swapping = true;
+        swapTick = 0;
     }
 
     private boolean shouldUseTotem() {
@@ -145,7 +184,9 @@ public final class AutoTotem extends Module {
     public void onDisable() {
         totemTaken = false;
         savedOffhand = ItemStack.EMPTY;
-        cooldownTicks = 0;
+        swapping = false;
+        swapTick = 0;
+        pendingSlot = null;
         super.onDisable();
     }
 }

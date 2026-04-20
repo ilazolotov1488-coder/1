@@ -38,6 +38,10 @@ import space.visuals.client.modules.api.setting.Setting;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.KeySetting;
 import space.visuals.client.modules.impl.render.Predictions;
+import org.lwjgl.glfw.GLFW;
+import space.visuals.base.events.impl.player.EventUpdate;
+import space.visuals.base.request.ScriptManager;
+import space.visuals.utility.game.player.PlayerInventoryComponent;
 import space.visuals.utility.game.player.PlayerIntersectionUtil;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.utility.math.MathUtil;
@@ -80,12 +84,6 @@ public final class ServerHelper extends Module {
 
 
     public void initialize() {
-        keyBindings.add(new KeyBind(Items.FIREWORK_STAR,
-                new KeySetting("Анти флай"), 0, new BooleanSettable()));
-
-        keyBindings.add(new KeyBind(Items.FLOWER_BANNER_PATTERN,
-                new KeySetting("Опыт прокрутки"), 0, new BooleanSettable()));
-
         keyBindings.add(new KeyBind(Items.PRISMARINE_SHARD,
                 new KeySetting("Взрывная трапка"), 5, new BooleanSettable()));
 
@@ -133,8 +131,7 @@ public final class ServerHelper extends Module {
     public void onKey(EventKey e) {
         if (e.getAction() == GLFW.GLFW_RELEASE) {
             keyBindings.stream().filter(bind -> e.is(bind.setting.getKeyCode()) && bind.setting.getVisible().get()).forEach(bind -> {
-                if ( mc.currentScreen == null) PlayerInventoryUtil.swapAndUse(bind.item);
-
+                if (mc.currentScreen == null) swapAndUseWithReset(bind.item);
                 bind.draw.setValue(false);
             });
             return;
@@ -142,8 +139,99 @@ public final class ServerHelper extends Module {
         if (mc.currentScreen != null) return;
 
         keyBindings.stream().filter(bind -> e.is(bind.setting.getKeyCode()) && bind.setting.getVisible().get() && PlayerInventoryUtil.getSlot(bind.item, slot -> slot.getStack().get(DataComponentTypes.CUSTOM_DATA) != null) != null).forEach(bind -> bind.draw.setValue(true));
+    }
 
+    // Свап с 2 тиками сброса движения — своп пакетом в руку, использовать, вернуть
+    private void swapAndUseWithReset(net.minecraft.item.Item item) {
+        if (mc.player == null) return;
+        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
 
+        float cooldown = mc.player.getItemCooldownManager().getCooldownProgress(item.getDefaultStack(), 0f);
+        if (cooldown > 0) return;
+        net.minecraft.screen.slot.Slot slot = PlayerInventoryUtil.getSlot(item);
+        if (slot == null) return;
+
+        space.visuals.utility.game.player.rotation.Rotation angle = Zenith.getInstance().getRotationManager().getCurrentRotation();
+        int prevSlot = mc.player.getInventory().selectedSlot;
+        boolean inHotbar = slot.id >= 36 && slot.id <= 44;
+
+        ScriptManager.ScriptTask task = new ScriptManager.ScriptTask();
+        Zenith.getInstance().getScriptManager().addTask(task);
+
+        // Тик 1: сброс спринта и движения
+        task.schedule(EventUpdate.class, ev -> {
+            mc.options.sprintKey.setPressed(false);
+            mc.options.forwardKey.setPressed(false);
+            mc.options.backKey.setPressed(false);
+            mc.options.leftKey.setPressed(false);
+            mc.options.rightKey.setPressed(false);
+            mc.options.jumpKey.setPressed(false);
+            return true;
+        });
+        // Тик 2: сброс спринта и движения
+        task.schedule(EventUpdate.class, ev -> {
+            mc.options.sprintKey.setPressed(false);
+            mc.options.forwardKey.setPressed(false);
+            mc.options.backKey.setPressed(false);
+            mc.options.leftKey.setPressed(false);
+            mc.options.rightKey.setPressed(false);
+            mc.options.jumpKey.setPressed(false);
+            return true;
+        });
+        if (inHotbar) {
+            task.schedule(EventUpdate.class, ev -> {
+                mc.player.getInventory().selectedSlot = slot.id - 36;
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик
+            task.schedule(EventUpdate.class, ev -> {
+                PlayerIntersectionUtil.useItem(net.minecraft.util.Hand.MAIN_HAND, angle);
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик после
+            task.schedule(EventUpdate.class, ev -> {
+                mc.player.getInventory().selectedSlot = prevSlot;
+                return true;
+            });
+        } else {
+            task.schedule(EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(
+                    mc.player.currentScreenHandler.syncId,
+                    slot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                PlayerInventoryUtil.closeScreen(true);
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик
+            task.schedule(EventUpdate.class, ev -> {
+                PlayerIntersectionUtil.useItem(net.minecraft.util.Hand.MAIN_HAND, angle);
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик после
+            task.schedule(EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(
+                    mc.player.currentScreenHandler.syncId,
+                    slot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                PlayerInventoryUtil.closeScreen(true);
+                return true;
+            });
+        }
+
+        // 4 тика после возврата предмета — спринт не возобновляем
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { restoreMoveKeys(); return true; });
+    }
+
+    private void restoreMoveKeys() {
+        long win = mc.getWindow().getHandle();
+        mc.options.sprintKey.setPressed(GLFW.glfwGetKey(win,  GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS);
+        mc.options.forwardKey.setPressed(GLFW.glfwGetKey(win, GLFW.GLFW_KEY_W)     == GLFW.GLFW_PRESS);
+        mc.options.leftKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_A)     == GLFW.GLFW_PRESS);
+        mc.options.rightKey.setPressed(GLFW.glfwGetKey(win,   GLFW.GLFW_KEY_D)     == GLFW.GLFW_PRESS);
+        mc.options.backKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS);
+        mc.options.jumpKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS);
     }
 
 

@@ -1,4 +1,4 @@
-﻿{
+{
     "vertex": "space:core/position_color",
     "fragment": "space:core/loading/fragment",
     "samplers": [],

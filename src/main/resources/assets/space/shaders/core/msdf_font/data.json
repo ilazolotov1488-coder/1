@@ -1,4 +1,4 @@
-﻿{
+{
     "vertex": "space:core/msdf_font/vertex",
     "fragment": "space:core/msdf_font/fragment",
     "samplers": [

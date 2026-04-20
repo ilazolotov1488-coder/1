@@ -31,6 +31,7 @@
     "client.ClientPlayerInteractionManagerMixin",
     "client.HandledScreenMixin",
     "client.HeldItemRendererMixin",
+    "client.ItemRendererMixin",
     "client.KeyboardInputMixin",
     "client.KeyboardMixin",
     "client.LightmapTextureManagerMixin",

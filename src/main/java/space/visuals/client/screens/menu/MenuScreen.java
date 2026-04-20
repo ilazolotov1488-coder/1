@@ -30,6 +30,7 @@ import space.visuals.utility.render.display.base.BorderRadius;
 import space.visuals.utility.render.display.base.UIContext;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.display.shader.DrawUtil;
+import space.visuals.client.screens.SpaceEffects;
 
 import java.util.*;
 
@@ -76,6 +77,7 @@ public class MenuScreen extends CustomScreen {
 
     private Set<MenuPopupSetting> popupSettings = new HashSet<>();
     List<AbstractMenuElement> modules = new ArrayList<>();
+    private final SpaceEffects spaceEffects = new SpaceEffects();
 
     public MenuScreen() {
         animationColums = new Animation(300, columns == 3 ? 1 : 0, Easing.CUBIC_IN_OUT);
@@ -197,6 +199,18 @@ public class MenuScreen extends CustomScreen {
             DrawUtil.drawBlur(ctx.getMatrices(), boxX, boxY, boxWidth, boxHeight, 20 * progress * progress, BorderRadius.all(9), ColorRGBA.WHITE.mulAlpha(progress*2));
         }
         ctx.drawRoundedRect(boxX, boxY, boxWidth, boxHeight, BorderRadius.all(9), baseBg);
+
+        // Космические эффекты внутри бокса (с scissor чтобы не выходили за границы)
+        long nowMs = System.currentTimeMillis();
+        spaceEffects.tick(nowMs);
+        ctx.enableScissor((int)boxX, (int)boxY, (int)(boxX+boxWidth), (int)(boxY+boxHeight));
+        spaceEffects.render(ctx, (int)boxWidth, (int)boxHeight,
+            progress * 0.5f, nowMs, (int)boxX, (int)boxY);
+        ctx.disableScissor();
+
+        // Фиолетовое свечение по краям бокса
+        DrawUtil.drawShadow(ctx.getMatrices(), boxX - 8, boxY - 8, boxWidth + 16, boxHeight + 16,
+            18f, BorderRadius.all(12), primary.mulAlpha(0.35f * progress));
         float widthScroll = 2;
         // СЛАЙДБАР
         sidebarPanel.render(ctx, boxX, boxY, boxHeight, progress, theme, realSelectedCategory, primary, textColor, selectedColor);

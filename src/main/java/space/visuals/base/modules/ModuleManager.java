@@ -52,7 +52,6 @@ public final class ModuleManager implements IMinecraft {
 
     private void registerRender() {
         registerModule(Interface.INSTANCE);
-
         registerModule(Menu.INSTANCE);
         registerModule(NoRender.INSTANCE);
         registerModule(Predictions.INSTANCE);
@@ -69,6 +68,9 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ParticlesModule.INSTANCE);
         registerModule(CustomModels.INSTANCE);
         registerModule(JumpCircle.INSTANCE);
+        registerModule(ShaderHands.INSTANCE);
+        registerModule(NoFluid.INSTANCE);
+        registerModule(HitParticles.INSTANCE);
     }
 
     private void registerPlayer() {
@@ -89,6 +91,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(NameProtect.INSTANCE);
         registerModule(Sounds.INSTANCE);
         registerModule(AutoJoin.INSTANCE);
+        registerModule(FastExp.INSTANCE);
     }
 
     private void registerModule(Module module) {

@@ -9,12 +9,12 @@ uniform mat4 ProjMat;
 
 out vec2 TexCoord;
 out vec4 FragColor;
-out vec2 GlobalPos; // Передаем глобальные координаты
+out vec2 GlobalPos; //
 
 void main() {
     TexCoord = UV0;
     FragColor = Color;
-    GlobalPos = Position.xy; // Передаем позицию вершины в мировых координатах
+    GlobalPos = Position.xy; //
 
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
 }

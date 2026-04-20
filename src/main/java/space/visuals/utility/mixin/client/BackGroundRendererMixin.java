@@ -1,18 +1,21 @@
 package space.visuals.utility.mixin.client;
 
 import com.darkmagician6.eventapi.EventManager;
+import com.darkmagician6.eventapi.EventManager;
 import net.minecraft.client.render.BackgroundRenderer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Fog;
 import net.minecraft.client.render.FogShape;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.math.Vec3d;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import space.visuals.base.events.impl.render.EventFog;
+import space.visuals.client.modules.impl.render.NoFluid;
 import space.visuals.client.modules.impl.render.NoRender;
 import space.visuals.utility.render.display.base.color.ColorUtil;
 
@@ -38,11 +41,19 @@ public class BackGroundRendererMixin {
 
     @Inject(method = "applyFog", at = @At(value = "HEAD"), cancellable = true)
     private static void modifyFog(Camera camera, BackgroundRenderer.FogType fogType, Vector4f color, float viewDistance, boolean thickenFog, float tickDelta, CallbackInfoReturnable<Fog> cir) {
+        // NoFluid: убираем туман в жидкостях
+        if (NoFluid.INSTANCE.shouldRemoveFluidFog()) {
+            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+            if (mc.player != null && (mc.player.isSubmergedInWater() || mc.player.isInLava())) {
+                cir.setReturnValue(new Fog(1000f, 1001f, FogShape.CYLINDER, 0f, 0f, 0f, 0f));
+                return;
+            }
+        }
         EventFog event = new EventFog();
         EventManager.call(event);
         if (event.isCancelled()) {
             int color1 = event.getColor();
-            cir.setReturnValue(new Fog(2.0F, event.getDistance(),  FogShape.CYLINDER, ColorUtil.redf(color1), ColorUtil.greenf(color1), ColorUtil.bluef(color1), ColorUtil.alphaf(color1)));
+            cir.setReturnValue(new Fog(2.0F, event.getDistance(), FogShape.CYLINDER, ColorUtil.redf(color1), ColorUtil.greenf(color1), ColorUtil.bluef(color1), ColorUtil.alphaf(color1)));
         }
     }
 }

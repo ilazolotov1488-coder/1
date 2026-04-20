@@ -81,6 +81,9 @@ public enum Zenith {
             new java.io.File(getDirectory(), "configs").mkdirs();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> Zenith.getInstance().shutdown()));
 
+            // HWID-проверка: мод должен запускаться только с авторизованного устройства
+            checkHwid();
+
             System.out.println("[ZENITH] step 1: FriendManager");
             friendManager = new FriendManager();
             System.out.println("[ZENITH] step 2: StaffManager");
@@ -155,6 +158,26 @@ public enum Zenith {
 
     public RCTRepository getRCTRepository() {
         return rctRepository;
+    }
+
+    /** Проверяет что мод запущен с авторизованного устройства */
+    private static void checkHwid() {
+        try {
+            java.nio.file.Path hwidFile = java.nio.file.Path.of("C:\\Space Visuals\\hwid.txt");
+            if (!java.nio.file.Files.exists(hwidFile)) return; // файла нет — пропускаем
+
+            String savedHwid = java.nio.file.Files.readString(hwidFile).trim();
+            if (savedHwid.isEmpty()) return;
+
+            // Лоадер передаёт HWID через системное свойство -Dspace.hwid=...
+            String jvmHwid = System.getProperty("space.hwid", "").trim();
+            if (jvmHwid.isEmpty()) return; // свойство не передано — старый лоадер, пропускаем
+
+            if (!jvmHwid.equalsIgnoreCase(savedHwid)) {
+                System.err.println("[ZENITH] HWID mismatch. Unauthorized copy detected.");
+                Runtime.getRuntime().halt(1);
+            }
+        } catch (Exception ignored) {}
     }
 
 }

@@ -2,6 +2,7 @@ package space.visuals.utility.render.display.shader;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import lombok.experimental.UtilityClass;
+import net.minecraft.client.gl.GlUniform;
 import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
@@ -577,18 +578,24 @@ public class DrawUtil implements IWindow {
      * раз и создает нужный нам эффект "тени"
      */
     public void drawShadow(MatrixStack matrices, float x, float y, float width, float height, float softness, BorderRadius borderRadius, ColorRGBA color) {
+        if (rectangleProgram == null || !rectangleProgram.isReady()) return;
+        try {
+            if (rectangleProgram.use() == null) return;
+        } catch (Exception e) { return; }
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
 
-        rectangleProgram.use();
-        rectangleProgram.findUniform("Size").set(width, height);
-        rectangleProgram.findUniform("Radius").set(
+        GlUniform sizeU = rectangleProgram.findUniform("Size");
+        GlUniform radU  = rectangleProgram.findUniform("Radius");
+        GlUniform smU   = rectangleProgram.findUniform("Smoothness");
+        if (sizeU == null || radU == null || smU == null) { matrices.pop(); return; }        sizeU.set(width, height);
+        radU.set(
                 borderRadius.topLeftRadius() * 3,
                 borderRadius.bottomLeftRadius() * 3,
                 borderRadius.topRightRadius() * 3,
                 borderRadius.bottomRightRadius() * 3
         );
-        rectangleProgram.findUniform("Smoothness").set(softness);
+        smU.set(softness);
 
         drawSetup();
 

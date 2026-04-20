@@ -26,6 +26,7 @@ public class CustomOptionsScreen extends Screen {
     private final Screen parent;
     private final Animation fadeIn = new Animation(500, 0, Easing.QUAD_IN_OUT);
     private final List<OBtn> btns = new ArrayList<>();
+    private final SpaceEffects space = new SpaceEffects();
 
     // FOV слайдер
     private boolean draggingFov = false;
@@ -126,7 +127,11 @@ public class CustomOptionsScreen extends Screen {
         DrawUtil.drawTexture(ctx.getMatrices(), BG_TEX, 0, 0, width, height, ColorRGBA.WHITE.mulAlpha(a));
         ctx.fill(0, 0, width, height, new ColorRGBA(0,0,0,(int)(165*a)).getRGB());
 
-        DrawUtil.drawShadow(ctx.getMatrices(), width/2f-80, height/2f-60, 160,120, 100f, BorderRadius.all(60), GLOW.mulAlpha(0.12f*a));
+        long now = System.currentTimeMillis();
+        space.tick(now);
+        space.render(ctx, width, height, a, now);
+
+        try { DrawUtil.drawShadow(ctx.getMatrices(), width/2f-80, height/2f-60, 160,120, 100f, BorderRadius.all(60), GLOW.mulAlpha(0.12f*a)); } catch (Exception ignored) {}
 
         // Заголовок
         Font tf = Fonts.BOLD.getFont(13);

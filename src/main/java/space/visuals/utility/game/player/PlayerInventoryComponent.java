@@ -32,7 +32,12 @@ public class PlayerInventoryComponent implements IMinecraft {
         Zenith.getInstance().getScriptManager().addTask(newScript);
 
         newScript.schedule(EventUpdate.class, eventUpdate -> {
-            if (mc.player != null) task.run();
+            if (mc.player != null) {
+                // Сбрасываем модификаторы чтобы Ctrl/Shift не ломали свап
+                mc.options.sneakKey.setPressed(false);
+                mc.options.sprintKey.setPressed(false);
+                task.run();
+            }
             return true;
         });
     }
@@ -54,6 +59,9 @@ public class PlayerInventoryComponent implements IMinecraft {
 
     public void updateMoveKeys() {
         moveKeys.forEach(keyBinding -> keyBinding.setPressed(InputUtil.isKeyPressed(mc.getWindow().getHandle(), keyBinding.getDefaultKey().getCode())));
+        // Сбрасываем модификаторы
+        mc.options.sneakKey.setPressed(false);
+        mc.options.sprintKey.setPressed(false);
     }
 
     public boolean shouldSkipExecution() {

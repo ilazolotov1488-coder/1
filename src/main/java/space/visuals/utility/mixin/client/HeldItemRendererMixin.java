@@ -14,8 +14,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import space.visuals.client.modules.impl.render.ShaderHands;
 import space.visuals.client.modules.impl.render.SwingAnimation;
 import space.visuals.client.modules.impl.render.ViewModel;
+import space.visuals.utility.render.item.ShaderHandsRenderState;
 
 @Mixin(HeldItemRenderer.class)
 public abstract class HeldItemRendererMixin {
@@ -36,6 +38,28 @@ public abstract class HeldItemRendererMixin {
 //        }
 //    }
 
+
+    @Inject(
+            method = "renderFirstPersonItem",
+            at = @At(value = "HEAD"))
+    private void beginShaderHandsTint(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
+        ShaderHands sh = ShaderHands.INSTANCE;
+        if (!sh.shouldShaderHands() || item.isEmpty() || item.contains(DataComponentTypes.MAP_ID)) return;
+        float brightness = sh.getHandBrightness();
+        float r = Math.min(1f, sh.getHandColor().getRed()   / 255f * brightness);
+        float g = Math.min(1f, sh.getHandColor().getGreen() / 255f * brightness);
+        float b = Math.min(1f, sh.getHandColor().getBlue()  / 255f * brightness);
+        ShaderHandsRenderState.begin(r, g, b, sh.getHandCombinedAlpha());
+    }
+
+    @Inject(
+            method = "renderFirstPersonItem",
+            at = @At(value = "RETURN"))
+    private void endShaderHandsTint(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
+        ShaderHands sh = ShaderHands.INSTANCE;
+        if (sh.shouldShaderHands() && !item.isEmpty() && !item.contains(DataComponentTypes.MAP_ID))
+            ShaderHandsRenderState.end();
+    }
 
     @Inject(
             method = "renderFirstPersonItem",

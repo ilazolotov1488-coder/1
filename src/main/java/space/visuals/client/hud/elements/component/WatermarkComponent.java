@@ -58,7 +58,13 @@ public class WatermarkComponent extends DraggableHudElement {
                 ctx.drawText(boldFont, "s", textX, textY, iconColor);
             }
         });
-        elements.add(new HudElement("2", ()->String.valueOf(UserInfo.getUsername())));
+        elements.add(new HudElement("2", ()->String.valueOf(UserInfo.getUsername())) {
+            @Override
+            public void calculateWidth(Font font, float iconSize, float cellPadding, float iconTextSpacing) {
+                super.calculateWidth(font, iconSize, cellPadding, iconTextSpacing);
+                this.width += 4f; // доп. отступ справа
+            }
+        });
         elements.add(new HudElement("G", ()-> String.valueOf(mc.getCurrentFps()),"fps"));
         elements.add(new HudElement("H",()-> mc.player.networkHandler.getServerInfo() == null ||mc.player.networkHandler.getPlayerListEntry(mc.player.getUuid())==null  ? "0" : String.valueOf(mc.player.networkHandler.getPlayerListEntry(mc.player.getUuid()).getLatency()),"ms" ));
         elements.add(new HudElement("I",()-> mc.player.networkHandler.getServerInfo() == null ? "20" : TextUtil.formatNumber(Zenith.getInstance().getServerHandler().getTPS()).replace(",", ".").replace(".0", "") ,"tps"));

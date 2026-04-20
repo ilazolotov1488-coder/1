@@ -1,4 +1,4 @@
-﻿#version 150
+#version 150
 
 #moj_import <space:common.glsl>
 
@@ -10,7 +10,7 @@ uniform vec4 Radius;
 uniform float Smoothness;
 uniform vec4 ColorModulator;
 
-// Четыре цвета для углов градиента
+//
 uniform vec4 TopLeftColor;
 uniform vec4 BottomLeftColor;
 uniform vec4 TopRightColor;
@@ -19,21 +19,21 @@ uniform vec4 BottomRightColor;
 out vec4 OutColor;
 
 vec4 bilinearInterpolation(vec2 uv) {
-    // Интерполяция по горизонтали для верхней строки
+    //
     vec4 topColor = mix(TopLeftColor, TopRightColor, uv.x);
 
-    // Интерполяция по горизонтали для нижней строки
+    //
     vec4 bottomColor = mix(BottomLeftColor, BottomRightColor, uv.x);
 
-    // Интерполяция по вертикали между верхней и нижней строками
+    //
     return mix(topColor, bottomColor, uv.y);
 }
 
 void main() {
     vec2 center = Size * 0.5;
-    vec2 uv = FragCoord; // UV координаты от 0 до 1
+    vec2 uv = FragCoord; // UV   0  1
 
-    // Вычисляем цвет градиента для текущего фрагмента
+    //
     vec4 gradientColor = bilinearInterpolation(uv);
 
     float distance = roundedBoxSDF(center - (FragCoord * Size), center - 1.0, Radius);

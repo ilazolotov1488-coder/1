@@ -1,4 +1,4 @@
-﻿{
+{
     "vertex": "space:core/position_texture_color",
     "fragment": "space:core/squircle_texture/fragment",
     "samplers": [

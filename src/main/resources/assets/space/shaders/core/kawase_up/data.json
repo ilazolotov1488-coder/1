@@ -1,4 +1,4 @@
-﻿{
+{
   "vertex": "space:core/kawase_up/vertex",
   "fragment": "space:core/kawase_up/fragment",
   "samplers": [

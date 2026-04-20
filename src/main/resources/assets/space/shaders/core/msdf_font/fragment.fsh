@@ -40,9 +40,9 @@ void main() {
     // Apply horizontal fadeout
     if (EnableFadeout) {
         float fadeAlpha = 1.0;
-        // Вычисляем позицию относительно начала текста
+        //
         float relativeX = GlobalPos.x - TextPosX;
-        // Нормализуем относительно ширины текста
+        //
         float normalizedX = relativeX / MaxWidth;
         if (normalizedX > FadeoutStart) {
             fadeAlpha = 1.0 - smoothstep(FadeoutStart, FadeoutEnd, normalizedX);

@@ -53,7 +53,16 @@ public class GlProgram implements IMinecraft {
      * invoking {@code use()}
      */
     public ShaderProgram use() {
-        return RenderSystem.setShader(programKey);
+        if (backingProgram == null) return null;
+        try {
+            return RenderSystem.setShader(programKey);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean isReady() {
+        return backingProgram != null;
     }
 
     protected void setup() {}
@@ -66,7 +75,12 @@ public class GlProgram implements IMinecraft {
      * the value of the uniform, or {@code null} if no such uniform exists
      */
     public GlUniform findUniform(String name) {
-        return ((ShaderProgramAccessor) this.backingProgram).getUniformsByName().get(name);
+        if (backingProgram == null) return null;
+        try {
+            return ((ShaderProgramAccessor) this.backingProgram).getUniformsByName().get(name);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @ApiStatus.Internal

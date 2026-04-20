@@ -153,7 +153,7 @@ public class SidebarPanel {
         DrawUtil.drawRoundedBorder(ctx.getMatrices(), avatarX, avatarY, avatarSize, avatarSize, -0.1f, BorderRadius.all(3), new ColorRGBA(181, 162, 255, hover ? 200 : 190).mulAlpha(progress));
 
         {
-            String playerName = UserInfo.getUsername();
+            String playerName = UserInfo.getLoginWithUid();
             Font nameFont = Fonts.MEDIUM.getFont(6);
             ctx.drawText(nameFont, playerName, avatarX + avatarSize + 8, avatarY + (avatarSize - nameFont.height()) / 2f, textColor);
         }

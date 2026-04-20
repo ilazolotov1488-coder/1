@@ -1,21 +1,21 @@
 package space.visuals.client.modules.impl.misc;
 
 import com.darkmagician6.eventapi.EventTarget;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
+import org.lwjgl.glfw.GLFW;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.input.EventKey;
 import space.visuals.base.events.impl.player.EventRotate;
 import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.base.events.impl.render.EventRender3D;
+import space.visuals.base.request.ScriptManager;
 import space.visuals.base.rotation.RotationTarget;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
@@ -44,13 +44,6 @@ public final class ClickAction extends Module {
     private final List<KeyBind> keyBindings = new ArrayList<>();
     private final Timer timer = new Timer();
     public static final ClickAction INSTANCE = new ClickAction();
-
-    // Тик-машина состояний (как в KeyPearl)
-    private int step = 0;
-    private int prevSlot = -1;
-    private int itemSlot = -1;
-    private boolean itemInHotbar = false;
-    private Rotation throwAngle = null;
 
     private ClickAction() {
         keyBindings.add(new KeyBind(Items.ENDER_PEARL, new KeySetting("Эндер перл"), new BooleanSettable()));
@@ -84,7 +77,8 @@ public final class ClickAction extends Module {
         keyBindings.stream()
                 .filter(bind -> e.isKeyReleased(bind.setting.getKeyCode()))
                 .forEach(bind -> {
-                    if (step == 0) tryUse(bind.item);
+                    if (mc.currentScreen == null && Zenith.getInstance().getScriptManager().isFinished())
+                        swapAndUseWithReset(bind.item);
                     bind.draw.setValue(false);
                 });
 
@@ -100,113 +94,108 @@ public final class ClickAction extends Module {
         }
     }
 
-    private void tryUse(Item item) {
-        if (mc.player == null || step != 0) return;
-        int slot = findItem(item);
-        if (slot == -1) return;
-        itemSlot = slot;
-        prevSlot = mc.player.getInventory().selectedSlot;
-        itemInHotbar = itemSlot >= 36 && itemSlot <= 44;
-        throwAngle = new Rotation(mc.player.getYaw(), mc.player.getPitch());
-        step = 1;
-    }
+    // Легитный бросок снаряда — логика как в ServerHelper (пакетный своп без открытия инвентаря)
+    private void swapAndUseWithReset(Item item) {
+        if (mc.player == null) return;
+        if (!Zenith.getInstance().getScriptManager().isFinished()) return;
 
-    @EventTarget
-    public void onTick(EventUpdate e) {
-        if (mc.player == null || mc.world == null) return;
-        if (step == 0) return;
+        float cooldown = mc.player.getItemCooldownManager().getCooldownProgress(item.getDefaultStack(), 0f);
+        if (cooldown > 0) return;
 
-        if (itemInHotbar) {
-            tickHotbar();
-        } else {
-            tickInventory();
-        }
-    }
+        // Приоритет хотбара: ищем сначала в хотбаре (слоты 36-44)
+        Slot slot = PlayerInventoryUtil.getSlot(item, s -> s.id >= 36 && s.id <= 44);
+        if (slot == null) slot = PlayerInventoryUtil.getSlot(item);
+        if (slot == null) return;
 
-    private void tickHotbar() {
-        switch (step) {
-            case 1 -> {
-                // выбираем слот как нажатие цифры
-                mc.player.getInventory().selectedSlot = itemSlot - 36;
-                step = 2;
-            }
-            case 2 -> {
-                // используем предмет
+        final int prevSlot = mc.player.getInventory().selectedSlot;
+        final boolean inHotbar = slot.id >= 36 && slot.id <= 44;
+        final Slot finalSlot = slot;
+
+        space.visuals.utility.game.player.rotation.Rotation angle = Zenith.getInstance().getRotationManager().getCurrentRotation();
+
+        ScriptManager.ScriptTask task = new ScriptManager.ScriptTask();
+        Zenith.getInstance().getScriptManager().addTask(task);
+
+        // Тик 1: сброс спринта и движения
+        task.schedule(EventUpdate.class, ev -> {
+            mc.options.sprintKey.setPressed(false);
+            mc.options.forwardKey.setPressed(false);
+            mc.options.backKey.setPressed(false);
+            mc.options.leftKey.setPressed(false);
+            mc.options.rightKey.setPressed(false);
+            mc.options.jumpKey.setPressed(false);
+            return true;
+        });
+        // Тик 2: сброс спринта и движения
+        task.schedule(EventUpdate.class, ev -> {
+            mc.options.sprintKey.setPressed(false);
+            mc.options.forwardKey.setPressed(false);
+            mc.options.backKey.setPressed(false);
+            mc.options.leftKey.setPressed(false);
+            mc.options.rightKey.setPressed(false);
+            mc.options.jumpKey.setPressed(false);
+            return true;
+        });
+
+        if (inHotbar) {
+            // Переключить слот
+            task.schedule(EventUpdate.class, ev -> {
+                mc.player.getInventory().selectedSlot = finalSlot.id - 36;
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик
+            // Использовать
+            task.schedule(EventUpdate.class, ev -> {
                 mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-                step = 3;
-            }
-            case 3 -> {
-                // возвращаем слот
+                return true;
+            });
+            // Вернуть слот
+            task.schedule(EventUpdate.class, ev -> {
                 mc.player.getInventory().selectedSlot = prevSlot;
-                reset();
-            }
-        }
-    }
-
-    private void tickInventory() {
-        switch (step) {
-            case 1 -> {
-                if (!(mc.currentScreen instanceof InventoryScreen))
-                    mc.setScreen(new InventoryScreen(mc.player));
-                step = 2;
-            }
-            case 2 -> {
-                swapSlot(itemSlot, prevSlot);
-                step = 3;
-            }
-            case 3 -> {
-                if (mc.currentScreen instanceof InventoryScreen)
-                    mc.currentScreen.close();
-                step = 4;
-            }
-            case 4 -> {
+                return true;
+            });
+        } else {
+            // Своп пакетом в хотбар (без открытия инвентаря)
+            task.schedule(EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(
+                    mc.player.currentScreenHandler.syncId,
+                    finalSlot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                PlayerInventoryUtil.closeScreen(true);
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик
+            // Использовать
+            task.schedule(EventUpdate.class, ev -> {
                 mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-                step = 5;
-            }
-            case 5 -> {
-                mc.setScreen(new InventoryScreen(mc.player));
-                step = 6;
-            }
-            case 6 -> {
-                swapSlot(itemSlot, prevSlot);
-                step = 7;
-            }
-            case 7 -> {
-                if (mc.currentScreen instanceof InventoryScreen)
-                    mc.currentScreen.close();
-                reset();
-            }
+                return true;
+            });
+            task.schedule(EventUpdate.class, ev -> true); // +1 тик после броска
+            // Вернуть предмет пакетом
+            task.schedule(EventUpdate.class, ev -> {
+                mc.interactionManager.clickSlot(
+                    mc.player.currentScreenHandler.syncId,
+                    finalSlot.id, prevSlot, net.minecraft.screen.slot.SlotActionType.SWAP, mc.player);
+                PlayerInventoryUtil.closeScreen(true);
+                return true;
+            });
         }
+
+        // 4 тика ожидания после возврата предмета — только потом восстанавливаем спринт
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { mc.options.sprintKey.setPressed(false); return true; });
+        task.schedule(EventUpdate.class, ev -> { restoreMoveKeys(); return true; });
     }
 
-    private void swapSlot(int slotId, int hotbarSlot) {
-        if (mc.interactionManager == null || mc.player == null) return;
-        if (hotbarSlot >= 0 && hotbarSlot <= 8) {
-            int syncId = mc.player.currentScreenHandler.syncId;
-            mc.interactionManager.clickSlot(syncId, slotId, hotbarSlot, SlotActionType.SWAP, mc.player);
-        }
-    }
-
-    private int findItem(Item item) {
-        if (mc.player == null) return -1;
-        List<Slot> slots = mc.player.currentScreenHandler.slots;
-        // сначала хотбар
-        for (Slot slot : slots) {
-            if (slot.id >= 36 && slot.id <= 44 && slot.getStack().isOf(item)) return slot.id;
-        }
-        // потом инвентарь
-        for (Slot slot : slots) {
-            if (slot.id >= 9 && slot.id <= 35 && slot.getStack().isOf(item)) return slot.id;
-        }
-        return -1;
-    }
-
-    private void reset() {
-        step = 0;
-        prevSlot = -1;
-        itemSlot = -1;
-        itemInHotbar = false;
-        throwAngle = null;
+    private void restoreMoveKeys() {
+        long win = mc.getWindow().getHandle();
+        mc.options.sprintKey.setPressed(GLFW.glfwGetKey(win,  GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS);
+        mc.options.forwardKey.setPressed(GLFW.glfwGetKey(win, GLFW.GLFW_KEY_W)     == GLFW.GLFW_PRESS);
+        mc.options.leftKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_A)     == GLFW.GLFW_PRESS);
+        mc.options.rightKey.setPressed(GLFW.glfwGetKey(win,   GLFW.GLFW_KEY_D)     == GLFW.GLFW_PRESS);
+        mc.options.backKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS);
+        mc.options.jumpKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS);
     }
 
     @EventTarget

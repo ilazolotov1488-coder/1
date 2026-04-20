@@ -16,6 +16,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
 import space.visuals.base.events.impl.input.EventKey;
 import space.visuals.base.events.impl.input.EventMouse;
@@ -31,8 +32,13 @@ import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.base.font.Font;
 import space.visuals.base.font.Fonts;
+import space.visuals.utility.game.player.PlayerInventoryComponent;
+import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.utility.render.display.base.CustomDrawContext;
+import org.lwjgl.glfw.GLFW;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
+
+import java.util.Comparator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -61,12 +67,10 @@ public final class SwapPlus extends Module {
     private final NumberSetting swapDelay = new NumberSetting("Делей свапа", 1f, 0f, 5f, 1f);
     private final NumberSetting closeDelay = new NumberSetting("Делей закрытия", 1f, 0f, 5f, 1f);
 
-    // Состояние свапа
-    private int step = 0;
-    private int aka = 0;
-    private int lk = -1;
-    private boolean auj = false;
-    private int cooldownTicks = 0;
+    // Состояние свапа (режим Предметы и Колесо)
+    boolean startSwap = false;
+    int swapTick = 0;
+    private Slot pendingSwapSlot = null;
 
     // Колесо
     private boolean wheelOpen = false;
@@ -89,8 +93,7 @@ public final class SwapPlus extends Module {
     @EventTarget
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;
-        if (cooldownTicks > 0) cooldownTicks--;
-        // Задержка перед открытием инвентаря для выбора предмета в ячейку
+        // Задержка перед открытием инвентаря для выбора предмета в ячейку колеса
         if (pendingPickDelay > 0) {
             pendingPickDelay--;
             if (pendingPickDelay == 0 && pendingPickSlot != -1) {
@@ -98,23 +101,32 @@ public final class SwapPlus extends Module {
             }
             return;
         }
-        if (step == 0) return;
-        if (aka > 0) { aka--; return; }
-        switch (step) {
-            case 1 -> {
-                if (!auj) mc.setScreen(new InventoryScreen(mc.player));
-                nextStep((int) swapDelay.getCurrent());
+        if (!startSwap || pendingSwapSlot == null) return;
+
+        PlayerInventoryComponent.addTask(() -> {
+            if (isWPressed())    mc.options.forwardKey.setPressed(true);
+            if (isAPressed())    mc.options.leftKey.setPressed(true);
+            if (isDPressed())    mc.options.rightKey.setPressed(true);
+            if (isSPressed())    mc.options.backKey.setPressed(true);
+            if (isJumpPressed()) mc.options.jumpKey.setPressed(true);
+
+            if (swapTick >= 2) {
+                PlayerInventoryUtil.swapHand(pendingSwapSlot, Hand.OFF_HAND, false);
+                PlayerInventoryUtil.closeScreen(true);
+                startSwap = false;
+                swapTick = 0;
+                pendingSwapSlot = null;
+            } else {
+                swapTick++;
+                mc.options.jumpKey.setPressed(false);
+                mc.options.forwardKey.setPressed(false);
+                mc.options.leftKey.setPressed(false);
+                mc.options.rightKey.setPressed(false);
+                mc.options.backKey.setPressed(false);
+                mc.options.sneakKey.setPressed(false);
+                mc.options.sprintKey.setPressed(false);
             }
-            case 2 -> {
-                doSwap(lk);
-                nextStep((int) closeDelay.getCurrent());
-            }
-            case 3 -> {
-                if (!auj && mc.currentScreen instanceof InventoryScreen)
-                    mc.currentScreen.close();
-                reset();
-            }
-        }
+        });
     }
 
     @EventTarget
@@ -265,8 +277,9 @@ public final class SwapPlus extends Module {
 
     @Override
     public void onDisable() {
-        if (!auj && mc.currentScreen instanceof InventoryScreen) mc.currentScreen.close();
-        reset();
+        startSwap = false;
+        swapTick = 0;
+        pendingSwapSlot = null;
         closeWheel();
         super.onDisable();
     }
@@ -274,61 +287,28 @@ public final class SwapPlus extends Module {
     // --- приватные методы ---
 
     private void startItemSwap() {
-        if (mc.player == null || mc.currentScreen != null || step != 0 || cooldownTicks > 0) return;
+        if (mc.player == null || mc.currentScreen != null || startSwap) return;
         Item item1 = getItemByMode(firstItem.get());
         Item item2 = getItemByMode(secondItem.get());
         Item offhand = mc.player.getOffHandStack().getItem();
         Item target = (offhand == item1) ? item2 : item1;
-        int slotId = findSlotByItem(target);
-        if (slotId == -1) return;
-        startSwap(slotId);
+        Slot slot = PlayerInventoryUtil.getSlot(target,
+                Comparator.comparing(s -> s.getStack().hasEnchantments()),
+                s -> s.id != 46 && s.id != 45);
+        if (slot == null) return;
+        pendingSwapSlot = slot;
+        startSwap = true;
     }
 
     private void startWheelSwap(int idx) {
-        if (mc.player == null || step != 0 || cooldownTicks > 0) return;
+        if (mc.player == null || startSwap) return;
         ItemStack saved = isWheelEmpty(idx) ? ItemStack.EMPTY : wheelStacks[idx];
         if (saved.isEmpty()) return;
         if (ItemStack.areItemsAndComponentsEqual(mc.player.getOffHandStack(), saved)) return;
-        int slotId = findSlotByStack(saved);
-        if (slotId == -1) return;
-        startSwap(slotId);
-    }
-
-    private void startSwap(int slotId) {
-        if (mc.player == null || step != 0 || cooldownTicks > 0) return;
-        lk = slotId;
-        auj = mc.currentScreen instanceof InventoryScreen;
-        step = 1;
-        aka = 0;
-    }
-
-    private void nextStep(int delay) { step++; aka = delay; }
-
-    private void doSwap(int slotId) {
-        if (mc.interactionManager == null || mc.player == null) return;
-        // Сохраняем стек ДО свапа — это то что идёт в оффхенд
-        net.minecraft.item.ItemStack swappedStack = net.minecraft.item.ItemStack.EMPTY;
-        List<Slot> slots = mc.player.currentScreenHandler.slots;
-        for (Slot s : slots) {
-            if (s.id == slotId && !s.getStack().isEmpty()) {
-                swappedStack = s.getStack().copy();
-                break;
-            }
-        }
-        mc.interactionManager.clickSlot(
-            mc.player.currentScreenHandler.syncId,
-            slotId, 40, SlotActionType.SWAP, mc.player
-        );
-        // Уведомление о том что попало в оффхенд
-        if (!swappedStack.isEmpty()) {
-            Zenith.getInstance().getNotifyManager().addSwapNotification(swappedStack);
-        }
-    }
-
-    private void reset() {
-        step = 0; aka = 0; lk = -1; auj = false;
-        // Кулдаун только для колеса, для предметов — без задержки
-        cooldownTicks = mode.get().equals("Колесо") ? 10 : 0;
+        Slot slot = findSlotByStack(saved);
+        if (slot == null) return;
+        pendingSwapSlot = slot;
+        startSwap = true;
     }
 
     private void openWheel() { 
@@ -354,6 +334,12 @@ public final class SwapPlus extends Module {
         return s == null || s.isEmpty() || s.getItem() == Items.AIR;
     }
 
+    public boolean isWPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_W)     == GLFW.GLFW_PRESS; }
+    public boolean isAPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_A)     == GLFW.GLFW_PRESS; }
+    public boolean isDPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_D)     == GLFW.GLFW_PRESS; }
+    public boolean isSPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS; }
+    public boolean isJumpPressed() { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS; }
+
     private Item getItemByMode(String name) {
         return switch (name) {
             case "Тотем" -> Items.TOTEM_OF_UNDYING;
@@ -366,23 +352,15 @@ public final class SwapPlus extends Module {
 
     private int getWheelSlotCount() { return MathHelper.clamp(Math.round(wheelSlots.getCurrent()), 3, 8); }
 
-    private int findSlotByItem(Item item) {
-        if (mc.player == null) return -1;
+    private Slot findSlotByStack(ItemStack target) {
+        if (mc.player == null || target.isEmpty()) return null;
         List<Slot> slots = mc.player.currentScreenHandler.slots;
-        for (Slot s : slots) if (s.id >= 36 && s.id <= 44 && s.getStack().getItem() == item) return s.id;
-        for (Slot s : slots) if (s.id >= 9  && s.id <= 35 && s.getStack().getItem() == item) return s.id;
-        return -1;
-    }
-
-    private int findSlotByStack(ItemStack target) {
-        if (mc.player == null || target.isEmpty()) return -1;
-        List<Slot> slots = mc.player.currentScreenHandler.slots;
-        for (Slot s : slots) if (s.id >= 36 && s.id <= 44 && ItemStack.areItemsAndComponentsEqual(s.getStack(), target)) return s.id;
-        for (Slot s : slots) if (s.id >= 9  && s.id <= 35 && ItemStack.areItemsAndComponentsEqual(s.getStack(), target)) return s.id;
+        for (Slot s : slots) if (s.id >= 36 && s.id <= 44 && ItemStack.areItemsAndComponentsEqual(s.getStack(), target)) return s;
+        for (Slot s : slots) if (s.id >= 9  && s.id <= 35 && ItemStack.areItemsAndComponentsEqual(s.getStack(), target)) return s;
         String name = target.getName().getString();
-        for (Slot s : slots) if (s.id >= 36 && s.id <= 44 && !s.getStack().isEmpty() && s.getStack().getName().getString().equals(name)) return s.id;
-        for (Slot s : slots) if (s.id >= 9  && s.id <= 35 && !s.getStack().isEmpty() && s.getStack().getName().getString().equals(name)) return s.id;
-        return -1;
+        for (Slot s : slots) if (s.id >= 36 && s.id <= 44 && !s.getStack().isEmpty() && s.getStack().getName().getString().equals(name)) return s;
+        for (Slot s : slots) if (s.id >= 9  && s.id <= 35 && !s.getStack().isEmpty() && s.getStack().getName().getString().equals(name)) return s;
+        return null;
     }
 
     private int getHoverPanelIndex(float mx, float my, float cx, float cy, int count, float animProgress) {
