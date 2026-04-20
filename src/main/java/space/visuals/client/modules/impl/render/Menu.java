@@ -20,7 +20,7 @@ public final class Menu extends Module {
     public static final Menu INSTANCE = new Menu();
 
     /** Режим GUI: Zenith (оригинальный) или Новый */
-    public final ModeSetting guiMode = new ModeSetting("GUI Mode", "Zenith", "Новый");
+    public final ModeSetting guiMode = new ModeSetting("GUI Mode", "Новый", "Zenith");
 
     @Getter
     private NewClickGui newClickGui;
@@ -76,16 +76,14 @@ public final class Menu extends Module {
         UIContext uiContext = eventRender2D.getContext();
 
         if (guiMode.is("Новый")) {
-            if (newClickGui != null) {
-                newClickGui.renderTop(uiContext, uiContext.getMouseX(), uiContext.getMouseY());
-                if (newClickGui.isFinish()) {
+            // Новый GUI рисует себя сам через Screen.render — ничего не делаем
+        } else {
+            // Оригинальный Zenith GUI — рисуем оверлей только если он открыт
+            if (mc.currentScreen == Zenith.getInstance().getMenuScreen()) {
+                Zenith.getInstance().getMenuScreen().renderTop(uiContext, uiContext.getMouseX(), uiContext.getMouseY());
+                if (Zenith.getInstance().getMenuScreen().isFinish()) {
                     this.toggle();
                 }
-            }
-        } else {
-            Zenith.getInstance().getMenuScreen().renderTop(uiContext, uiContext.getMouseX(), uiContext.getMouseY());
-            if (Zenith.getInstance().getMenuScreen().isFinish()) {
-                this.toggle();
             }
         }
     }

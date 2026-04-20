@@ -93,7 +93,7 @@ public class NewGuiModuleEntry {
     private float getSettingsHeight() {
         float h = 0;
         for (NewGuiSettingEntry entry : settingEntries) {
-            if (entry.getSetting() == null || entry.getSetting().visible()) {
+            if (entry.getSetting() == null || entry.getSetting().isVisible()) {
                 h += entry.getHeight() + SETTING_PADDING;
             }
         }
@@ -164,7 +164,7 @@ public class NewGuiModuleEntry {
         if (expandVal > 0.01f) {
             float settingY = y + MODULE_HEIGHT;
             for (NewGuiSettingEntry entry : settingEntries) {
-                if (entry.getSetting() != null && !entry.getSetting().visible()) continue;
+                if (entry.getSetting() != null && !entry.getSetting().isVisible()) continue;
                 float entryH = entry.getHeight();
                 // Scissor по высоте анимации
                 float visibleH = getSettingsHeight() * expandVal;
@@ -198,7 +198,7 @@ public class NewGuiModuleEntry {
         if (expanded) {
             float settingY = y + MODULE_HEIGHT;
             for (NewGuiSettingEntry entry : settingEntries) {
-                if (entry.getSetting() != null && !entry.getSetting().visible()) continue;
+                if (entry.getSetting() != null && !entry.getSetting().isVisible()) continue;
                 entry.onMouseClicked(mouseX, mouseY, button, lastX, settingY, lastWidth);
                 settingY += entry.getHeight() + SETTING_PADDING;
             }

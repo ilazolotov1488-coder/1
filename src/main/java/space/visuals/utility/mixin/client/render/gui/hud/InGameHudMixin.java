@@ -39,8 +39,9 @@ public abstract class InGameHudMixin {
         Interface interfaceModule = Interface.INSTANCE;
         if (interfaceModule.isEnabled() && interfaceModule.isBlur()) {
             boolean inventoryOpen = mc.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+            boolean newGuiOpen = mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui;
             boolean animHidesBlur = AnimationModule.INSTANCE.isEnabled() && AnimationModule.INSTANCE.animateInventory.isEnabled();
-            if (!(inventoryOpen && animHidesBlur)) {
+            if (!(inventoryOpen && animHidesBlur) && !newGuiOpen) {
                 DrawUtil.blurProgram.draw();
             }
         }
