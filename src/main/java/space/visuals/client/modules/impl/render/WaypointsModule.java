@@ -18,6 +18,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.font.Font;
+import net.minecraft.util.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,10 @@ public class WaypointsModule extends Module {
     public static final WaypointsModule INSTANCE = new WaypointsModule();
 
     private final Map<String, Animation> fadeAnims = new HashMap<>();
+    
+    // Текстуры
+    private static final Identifier MARKER_ICON = Zenith.id("icons/marker.png");
+    private static final Identifier TARGET_ICON = Zenith.id("icons/target2.png");
 
     private static final ColorRGBA BG       = new ColorRGBA(8, 9, 16, 210);
     private static final ColorRGBA BORDER   = new ColorRGBA(108, 99, 210, 200);
@@ -76,7 +81,7 @@ public class WaypointsModule extends Module {
 
             float nameW = nameFont.width(waypoint.name);
             float distW = distFont.width(distText);
-            float labelW = Math.max(nameW, distW) + 18f;
+            float labelW = Math.max(nameW, distW) + 28f; // +10 для иконки
             float labelH = nameFont.height() + distFont.height() + 12f;
 
             // Всё рисуем в экранных координатах с учётом scale
@@ -110,6 +115,14 @@ public class WaypointsModule extends Module {
             ctx.getMatrices().push();
             ctx.getMatrices().translate(sx, ly + 5f * scale, 0);
             ctx.getMatrices().scale(scale, scale, 1);
+            
+            // Иконка слева от текста
+            float iconSize = 10f;
+            float iconX = -nameW / 2f - iconSize - 3f;
+            float iconY = (nameFont.height() - iconSize) / 2f;
+            Identifier icon = isPlayer ? TARGET_ICON : MARKER_ICON;
+            ctx.drawTexture(icon, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE.mulAlpha(alpha));
+            
             ctx.drawText(nameFont, waypoint.name, -nameW / 2f, 0, TXT.mulAlpha(alpha));
             ctx.drawText(distFont, distText, -distW / 2f, nameFont.height() + 2f, DIST_CLR.mulAlpha(alpha));
             ctx.getMatrices().pop();
