@@ -111,18 +111,18 @@ public class WaypointsModule extends Module {
             DrawUtil.drawRoundedRect(ctx.getMatrices(), lx, ly, rw, 2f * scale,
                 BorderRadius.all(1), borderColor.mulAlpha(alpha));
 
-            // Текст — масштабируем через матрицу
+            // Текст и иконка — масштабируем через матрицу
             ctx.getMatrices().push();
             ctx.getMatrices().translate(sx, ly + 5f * scale, 0);
             ctx.getMatrices().scale(scale, scale, 1);
-            
+
             // Иконка слева от текста
             float iconSize = 10f;
             float iconX = -nameW / 2f - iconSize - 3f;
             float iconY = (nameFont.height() - iconSize) / 2f;
             Identifier icon = isPlayer ? TARGET_ICON : MARKER_ICON;
-            ctx.drawTexture(icon, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE.mulAlpha(alpha));
-            
+            DrawUtil.drawTexture(ctx.getMatrices(), icon, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE.mulAlpha(alpha));
+
             ctx.drawText(nameFont, waypoint.name, -nameW / 2f, 0, TXT.mulAlpha(alpha));
             ctx.drawText(distFont, distText, -distW / 2f, nameFont.height() + 2f, DIST_CLR.mulAlpha(alpha));
             ctx.getMatrices().pop();
