@@ -36,6 +36,7 @@ public final class TargetESP extends Module {
     public static final TargetESP INSTANCE = new TargetESP();
 
     private final ModeSetting mode = new ModeSetting("Режим", "Кристалы", "Souls", "Ромб", "Кольцо", "Кубы", "Кристаллы 2");
+    private final ModeSetting crystalDirection = new ModeSetting("Направление", () -> mode.is("Кристаллы 2"), "Вертикальный", "Горизонтальный", "Рандомный");
     private final ColorSetting colorTarget = new ColorSetting("Цвет", new ColorRGBA(100, 180, 255));
     private final BooleanSetting changeColorOnDamage = new BooleanSetting("Цвет при уроне", true);
     private final NumberSetting speed = new NumberSetting("Скорость", 0.5f, 0.1f, 5.0f, 0.1f);
@@ -649,8 +650,8 @@ public final class TargetESP extends Module {
             float z = radius * (float) Math.sin(Math.toRadians(angle));
             float y = seed2 * entityHeight;
             
-            // Используем baseCrystalScale из настроек
-            drawEssenceCrystalMesh(crystalBuf, ms, x, y, z, baseCrystalScale * alphaValue, angle, color, alphaValue * 0.8f);
+            // Используем baseCrystalScale из настроек и передаем индекс для рандомного направления
+            drawEssenceCrystalMesh(crystalBuf, ms, x, y, z, baseCrystalScale * alphaValue, angle, color, alphaValue * 0.8f, i);
         }
         BufferRenderer.drawWithGlobalProgram(crystalBuf.end());
 
@@ -664,7 +665,7 @@ public final class TargetESP extends Module {
 
     private void drawEssenceCrystalMesh(BufferBuilder buffer, MatrixStack matrices,
                                         float x, float y, float z, float scale,
-                                        float yaw, int color, float alpha) {
+                                        float yaw, int color, float alpha, int crystalIndex) {
         matrices.push();
         matrices.translate(x, y, z);
         
@@ -675,6 +676,28 @@ public final class TargetESP extends Module {
         // Вращение кристалла
         float selfRotation = (System.currentTimeMillis() % 36000) / 100.0f * 0.5f;
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw + selfRotation));
+        
+        // Применяем направление кристалла
+        String direction = crystalDirection.get();
+        if (direction.equals("Горизонтальный")) {
+            // Горизонтальное положение - поворот на 90 градусов по оси X
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(90f));
+        } else if (direction.equals("Рандомный")) {
+            // Рандомное положение - каждый кристалл под своим углом
+            float seed1 = (float) Math.sin(crystalIndex * 2.7f + 0.5f);
+            float seed2 = (float) Math.cos(crystalIndex * 3.3f + 0.9f);
+            float seed3 = (float) Math.sin(crystalIndex * 1.9f + 1.3f);
+            
+            // Углы от -45 до 45 градусов по разным осям
+            float angleX = seed1 * 45f;
+            float angleY = seed2 * 45f;
+            float angleZ = seed3 * 45f;
+            
+            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(angleX));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(angleY));
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(angleZ));
+        }
+        // Если "Вертикальный" - не применяем дополнительных поворотов
         
         MatrixStack.Entry entry = matrices.peek();
         Matrix4f m = entry.getPositionMatrix();
