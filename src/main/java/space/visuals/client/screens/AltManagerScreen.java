@@ -48,6 +48,7 @@ public class AltManagerScreen extends Screen {
     private final Animation bckBtnA = new Animation(130, 0, Easing.QUAD_IN_OUT);
     private final Animation inpA    = new Animation(130, 0, Easing.QUAD_IN_OUT);
     private final SpaceEffects space = new SpaceEffects();
+    private final MouseTrailEffect mouseTrail = new MouseTrailEffect();
 
     // Цвета
     private static final ColorRGBA PANEL   = new ColorRGBA(10, 11, 18, 215);
@@ -143,6 +144,9 @@ public class AltManagerScreen extends Screen {
         float a  = (float) fadeIn.update();
         float ps = (float) panelIn.update();
         scrollY += (targetScrollY - scrollY) * 0.14f;
+        
+        // Обновляем трейл
+        mouseTrail.update((float) mx, (float) my);
 
         DrawUtil.drawTexture(ctx.getMatrices(), BG_TEX, 0, 0, width, height, ColorRGBA.WHITE.mulAlpha(a));
         ctx.fill(0,0,width,height, new ColorRGBA(0,0,0,(int)(165*a)).getRGB());
@@ -151,6 +155,9 @@ public class AltManagerScreen extends Screen {
         long now = System.currentTimeMillis();
         space.tick(now);
         space.render(ctx, width, height, a, now);
+        
+        // Рендерим трейл частиц
+        mouseTrail.render(ctx, a * 0.7f);
 
         // Свечение
         try { DrawUtil.drawShadow(ctx.getMatrices(), width/2f-100, height/2f-80, 200,160, 120f, BorderRadius.all(80), GLOW.mulAlpha(0.10f*a)); } catch (Exception ignored) {}

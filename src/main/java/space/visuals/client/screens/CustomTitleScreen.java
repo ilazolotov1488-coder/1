@@ -31,6 +31,7 @@ public class CustomTitleScreen extends Screen {
     private final Animation logoAnim = new Animation(1000, 0, Easing.BAKEK_SIZE);
     private final List<Btn> btns = new ArrayList<>();
     private final SpaceEffects space = new SpaceEffects();
+    private final MouseTrailEffect mouseTrail = new MouseTrailEffect();
 
     // Цвета
     private static final ColorRGBA B_IDLE = new ColorRGBA(255, 255, 255, 14);
@@ -74,6 +75,7 @@ public class CustomTitleScreen extends Screen {
     public void mouseMoved(double mx, double my) {
         mouseX = (float) mx;
         mouseY = (float) my;
+        mouseTrail.update(mouseX, mouseY);
         super.mouseMoved(mx, my);
     }
 
@@ -81,6 +83,9 @@ public class CustomTitleScreen extends Screen {
     public void render(DrawContext ctx, int mx, int my, float delta) {
         float a  = (float) fadeIn.update();
         float la = (float) logoAnim.update();
+
+        // Обновляем трейл
+        mouseTrail.update((float) mx, (float) my);
 
         // Parallax смещение лого от мыши
         float px = (mouseX / Math.max(width,  1) - 0.5f) * 10f;
@@ -94,6 +99,9 @@ public class CustomTitleScreen extends Screen {
         long now = System.currentTimeMillis();
         space.tick(now);
         space.render(ctx, width, height, a, now);
+        
+        // Рендерим трейл частиц ЗА всем контентом
+        mouseTrail.render(ctx, a * 0.8f);
 
         float cx = width / 2f;
         float by = height * 0.57f;

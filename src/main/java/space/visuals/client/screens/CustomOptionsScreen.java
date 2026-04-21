@@ -27,6 +27,7 @@ public class CustomOptionsScreen extends Screen {
     private final Animation fadeIn = new Animation(500, 0, Easing.QUAD_IN_OUT);
     private final List<OBtn> btns = new ArrayList<>();
     private final SpaceEffects space = new SpaceEffects();
+    private final MouseTrailEffect mouseTrail = new MouseTrailEffect();
 
     // FOV слайдер
     private boolean draggingFov = false;
@@ -123,6 +124,9 @@ public class CustomOptionsScreen extends Screen {
     @Override
     public void render(DrawContext ctx, int mx, int my, float delta) {
         float a = (float) fadeIn.update();
+        
+        // Обновляем трейл
+        mouseTrail.update((float) mx, (float) my);
 
         DrawUtil.drawTexture(ctx.getMatrices(), BG_TEX, 0, 0, width, height, ColorRGBA.WHITE.mulAlpha(a));
         ctx.fill(0, 0, width, height, new ColorRGBA(0,0,0,(int)(165*a)).getRGB());
@@ -130,6 +134,9 @@ public class CustomOptionsScreen extends Screen {
         long now = System.currentTimeMillis();
         space.tick(now);
         space.render(ctx, width, height, a, now);
+        
+        // Рендерим трейл частиц
+        mouseTrail.render(ctx, a * 0.7f);
 
         try { DrawUtil.drawShadow(ctx.getMatrices(), width/2f-80, height/2f-60, 160,120, 100f, BorderRadius.all(60), GLOW.mulAlpha(0.12f*a)); } catch (Exception ignored) {}
 

@@ -618,7 +618,6 @@ public class DrawUtil implements IWindow {
     }
 
     public void drawBlur(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, float squirt, BorderRadius borderRadius, ColorRGBA color) {
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return;
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
         float smoothness = 0.03f;
@@ -676,10 +675,6 @@ public class DrawUtil implements IWindow {
     }
 
     public void drawBlurHudBooleanCheck(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color,boolean blur,boolean glow) {
-        // Глобальная блокировка блюра когда открыт новый Click GUI
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) {
-            blur = false;
-        }
         if(blur) {
 
             matrices.push();
@@ -735,7 +730,6 @@ public class DrawUtil implements IWindow {
 
     }
     public void drawBlur(MatrixStack matrices, float x, float y, float width, float height, float blurRadius, BorderRadius borderRadius, ColorRGBA color) {
-        if (mc.currentScreen instanceof space.visuals.client.screens.newgui.NewClickGui) return;
         matrices.push();
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
 

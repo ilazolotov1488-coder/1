@@ -208,9 +208,9 @@ public class MenuScreen extends CustomScreen {
             progress * 0.5f, nowMs, (int)boxX, (int)boxY);
         ctx.disableScissor();
 
-        // Фиолетовое свечение по краям бокса
-        DrawUtil.drawShadow(ctx.getMatrices(), boxX - 8, boxY - 8, boxWidth + 16, boxHeight + 16,
-            18f, BorderRadius.all(12), primary.mulAlpha(0.35f * progress));
+        // Фиолетовое свечение по краям бокса - отключено
+        // DrawUtil.drawShadow(ctx.getMatrices(), boxX - 8, boxY - 8, boxWidth + 16, boxHeight + 16,
+        //     18f, BorderRadius.all(12), primary.mulAlpha(0.35f * progress));
         float widthScroll = 2;
         // СЛАЙДБАР
         sidebarPanel.render(ctx, boxX, boxY, boxHeight, progress, theme, realSelectedCategory, primary, textColor, selectedColor);
