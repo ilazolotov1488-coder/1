@@ -3,6 +3,7 @@ package space.visuals.client.modules.impl.render;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.Identifier;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
@@ -18,7 +19,6 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.font.Font;
-import net.minecraft.util.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,40 +29,38 @@ public class WaypointsModule extends Module {
     public static final WaypointsModule INSTANCE = new WaypointsModule();
 
     private final Map<String, Animation> fadeAnims = new HashMap<>();
-    
-    // Текстуры
-    private static final Identifier MARKER_ICON = Zenith.id("icons/marker.png");
-    private static final Identifier TARGET_ICON = Zenith.id("icons/target2.png");
 
-    private static final ColorRGBA BG       = new ColorRGBA(8, 9, 16, 210);
+    private static final Identifier MARKER_ICON = Zenith.id("icons/marker.png");
+    private static final Identifier TARGET_ICON  = Zenith.id("icons/target2.png");
+
+    private static final ColorRGBA BG       = new ColorRGBA(8,   9,  16, 210);
     private static final ColorRGBA BORDER   = new ColorRGBA(108, 99, 210, 200);
     private static final ColorRGBA BORDER_P = new ColorRGBA(255, 210, 50, 200);
     private static final ColorRGBA TXT      = new ColorRGBA(240, 240, 255, 255);
     private static final ColorRGBA DIST_CLR = new ColorRGBA(150, 140, 230, 255);
-    private static final ColorRGBA GLOW     = new ColorRGBA(90, 80, 210, 255);
-    private static final ColorRGBA GLOW_P   = new ColorRGBA(255, 180, 30, 255);
+    private static final ColorRGBA GLOW     = new ColorRGBA(90,  80, 210, 255);
+    private static final ColorRGBA GLOW_P   = new ColorRGBA(255, 180,  30, 255);
 
     @EventTarget
     public void onRender2D(EventRender2D event) {
         if (mc.player == null || mc.world == null) return;
+        if (mc.getEntityRenderDispatcher().camera == null) return;
 
         CustomDrawContext ctx = event.getContext();
 
         for (WaypointManager.Waypoint waypoint : Zenith.getInstance().getWaypointManager().getWaypoints()) {
             Vec3d pos = waypoint.pos;
 
-            // Конвертируем 3D → 2D (центр блока, чуть выше)
             Vec3d screen = ProjectionUtil.worldSpaceToScreenSpace(pos.add(0.5, 1.2, 0.5));
-            if (screen == null || screen.z <= 0 || screen.z >= 1) continue;
+            // z: 0..1 = перед камерой, >1 или <0 = за камерой
+            if (screen.z <= 0 || screen.z >= 1) continue;
 
             float sx = (float) screen.x;
             float sy = (float) screen.y;
             float distance = (float) mc.player.getPos().distanceTo(pos);
 
-            // Масштаб по дистанции
             float scale = MathHelper.clamp(1.0f - distance / 300.0f, 0.4f, 1.0f);
 
-            // Анимация появления
             Animation anim = fadeAnims.computeIfAbsent(waypoint.name, k -> {
                 Animation a = new Animation(350, 0, Easing.QUAD_IN_OUT);
                 a.animateTo(1);
@@ -74,6 +72,7 @@ public class WaypointsModule extends Module {
             boolean isPlayer = waypoint.playerUUID != null;
             ColorRGBA borderColor = isPlayer ? BORDER_P : BORDER;
             ColorRGBA glowColor   = isPlayer ? GLOW_P   : GLOW;
+            Identifier icon       = isPlayer ? TARGET_ICON : MARKER_ICON;
 
             Font nameFont = Fonts.MEDIUM.getFont(8f);
             Font distFont = Fonts.MEDIUM.getFont(6f);
@@ -81,10 +80,11 @@ public class WaypointsModule extends Module {
 
             float nameW = nameFont.width(waypoint.name);
             float distW = distFont.width(distText);
-            float labelW = Math.max(nameW, distW) + 28f; // +10 для иконки
-            float labelH = nameFont.height() + distFont.height() + 12f;
+            float iconSz = 10f;
+            float labelW = Math.max(nameW, distW) + iconSz + 20f;
+            float labelH = nameFont.height() + distFont.height() + 10f;
 
-            // Всё рисуем в экранных координатах с учётом scale
+            // Позиция метки — центрируем над точкой
             float lx = sx - (labelW * scale) / 2f;
             float ly = sy - (labelH * scale) - 8f * scale;
             float rw = labelW * scale;
@@ -93,10 +93,10 @@ public class WaypointsModule extends Module {
             // Свечение
             try {
                 DrawUtil.drawShadow(ctx.getMatrices(),
-                    lx - 8 * scale, ly - 8 * scale,
-                    rw + 16 * scale, rh + 16 * scale,
-                    16f * scale, BorderRadius.all(8),
-                    glowColor.mulAlpha(0.22f * alpha));
+                    lx - 6 * scale, ly - 6 * scale,
+                    rw + 12 * scale, rh + 12 * scale,
+                    14f, BorderRadius.all(8),
+                    glowColor.mulAlpha(0.20f * alpha));
             } catch (Exception ignored) {}
 
             // Фон
@@ -107,36 +107,35 @@ public class WaypointsModule extends Module {
             DrawUtil.drawRoundedBorder(ctx.getMatrices(), lx, ly, rw, rh,
                 -0.5f, BorderRadius.all(6), borderColor.mulAlpha(alpha));
 
-            // Цветная полоска сверху
+            // Полоска сверху
             DrawUtil.drawRoundedRect(ctx.getMatrices(), lx, ly, rw, 2f * scale,
                 BorderRadius.all(1), borderColor.mulAlpha(alpha));
 
-            // Иконка в абсолютных координатах
-            float iconSize = 10f * scale;
-            Identifier icon = isPlayer ? TARGET_ICON : MARKER_ICON;
+            // Иконка
             float iconX = lx + 4f * scale;
-            float iconY = ly + (rh - iconSize) / 2f;
-            ctx.drawTexture(icon, iconX, iconY, iconSize, iconSize, ColorRGBA.WHITE.mulAlpha(alpha));
+            float iconY = ly + (rh - iconSz * scale) / 2f;
+            DrawUtil.drawTexture(ctx.getMatrices(), icon,
+                iconX, iconY, iconSz * scale, iconSz * scale,
+                ColorRGBA.WHITE.mulAlpha(alpha));
 
-            // Текст — масштабируем через матрицу
-            ctx.getMatrices().push();
-            ctx.getMatrices().translate(sx, ly + 5f * scale, 0);
+            // Текст — через context.pushMatrix/popMatrix как в EntityESP
+            float textX = lx + (iconSz + 8f) * scale;
+            float textY = ly + 4f * scale;
+
+            ctx.pushMatrix();
+            ctx.getMatrices().translate(textX, textY, 0);
             ctx.getMatrices().scale(scale, scale, 1);
-            ctx.drawText(nameFont, waypoint.name, -nameW / 2f, 0, TXT.mulAlpha(alpha));
-            ctx.drawText(distFont, distText, -distW / 2f, nameFont.height() + 2f, DIST_CLR.mulAlpha(alpha));
-            ctx.getMatrices().pop();
+            ctx.drawText(nameFont, waypoint.name, 0, 0, TXT.mulAlpha(alpha));
+            ctx.drawText(distFont, distText, 0, nameFont.height() + 2f, DIST_CLR.mulAlpha(alpha));
+            ctx.popMatrix();
 
-            // Стрелка-указатель вниз (от нижнего края метки к точке)
-            float arrowTipY = sy;
-            float arrowBaseY = ly + rh;
-            float arrowBaseX = sx;
+            // Стрелка вниз
             float arrowHalfW = 4f * scale;
-
-            // Треугольник: три точки
-            drawTriangle(ctx, arrowBaseX - arrowHalfW, arrowBaseY,
-                arrowBaseX + arrowHalfW, arrowBaseY,
-                arrowBaseX, arrowTipY,
-                borderColor.mulAlpha(alpha * 0.85f));
+            drawTriangle(ctx,
+                sx - arrowHalfW, ly + rh,
+                sx + arrowHalfW, ly + rh,
+                sx, sy,
+                borderColor.mulAlpha(alpha * 0.8f));
         }
 
         // Чистим анимации удалённых меток
@@ -146,18 +145,15 @@ public class WaypointsModule extends Module {
         );
     }
 
-    /** Рисует закрашенный треугольник через горизонтальные линии */
     private void drawTriangle(CustomDrawContext ctx,
-                               float x1, float y1,
-                               float x2, float y2,
-                               float tx, float ty,
-                               ColorRGBA color) {
-        // Сортируем по Y: y1==y2 (основание), ty (вершина)
+                              float x1, float y1,
+                              float x2, float y2,
+                              float tx, float ty,
+                              ColorRGBA color) {
         float baseY = Math.max(y1, ty);
         float tipY  = Math.min(y1, ty);
         float height = baseY - tipY;
         if (height < 1f) return;
-
         for (float y = tipY; y <= baseY; y++) {
             float t = (y - tipY) / height;
             float halfW = t * (x2 - x1) / 2f;
