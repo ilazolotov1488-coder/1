@@ -6,7 +6,7 @@ import net.minecraft.util.math.Vec3d;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
-import space.visuals.base.events.impl.render.EventHudRender;
+import space.visuals.base.events.impl.render.EventRender2D;
 import space.visuals.base.waypoints.WaypointManager;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
@@ -43,7 +43,7 @@ public class WaypointsModule extends Module {
     private static final ColorRGBA GLOW_P   = new ColorRGBA(255, 180, 30, 255);
 
     @EventTarget
-    public void onHudRender(EventHudRender event) {
+    public void onRender2D(EventRender2D event) {
         if (mc.player == null || mc.world == null) return;
 
         CustomDrawContext ctx = event.getContext();
