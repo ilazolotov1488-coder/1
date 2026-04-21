@@ -20,7 +20,12 @@ public class WaypointCommand extends CommandAbstract implements IMinecraft {
     @Override
     public void execute(LiteralArgumentBuilder<CommandSource> builder) {
 
-        // .way add <name> <x> <y> <z>
+        // Показываем помощь если вызвали просто .way
+        builder.executes(ctx -> {
+            MessageUtil.displayMessage(MessageUtil.LogLevel.INFO,
+                "Использование: .way add/del/clear/list/here");
+            return SINGLE_SUCCESS;
+        });
         builder.then(literal("add")
             .then(arg("name", StringArgumentType.word())
                 .then(arg("x", IntegerArgumentType.integer())
