@@ -23,6 +23,7 @@ import space.visuals.base.modules.ModuleManager;
 import space.visuals.base.request.ScriptManager;
 import space.visuals.base.rotation.RotationManager;
 import space.visuals.base.rotation.deeplearnig.DeepLearningManager;
+import space.visuals.base.waypoints.WaypointManager;
 import space.visuals.base.theme.ThemeManager;
 import space.visuals.client.screens.menu.MenuScreen;
 import space.visuals.utility.game.server.LastServerManager;
@@ -70,6 +71,7 @@ public enum Zenith {
     private ConfigManager configManager;
     private RCTRepository rctRepository;
     private DiscordManager discordManager;
+    private WaypointManager waypointManager;
 
     @CompileToNative
     @VMProtect(type = CompileType.ULTRA)
@@ -111,6 +113,8 @@ public enum Zenith {
             autoBuyManager = new AutoBuyManager();
             System.out.println("[ZENITH] step 11: CommandManager");
             commandManager = new CommandManager();
+            System.out.println("[ZENITH] step 11.5: WaypointManager");
+            waypointManager = new WaypointManager();
             System.out.println("[ZENITH] step 12: ScriptManager");
             scriptManager = new ScriptManager();
             System.out.println("[ZENITH] step 13: MenuScreen");

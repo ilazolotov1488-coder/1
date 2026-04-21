@@ -11,6 +11,7 @@ import space.visuals.base.comand.impl.FriendCommand;
 import space.visuals.base.comand.impl.MacroCommand;
 import space.visuals.base.comand.impl.ConfigCommand;
 import space.visuals.base.comand.impl.RCTCommand;
+import space.visuals.base.comand.impl.WaypointCommand;
 
 
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class CommandManager {
         registerCommand(new MacroCommand());
         registerCommand(new ConfigCommand());
         registerCommand(new RCTCommand());
+        registerCommand(new WaypointCommand());
 
     }
 

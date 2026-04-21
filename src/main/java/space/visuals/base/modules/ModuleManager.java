@@ -71,6 +71,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ShaderHands.INSTANCE);
         registerModule(NoFluid.INSTANCE);
         registerModule(HitParticles.INSTANCE);
+        registerModule(WaypointsModule.INSTANCE);
     }
 
     private void registerPlayer() {
