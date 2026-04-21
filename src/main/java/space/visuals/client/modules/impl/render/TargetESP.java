@@ -35,7 +35,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 public final class TargetESP extends Module {
     public static final TargetESP INSTANCE = new TargetESP();
 
-    private final ModeSetting mode = new ModeSetting("Режим", "Кристалы", "Souls", "Ромб", "Кольцо", "Кубы");
+    private final ModeSetting mode = new ModeSetting("Режим", "Кристалы", "Souls", "Ромб", "Кольцо", "Кубы", "Кристаллы 2");
     private final ColorSetting colorTarget = new ColorSetting("Цвет", new ColorRGBA(100, 180, 255));
     private final BooleanSetting changeColorOnDamage = new BooleanSetting("Цвет при уроне", true);
     private final NumberSetting speed = new NumberSetting("Скорость", 0.5f, 0.1f, 5.0f, 0.1f);
@@ -123,11 +123,12 @@ public final class TargetESP extends Module {
             RenderSystem.depthMask(false);
 
             switch (mode.get()) {
-                case "Ромб"      -> drawRhombus(ms, prevTarget);
-                case "Кольцо"    -> drawRing(ms, prevTarget);
-                case "Кубы"      -> drawCubes(ms, prevTarget);
-                case "Кристалы"  -> drawCrystals(ms, prevTarget);
-                default          -> drawGhosts(ms, prevTarget);
+                case "Ромб"        -> drawRhombus(ms, prevTarget);
+                case "Кольцо"      -> drawRing(ms, prevTarget);
+                case "Кубы"        -> drawCubes(ms, prevTarget);
+                case "Кристаллы"   -> drawCrystals(ms, prevTarget);
+                case "Кристаллы 2" -> drawCrystals2(ms, prevTarget);
+                default            -> drawGhosts(ms, prevTarget);
             }
 
             RenderSystem.depthMask(true);
@@ -333,7 +334,8 @@ public final class TargetESP extends Module {
             float bobbing = (float)Math.sin(time * 0.05f + i * 0.3f) * 0.1f;
             float y = seed2 * entityHeight * 1.05f + bobbing;
             
-            int color = getThemeColorAngle(i * 26, now);
+            // Используем цвет из настройки модуля
+            int color = getTargetColor().getRGB();
             
             drawCube(buf, ms, x, y, z, cubeScaleFactor, time * 4.0f, time * 3.0f, color, alphaValue * 0.5f);
         }
@@ -482,7 +484,8 @@ public final class TargetESP extends Module {
             float z = radius * (float) Math.sin(Math.toRadians(angle));
             float y = seed2 * entityHeight;
             float crystalScale = 0.18f * easedAnim;
-            int color = getThemeColorAngle(i * 26, System.currentTimeMillis());
+            // Используем цвет из настройки модуля
+            int color = getTargetColor().getRGB();
             drawCrystalBillboard(glowBuf, ms, camera, x, y, z, crystalScale * 3.6f, applyAlpha(color, alphaValue * 0.3f));
         }
         buildBuffer(glowBuf);
@@ -503,7 +506,8 @@ public final class TargetESP extends Module {
             float z = radius * (float) Math.sin(Math.toRadians(angle));
             float y = seed2 * entityHeight;
             float crystalScale = 0.18f * easedAnim;
-            int color = getThemeColorAngle(i * 26, System.currentTimeMillis());
+            // Используем цвет из настройки модуля
+            int color = getTargetColor().getRGB();
             drawCrystalH(crystalBuf, ms, x, y, z, crystalScale, angle, color, alphaValue * 0.7f);
         }
         net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(crystalBuf.end());
@@ -569,5 +573,181 @@ public final class TargetESP extends Module {
         buffer.vertex(matrix, x1, y1, z1).color(r, g, b, a);
         buffer.vertex(matrix, x2, y2, z2).color(r, g, b, a);
         buffer.vertex(matrix, x3, y3, z3).color(r, g, b, a);
+    }
+
+    // ── Crystals 2 (from Essence) ──────────────────────────────────────────────
+
+    private void drawCrystals2(MatrixStack ms, LivingEntity target) {
+        float alphaValue = animation.getValue();
+        if (alphaValue <= 0f) return;
+
+        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
+        Camera camera = mc.getEntityRenderDispatcher().camera;
+        Vec3d targetPos = new Vec3d(
+            MathHelper.lerp(tickDelta, target.prevX, target.getX()),
+            MathHelper.lerp(tickDelta, target.prevY, target.getY()),
+            MathHelper.lerp(tickDelta, target.prevZ, target.getZ())
+        );
+        Vec3d renderPos = targetPos.subtract(camera.getPos());
+
+        float time = ((float) mc.player.age + tickDelta) * speed.getCurrent();
+        float entityHeight = target.getHeight();
+        float entityWidth = target.getWidth();
+        float halfWidth = entityWidth * 0.5f;
+        int crystalCount = (int) particleCount.getCurrent();
+        
+        // Используем настройки размера и толщины
+        float baseCrystalScale = 0.05f * size.getCurrent(); // Essence использует 0.05f как базовый размер
+        float bloomScale = baseCrystalScale * 13.0f * particleThickness.getCurrent(); // Essence использует 13.0f множитель для bloom
+
+        ms.push();
+        ms.translate(renderPos.x, renderPos.y, renderPos.z);
+
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
+        RenderSystem.disableCull();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+
+        ColorRGBA baseColor = getTargetColor();
+        int color = baseColor.getRGB();
+
+        // Glow billboards
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+        RenderSystem.setShaderTexture(0, Zenith.id("textures/bloom.png"));
+
+        BufferBuilder glowBuf = RenderSystem.renderThreadTesselator().begin(DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        for (int i = 0; i < crystalCount; i++) {
+            float seed1 = (float) Math.sin(i * 1.7f + 0.3f) * 0.5f + 0.5f;
+            float seed2 = (float) Math.cos(i * 2.3f + 0.7f) * 0.5f + 0.5f;
+            float seed3 = (float) Math.sin(i * 3.1f + 1.1f) * 0.5f + 0.5f;
+            float angleOffset = i * (360f / crystalCount) + seed1 * 12f;
+            float angle = time + angleOffset;
+            float radius = halfWidth + 0.25f + seed3 * 0.15f;
+            float x = radius * (float) Math.cos(Math.toRadians(angle));
+            float z = radius * (float) Math.sin(Math.toRadians(angle));
+            float y = seed2 * entityHeight;
+            
+            // Используем bloomScale из настроек
+            drawCrystalBillboard(glowBuf, ms, camera, x, y, z, bloomScale * alphaValue, applyAlpha(color, alphaValue * 0.4f));
+        }
+        buildBuffer(glowBuf);
+
+        // Crystal meshes - восьмигранные кристаллы
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
+
+        BufferBuilder crystalBuf = Tessellator.getInstance().begin(DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+        for (int i = 0; i < crystalCount; i++) {
+            float seed1 = (float) Math.sin(i * 1.7f + 0.3f) * 0.5f + 0.5f;
+            float seed2 = (float) Math.cos(i * 2.3f + 0.7f) * 0.5f + 0.5f;
+            float seed3 = (float) Math.sin(i * 3.1f + 1.1f) * 0.5f + 0.5f;
+            float angleOffset = i * (360f / crystalCount) + seed1 * 12f;
+            float angle = time + angleOffset;
+            float radius = halfWidth + 0.25f + seed3 * 0.15f;
+            float x = radius * (float) Math.cos(Math.toRadians(angle));
+            float z = radius * (float) Math.sin(Math.toRadians(angle));
+            float y = seed2 * entityHeight;
+            
+            // Используем baseCrystalScale из настроек
+            drawEssenceCrystalMesh(crystalBuf, ms, x, y, z, baseCrystalScale * alphaValue, angle, color, alphaValue * 0.8f);
+        }
+        BufferRenderer.drawWithGlobalProgram(crystalBuf.end());
+
+        ms.pop();
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    }
+
+    private void drawEssenceCrystalMesh(BufferBuilder buffer, MatrixStack matrices,
+                                        float x, float y, float z, float scale,
+                                        float yaw, int color, float alpha) {
+        matrices.push();
+        matrices.translate(x, y, z);
+        
+        // Добавляем пульсацию как в Essence
+        float pulsation = 1.0f + (float) (Math.sin(System.currentTimeMillis() / 500.0) * 0.1f);
+        matrices.scale(scale * pulsation, scale * pulsation, scale * pulsation);
+        
+        // Вращение кристалла
+        float selfRotation = (System.currentTimeMillis() % 36000) / 100.0f * 0.5f;
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw + selfRotation));
+        
+        MatrixStack.Entry entry = matrices.peek();
+        Matrix4f m = entry.getPositionMatrix();
+        
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        int a = (int)(255 * alpha * 0.8f);
+        
+        // Размеры восьмигранного кристалла (как в Essence)
+        float s = 1.0f;           // радиус основания
+        float h_prism = 1.0f;     // высота призмы
+        float h_pyramid = 1.5f;   // высота пирамиды
+        int numSides = 8;
+        
+        // Вершины призмы
+        java.util.List<Vec3d> topVertices = new java.util.ArrayList<>();
+        java.util.List<Vec3d> bottomVertices = new java.util.ArrayList<>();
+        
+        for (int i = 0; i < numSides; i++) {
+            float angle = (float) (2 * Math.PI * i / numSides);
+            float vx = (float) (s * Math.cos(angle));
+            float vz = (float) (s * Math.sin(angle));
+            topVertices.add(new Vec3d(vx, h_prism / 2, vz));
+            bottomVertices.add(new Vec3d(vx, -h_prism / 2, vz));
+        }
+        
+        Vec3d vTop = new Vec3d(0, h_prism / 2 + h_pyramid, 0);
+        Vec3d vBottom = new Vec3d(0, -h_prism / 2 - h_pyramid, 0);
+        
+        // Боковые грани призмы (средняя яркость)
+        for (int i = 0; i < numSides; i++) {
+            Vec3d v1 = bottomVertices.get(i);
+            Vec3d v2 = bottomVertices.get((i + 1) % numSides);
+            Vec3d v3 = topVertices.get((i + 1) % numSides);
+            Vec3d v4 = topVertices.get(i);
+            
+            // Два треугольника для квада
+            buffer.vertex(m, (float)v1.x, (float)v1.y, (float)v1.z).color(r, g, b, a);
+            buffer.vertex(m, (float)v2.x, (float)v2.y, (float)v2.z).color(r, g, b, a);
+            buffer.vertex(m, (float)v3.x, (float)v3.y, (float)v3.z).color(r, g, b, a);
+            
+            buffer.vertex(m, (float)v1.x, (float)v1.y, (float)v1.z).color(r, g, b, a);
+            buffer.vertex(m, (float)v3.x, (float)v3.y, (float)v3.z).color(r, g, b, a);
+            buffer.vertex(m, (float)v4.x, (float)v4.y, (float)v4.z).color(r, g, b, a);
+        }
+        
+        // Верхняя пирамида (светлее)
+        int rL = Math.min(255, (int)(r * 1.3f));
+        int gL = Math.min(255, (int)(g * 1.3f));
+        int bL = Math.min(255, (int)(b * 1.3f));
+        
+        for (int i = 0; i < numSides; i++) {
+            Vec3d v1 = topVertices.get(i);
+            Vec3d v2 = topVertices.get((i + 1) % numSides);
+            buffer.vertex(m, (float)vTop.x, (float)vTop.y, (float)vTop.z).color(rL, gL, bL, a);
+            buffer.vertex(m, (float)v1.x, (float)v1.y, (float)v1.z).color(rL, gL, bL, a);
+            buffer.vertex(m, (float)v2.x, (float)v2.y, (float)v2.z).color(rL, gL, bL, a);
+        }
+        
+        // Нижняя пирамида (темнее)
+        int rD = (int)(r * 0.6f);
+        int gD = (int)(g * 0.6f);
+        int bD = (int)(b * 0.6f);
+        
+        for (int i = 0; i < numSides; i++) {
+            Vec3d v1 = bottomVertices.get(i);
+            Vec3d v2 = bottomVertices.get((i + 1) % numSides);
+            buffer.vertex(m, (float)vBottom.x, (float)vBottom.y, (float)vBottom.z).color(rD, gD, bD, a);
+            buffer.vertex(m, (float)v2.x, (float)v2.y, (float)v2.z).color(rD, gD, bD, a);
+            buffer.vertex(m, (float)v1.x, (float)v1.y, (float)v1.z).color(rD, gD, bD, a);
+        }
+        
+        matrices.pop();
     }
 }

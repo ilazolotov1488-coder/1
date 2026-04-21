@@ -72,6 +72,19 @@ public final class ModuleManager implements IMinecraft {
         registerModule(NoFluid.INSTANCE);
         registerModule(HitParticles.INSTANCE);
         registerModule(WaypointsModule.INSTANCE);
+        
+        // Включаем модули по умолчанию ПОСЛЕ регистрации всех модулей
+        // Используем setToggled(true) чтобы принудительно включить без toggle звука
+        if (!Interface.INSTANCE.isEnabled()) {
+            Interface.INSTANCE.setToggled(true);
+        }
+        // Для Waypoints всегда вызываем onEnable чтобы зарегистрировать события
+        if (!WaypointsModule.INSTANCE.isEnabled()) {
+            WaypointsModule.INSTANCE.setToggled(true);
+        } else {
+            // Если модуль уже enabled (из конфига), но события не зарегистрированы
+            WaypointsModule.INSTANCE.onEnable();
+        }
     }
 
     private void registerPlayer() {

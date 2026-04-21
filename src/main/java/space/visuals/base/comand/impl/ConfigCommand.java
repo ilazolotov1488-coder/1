@@ -45,24 +45,44 @@ public class ConfigCommand extends CommandAbstract {
 
         // .cfg load <name>
         builder.then(literal("load")
-            .then(arg("name", StringArgumentType.word()).executes(context -> {
-                String name = StringArgumentType.getString(context, "name");
-                boolean ok = Zenith.getInstance().getConfigManager().loadConfig(name);
-                MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
-                    ok ? "§aКонфиг §e" + name + "§a загружен" : "§cКонфиг §e" + name + "§c не найден");
-                return SINGLE_SUCCESS;
-            }))
+            .then(arg("name", StringArgumentType.word())
+                .suggests((context, suggestionsBuilder) -> {
+                    // Получаем список всех конфигов
+                    java.util.List<String> configs = Zenith.getInstance().getConfigManager().configNames();
+                    // Добавляем их как предложения
+                    for (String config : configs) {
+                        suggestionsBuilder.suggest(config);
+                    }
+                    return suggestionsBuilder.buildFuture();
+                })
+                .executes(context -> {
+                    String name = StringArgumentType.getString(context, "name");
+                    boolean ok = Zenith.getInstance().getConfigManager().loadConfig(name);
+                    MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
+                        ok ? "§aКонфиг §e" + name + "§a загружен" : "§cКонфиг §e" + name + "§c не найден");
+                    return SINGLE_SUCCESS;
+                }))
         );
 
         // .cfg del <name>
         builder.then(literal("del")
-            .then(arg("name", StringArgumentType.word()).executes(context -> {
-                String name = StringArgumentType.getString(context, "name");
-                boolean ok = Zenith.getInstance().getConfigManager().deleteConfig(name);
-                MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
-                    ok ? "§aКонфиг §e" + name + "§a удалён" : "§cКонфиг §e" + name + "§c не найден");
-                return SINGLE_SUCCESS;
-            }))
+            .then(arg("name", StringArgumentType.word())
+                .suggests((context, suggestionsBuilder) -> {
+                    // Получаем список всех конфигов
+                    java.util.List<String> configs = Zenith.getInstance().getConfigManager().configNames();
+                    // Добавляем их как предложения
+                    for (String config : configs) {
+                        suggestionsBuilder.suggest(config);
+                    }
+                    return suggestionsBuilder.buildFuture();
+                })
+                .executes(context -> {
+                    String name = StringArgumentType.getString(context, "name");
+                    boolean ok = Zenith.getInstance().getConfigManager().deleteConfig(name);
+                    MessageUtil.displayMessage(ok ? MessageUtil.LogLevel.INFO : MessageUtil.LogLevel.WARN,
+                        ok ? "§aКонфиг §e" + name + "§a удалён" : "§cКонфиг §e" + name + "§c не найден");
+                    return SINGLE_SUCCESS;
+                }))
         );
 
         // .cfg list — список всех конфигов
