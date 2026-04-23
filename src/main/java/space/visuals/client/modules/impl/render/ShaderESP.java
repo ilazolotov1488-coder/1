@@ -3,6 +3,8 @@ package space.visuals.client.modules.impl.render;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import space.visuals.Zenith;
@@ -15,14 +17,14 @@ import space.visuals.client.modules.api.setting.impl.ColorSetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * ShaderESP — использует встроенный MC outline (Glowing effect pipeline).
+ * ShaderESP — использует встроенный MC Glowing эффект для outline.
  *
- * Работает через WorldRendererMixin который перехватывает:
- *  - canDrawEntityOutlines() → возвращает true если модуль включён
- *  - renderEntityOutlines() → добавляет нужные сущности в outline буфер
- *
- * Цвет outline берётся из настройки модуля через getOutlineColor().
+ * Каждый тик добавляем нужным сущностям StatusEffects.GLOWING на клиенте.
+ * Цвет outline берётся из WorldRendererMixin через getOutlineColor().
  */
 @ModuleAnnotation(name = "ShaderESP", category = Category.RENDER, description = "Подсвечивает сущности шейдером")
 public final class ShaderESP extends Module {
@@ -35,11 +37,59 @@ public final class ShaderESP extends Module {
     private final ModeSetting colorMode  = new ModeSetting("Цвет", "Клиентский", "Кастом");
     private final ColorSetting color     = new ColorSetting("Цвет", new ColorRGBA(100, 200, 255));
 
+    // Сущности которым мы добавили эффект — чтобы убрать при выключении
+    private final Set<Integer> glowingEntities = new HashSet<>();
+
     private ShaderESP() {}
 
-    /**
-     * Вызывается из WorldRendererMixin — нужно ли рисовать outline для этой сущности.
-     */
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        removeGlowFromAll();
+    }
+
+    @EventTarget
+    public void onRender3D(EventRender3D event) {
+        if (mc.world == null || mc.player == null) return;
+
+        Set<Integer> currentFrame = new HashSet<>();
+
+        for (Entity entity : mc.world.getEntities()) {
+            if (!(entity instanceof LivingEntity living)) continue;
+            if (!shouldOutline(entity)) continue;
+
+            // Добавляем Glowing эффект на 2 тика (постоянно обновляем)
+            living.addStatusEffect(new StatusEffectInstance(
+                StatusEffects.GLOWING, 2, 0, false, false, false
+            ));
+            currentFrame.add(entity.getId());
+        }
+
+        // Убираем эффект у тех кто больше не должен светиться
+        for (int id : glowingEntities) {
+            if (!currentFrame.contains(id)) {
+                Entity entity = mc.world.getEntityById(id);
+                if (entity instanceof LivingEntity living) {
+                    living.removeStatusEffect(StatusEffects.GLOWING);
+                }
+            }
+        }
+
+        glowingEntities.clear();
+        glowingEntities.addAll(currentFrame);
+    }
+
+    private void removeGlowFromAll() {
+        if (mc.world == null) return;
+        for (int id : glowingEntities) {
+            Entity entity = mc.world.getEntityById(id);
+            if (entity instanceof LivingEntity living) {
+                living.removeStatusEffect(StatusEffects.GLOWING);
+            }
+        }
+        glowingEntities.clear();
+    }
+
     public boolean shouldOutline(Entity entity) {
         if (!isEnabled()) return false;
         if (entity instanceof PlayerEntity player) {
@@ -50,15 +100,8 @@ public final class ShaderESP extends Module {
         return false;
     }
 
-    /**
-     * Цвет outline в формате ARGB.
-     */
     public int getOutlineColor() {
         if (colorMode.is("Кастом")) return color.getColor().getRGB();
         return Zenith.getInstance().getThemeManager().getClientColor(0).getRGB();
     }
-
-    // Пустой обработчик — нужен чтобы модуль регистрировался в EventManager
-    @EventTarget
-    public void onRender3D(EventRender3D event) {}
 }
