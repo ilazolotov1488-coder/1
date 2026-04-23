@@ -2,17 +2,13 @@ package space.visuals.client.screens;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
@@ -114,28 +110,6 @@ public class CustomTitleScreen extends Screen {
         float logoX = cx - LOGO_SZ / 2f + px;
         float logoY = by - LOGO_SZ - 22 + py;
 
-        // Пульсация свечения
-        float pulse  = (float)(Math.sin(System.currentTimeMillis() * 0.0018) * 0.5 + 0.5);
-        float pulse2 = (float)(Math.sin(System.currentTimeMillis() * 0.0009 + 1.2) * 0.5 + 0.5);
-        float pulse3 = (float)(Math.sin(System.currentTimeMillis() * 0.0030 + 2.5) * 0.5 + 0.5);
-
-        // Лучи света из углов
-        drawLightRays(ctx, cx, logoY + LOGO_SZ * 0.5f, a * la);
-
-        // Свечение под лого
-        try { DrawUtil.drawShadow(ctx.getMatrices(),
-            cx - 180 + px, logoY - 60, 360, LOGO_SZ + 120,
-            160f, BorderRadius.all(100),
-            GLOW.mulAlpha((0.15f + 0.07f * pulse2) * a * la)); } catch (Exception ignored) {}
-        try { DrawUtil.drawShadow(ctx.getMatrices(),
-            cx - 100 + px, logoY - 20, 200, LOGO_SZ + 40,
-            100f, BorderRadius.all(70),
-            GLOW.mulAlpha((0.28f + 0.12f * pulse) * a * la)); } catch (Exception ignored) {}
-        try { DrawUtil.drawShadow(ctx.getMatrices(),
-            cx - 55 + px, logoY + 5, 110, LOGO_SZ - 10,
-            55f, BorderRadius.all(40),
-            new ColorRGBA(130, 115, 255, 255).mulAlpha((0.40f + 0.18f * pulse3) * a * la)); } catch (Exception ignored) {}
-
         // Лого с parallax + scale анимация
         float scaledSz = LOGO_SZ * (0.65f + 0.35f * la);
         float off = (LOGO_SZ - scaledSz) / 2f;
@@ -186,81 +160,6 @@ public class CustomTitleScreen extends Screen {
 
     @Override public boolean keyPressed(int k, int s, int m) { if (k == GLFW.GLFW_KEY_ESCAPE) return false; return super.keyPressed(k, s, m); }
     @Override public boolean shouldCloseOnEsc() { return false; }
-
-    void drawLightRays(DrawContext ctx, float targetX, float targetY, float alpha) {
-        long now = System.currentTimeMillis();
-        // Медленная пульсация яркости лучей
-        float pulse = (float)(Math.sin(now * 0.0007) * 0.3 + 0.7);
-        float pulse2 = (float)(Math.sin(now * 0.0011 + 1.5) * 0.3 + 0.7);
-
-        MatrixStack ms = ctx.getMatrices();
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_COLOR);
-        RenderSystem.disableCull();
-        RenderSystem.depthMask(false);
-
-        // Левый верхний угол
-        drawRayFan(ms, 0, 0, targetX, targetY,
-                new ColorRGBA(90, 110, 255, 255), alpha * pulse, 11, 22f);
-
-        // Правый верхний угол
-        drawRayFan(ms, width, 0, targetX, targetY,
-                new ColorRGBA(90, 110, 255, 255), alpha * pulse2, 11, 22f);
-
-        RenderSystem.depthMask(true);
-        RenderSystem.enableCull();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableBlend();
-    }
-
-    /**
-     * Рисует веер лучей из точки (ox, oy) к цели (tx, ty).
-     * count — количество лучей, spread — угловой разброс в градусах.
-     */
-    void drawRayFan(MatrixStack ms, float ox, float oy, float tx, float ty,
-                    ColorRGBA color, float alpha, int count, float spread) {
-        long now = System.currentTimeMillis();
-        // Базовый угол от источника к цели
-        double baseAngle = Math.atan2(ty - oy, tx - ox);
-        float rayLen = (float) Math.sqrt((tx - ox) * (tx - ox) + (ty - oy) * (ty - oy)) * 1.6f;
-
-        Matrix4f m = ms.peek().getPositionMatrix();
-        BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(
-                VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
-
-        for (int i = 0; i < count; i++) {
-            // Каждый луч немного смещается со временем для мерцания
-            float timeOffset = (float)(Math.sin(now * 0.0005 + i * 0.9) * 0.5 + 0.5);
-            float rayAlpha = alpha * (0.10f + 0.14f * timeOffset);
-
-            // Угол луча — равномерно распределены в пределах spread
-            float t = count == 1 ? 0.5f : (float) i / (count - 1);
-            double angle = baseAngle + Math.toRadians(spread * (t - 0.5f));
-
-            // Ширина луча у основания
-            float halfWidth = 4f + 8f * timeOffset;
-
-            // Перпендикуляр к лучу
-            float perpX = (float) -Math.sin(angle);
-            float perpY = (float)  Math.cos(angle);
-
-            // Конец луча
-            float ex = ox + (float)(Math.cos(angle) * rayLen);
-            float ey = oy + (float)(Math.sin(angle) * rayLen);
-
-            int c0 = color.withAlpha((int)(255 * rayAlpha)).getRGB();
-            int c1 = color.withAlpha(0).getRGB();
-
-            // Треугольник: основание у источника, острие у конца
-            buf.vertex(m, ox + perpX * halfWidth, oy + perpY * halfWidth, 0).color(c0);
-            buf.vertex(m, ox - perpX * halfWidth, oy - perpY * halfWidth, 0).color(c0);
-            buf.vertex(m, ex, ey, 0).color(c1);
-        }
-
-        BuiltBuffer built = buf.endNullable();
-        if (built != null) BufferRenderer.drawWithGlobalProgram(built);
-    }
 
     void drawT(DrawContext ctx, Font f, String t, float x, float y, ColorRGBA c) {
         CustomDrawContext cdc = new CustomDrawContext(client.getBufferBuilders().getEntityVertexConsumers());
