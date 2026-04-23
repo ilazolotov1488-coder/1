@@ -142,26 +142,13 @@ public class CustomTitleScreen extends Screen {
         DrawUtil.drawRoundedTexture(ctx.getMatrices(), LOGO_TEX,
             logoX + off, logoY + off, scaledSz, scaledSz,
             BorderRadius.all(12), ColorRGBA.WHITE.mulAlpha(a * la));
-        // Осветляющий слой
+        // Осветляющий слой — делаем лого заметнее
         DrawUtil.drawRoundedTexture(ctx.getMatrices(), LOGO_TEX,
             logoX + off, logoY + off, scaledSz, scaledSz,
-            BorderRadius.all(12), new ColorRGBA(210, 200, 255, 160).mulAlpha(a * la));
-
-        // Световое пятно на лого — имитация попадания лучей
-        float logoCx = logoX + off + scaledSz / 2f;
-        float logoCy = logoY + off + scaledSz / 2f;
-        float lightPulse = (float)(Math.sin(System.currentTimeMillis() * 0.0014) * 0.4 + 0.6);
-        try { DrawUtil.drawShadow(ctx.getMatrices(),
-            logoCx - scaledSz * 0.7f, logoCy - scaledSz * 0.7f,
-            scaledSz * 1.4f, scaledSz * 1.4f,
-            scaledSz * 0.9f, BorderRadius.all(scaledSz * 0.7f),
-            new ColorRGBA(160, 180, 255, 255).mulAlpha((0.55f + 0.25f * lightPulse) * a * la)); } catch (Exception ignored) {}
-        // Яркое ядро свечения прямо по центру лого
-        try { DrawUtil.drawShadow(ctx.getMatrices(),
-            logoCx - scaledSz * 0.35f, logoCy - scaledSz * 0.35f,
-            scaledSz * 0.7f, scaledSz * 0.7f,
-            scaledSz * 0.5f, BorderRadius.all(scaledSz * 0.35f),
-            new ColorRGBA(200, 210, 255, 255).mulAlpha((0.70f + 0.30f * lightPulse) * a * la)); } catch (Exception ignored) {}
+            BorderRadius.all(12), new ColorRGBA(255, 255, 255, 255).mulAlpha(a * la));
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(), LOGO_TEX,
+            logoX + off, logoY + off, scaledSz, scaledSz,
+            BorderRadius.all(12), new ColorRGBA(220, 215, 255, 180).mulAlpha(a * la));
 
         // Кнопки
         for (Btn b : btns) b.render(ctx, mx, my, a);
