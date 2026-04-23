@@ -167,38 +167,18 @@ public final class LineGlyphs extends Module {
         final Random random          = new Random();
 
         FallingLine(Random rng, Vec3d playerPos) {
-            if (mc.gameRenderer == null || mc.player == null) {
-                double range = 15;
-                double x = playerPos.x + (rng.nextDouble() - 0.5) * range;
-                double y = playerPos.y + rng.nextDouble() * 14;
-                double z = playerPos.z + (rng.nextDouble() - 0.5) * range;
-                points.add(new Vec3d(x, y, z));
-            } else {
-                float  yaw      = mc.player.getYaw();
-                float  pitch    = mc.player.getPitch();
-                double yawRad   = Math.toRadians(yaw);
-                double pitchRad = Math.toRadians(pitch);
-                double distance = 2 + rng.nextDouble() * 6;
+            // Спавним равномерно вокруг игрока в случайной точке сферы радиусом 8-14 блоков
+            double radius = 8 + rng.nextDouble() * 6;
+            double theta  = rng.nextDouble() * 2 * Math.PI;          // горизонтальный угол
+            double phi    = Math.acos(2 * rng.nextDouble() - 1);      // вертикальный угол (равномерно по сфере)
 
-                double dirX = -Math.sin(yawRad) * Math.cos(pitchRad);
-                double dirY = -Math.sin(pitchRad);
-                double dirZ =  Math.cos(yawRad) * Math.cos(pitchRad);
+            double x = playerPos.x + radius * Math.sin(phi) * Math.cos(theta);
+            double y = playerPos.y + 1 + rng.nextDouble() * 3 + radius * Math.cos(phi) * 0.4;
+            double z = playerPos.z + radius * Math.sin(phi) * Math.sin(theta);
 
-                Vec3d lookDir = new Vec3d(dirX, dirY, dirZ);
-                Vec3d right   = lookDir.crossProduct(new Vec3d(0, 1, 0)).normalize();
-                Vec3d up      = right.crossProduct(lookDir).normalize();
-
-                double hSpread = (rng.nextDouble() - 0.5) * 24;
-                double vSpread = (rng.nextDouble() - 0.5) * 18;
-
-                double x = playerPos.x + dirX * distance + right.x * hSpread + up.x * vSpread;
-                double y = playerPos.y + dirY * distance + right.y * hSpread + up.y * vSpread;
-                double z = playerPos.z + dirZ * distance + right.z * hSpread + up.z * vSpread;
-                points.add(new Vec3d(x, y, z));
-            }
-
-            currentDirection      = randomDir();
-            currentSegmentLength  = 0.5 + rng.nextDouble() * 1.5;
+            points.add(new Vec3d(x, y, z));
+            currentDirection     = randomDir();
+            currentSegmentLength = 0.5 + rng.nextDouble() * 1.5;
         }
 
         void update(Vec3d playerPos, float speed, float segLen, float zigzag, float maxLen) {
@@ -227,14 +207,8 @@ public final class LineGlyphs extends Module {
         boolean shouldRespawn(Vec3d playerPos) {
             if (points.isEmpty()) return true;
             Vec3d last = points.get(points.size() - 1);
-            if (last.distanceTo(playerPos) > 18) return true;
-            if (mc.gameRenderer != null) {
-                Camera cam    = mc.gameRenderer.getCamera();
-                Vec3d  camDir = Vec3d.fromPolar(cam.getPitch(), cam.getYaw());
-                Vec3d  toLine = last.subtract(cam.getPos()).normalize();
-                if (camDir.dotProduct(toLine) < 0.5) return true;
-            }
-            return false;
+            // Респавним только если линия ушла слишком далеко от игрока
+            return last.distanceTo(playerPos) > 20;
         }
 
         private Vec3d randomDir() {
