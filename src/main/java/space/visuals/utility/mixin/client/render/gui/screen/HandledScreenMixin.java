@@ -34,6 +34,7 @@ public abstract class HandledScreenMixin {
     /** Если Animation включён — пропускаем тёмный оверлей (method_52752), серый фон инвентаря остаётся */
     @org.spongepowered.asm.mixin.injection.Redirect(
             method = "renderBackground",
+            require = 0,
             at = @At(value = "INVOKE", target = "Lnet/minecraft/class_465;method_52752(Lnet/minecraft/class_332;)V"))
     private void skipDarkOverlay(net.minecraft.client.gui.screen.ingame.HandledScreen instance, DrawContext context) {
         if (!AnimationModule.INSTANCE.isEnabled() || !AnimationModule.INSTANCE.animateInventory.isEnabled()) {
