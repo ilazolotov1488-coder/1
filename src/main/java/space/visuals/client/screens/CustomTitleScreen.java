@@ -147,6 +147,22 @@ public class CustomTitleScreen extends Screen {
             logoX + off, logoY + off, scaledSz, scaledSz,
             BorderRadius.all(12), new ColorRGBA(210, 200, 255, 160).mulAlpha(a * la));
 
+        // Световое пятно на лого — имитация попадания лучей
+        float logoCx = logoX + off + scaledSz / 2f;
+        float logoCy = logoY + off + scaledSz / 2f;
+        float lightPulse = (float)(Math.sin(System.currentTimeMillis() * 0.0014) * 0.4 + 0.6);
+        try { DrawUtil.drawShadow(ctx.getMatrices(),
+            logoCx - scaledSz * 0.7f, logoCy - scaledSz * 0.7f,
+            scaledSz * 1.4f, scaledSz * 1.4f,
+            scaledSz * 0.9f, BorderRadius.all(scaledSz * 0.7f),
+            new ColorRGBA(160, 180, 255, 255).mulAlpha((0.55f + 0.25f * lightPulse) * a * la)); } catch (Exception ignored) {}
+        // Яркое ядро свечения прямо по центру лого
+        try { DrawUtil.drawShadow(ctx.getMatrices(),
+            logoCx - scaledSz * 0.35f, logoCy - scaledSz * 0.35f,
+            scaledSz * 0.7f, scaledSz * 0.7f,
+            scaledSz * 0.5f, BorderRadius.all(scaledSz * 0.35f),
+            new ColorRGBA(200, 210, 255, 255).mulAlpha((0.70f + 0.30f * lightPulse) * a * la)); } catch (Exception ignored) {}
+
         // Кнопки
         for (Btn b : btns) b.render(ctx, mx, my, a);
 
@@ -199,11 +215,11 @@ public class CustomTitleScreen extends Screen {
 
         // Левый верхний угол
         drawRayFan(ms, 0, 0, targetX, targetY,
-                new ColorRGBA(90, 110, 255, 255), alpha * pulse, 9, 18f);
+                new ColorRGBA(90, 110, 255, 255), alpha * pulse, 11, 22f);
 
         // Правый верхний угол
         drawRayFan(ms, width, 0, targetX, targetY,
-                new ColorRGBA(90, 110, 255, 255), alpha * pulse2, 9, 18f);
+                new ColorRGBA(90, 110, 255, 255), alpha * pulse2, 11, 22f);
 
         RenderSystem.depthMask(true);
         RenderSystem.enableCull();
@@ -229,7 +245,7 @@ public class CustomTitleScreen extends Screen {
         for (int i = 0; i < count; i++) {
             // Каждый луч немного смещается со временем для мерцания
             float timeOffset = (float)(Math.sin(now * 0.0005 + i * 0.9) * 0.5 + 0.5);
-            float rayAlpha = alpha * (0.04f + 0.06f * timeOffset);
+            float rayAlpha = alpha * (0.10f + 0.14f * timeOffset);
 
             // Угол луча — равномерно распределены в пределах spread
             float t = count == 1 ? 0.5f : (float) i / (count - 1);
