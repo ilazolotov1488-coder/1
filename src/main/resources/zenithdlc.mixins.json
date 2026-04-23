@@ -55,7 +55,8 @@
     "minecraft.render.EntityRendererCullingMixin",
     "minecraft.render.FeatureRendererMixin",
     "minecraft.render.MixinGameRenderer",
-    "minecraft.render.PlayerEntityRendererMixin"
+    "minecraft.render.PlayerEntityRendererMixin",
+    "minecraft.render.WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 0
