@@ -25,16 +25,14 @@ public final class LineGlyphs extends Module {
     public static final LineGlyphs INSTANCE = new LineGlyphs();
 
     private final BooleanSetting glowing    = new BooleanSetting("Свечение", true);
-    private final BooleanSetting dashed     = new BooleanSetting("Пунктир", false);
     private final ModeSetting    colorMode  = new ModeSetting("Цвет", "Клиентский", "Кастом", "Двойной");
     private final ColorSetting   color1     = new ColorSetting("Цвет 1", new ColorRGBA(100, 200, 255));
     private final ColorSetting   color2     = new ColorSetting("Цвет 2", new ColorRGBA(255, 100, 200));
+    private final space.visuals.client.modules.api.setting.impl.NumberSetting count   = new space.visuals.client.modules.api.setting.impl.NumberSetting("Количество", 120f, 10f, 300f, 10f);
+    private final space.visuals.client.modules.api.setting.impl.NumberSetting radius  = new space.visuals.client.modules.api.setting.impl.NumberSetting("Дальность", 20f, 5f, 60f, 1f);
 
     private static final int   LINE_COUNT      = 120;
     private static final float FALL_SPEED      = 0.07f;
-    private static final float LINE_LENGTH     = 17f;
-    private static final float SEGMENT_LENGTH  = 2f;
-    private static final float ZIGZAG_WIDTH    = 5f;
 
     private final List<FallingLine> lines  = new ArrayList<>();
     private final Random            random = new Random();
@@ -56,8 +54,8 @@ public final class LineGlyphs extends Module {
     private void generateLines() {
         lines.clear();
         if (mc.player == null) return;
-        for (int i = 0; i < LINE_COUNT; i++) {
-            lines.add(new FallingLine(random, mc.player.getPos()));
+        for (int i = 0; i < (int) count.getCurrent(); i++) {
+            lines.add(new FallingLine(random, mc.player.getPos(), radius.getCurrent()));
         }
     }
 
@@ -68,20 +66,22 @@ public final class LineGlyphs extends Module {
         Vec3d playerPos = mc.player.getPos();
 
         // Считаем сколько нужно заспавнить
-        int toSpawn = LINE_COUNT - lines.size();
+        int targetCount = (int) count.getCurrent();
+        float maxRadius = radius.getCurrent();
+        int toSpawn = targetCount - lines.size();
 
         Iterator<FallingLine> it = lines.iterator();
         while (it.hasNext()) {
             FallingLine line = it.next();
-            line.update(playerPos, FALL_SPEED, SEGMENT_LENGTH, ZIGZAG_WIDTH, LINE_LENGTH);
-            if (line.shouldRespawn(playerPos)) {
+            line.update(playerPos, FALL_SPEED, 2f, 5f, 17f);
+            if (line.shouldRespawn(playerPos, maxRadius)) {
                 it.remove();
                 toSpawn++;
             }
         }
 
         for (int i = 0; i < toSpawn; i++) {
-            lines.add(new FallingLine(random, playerPos));
+            lines.add(new FallingLine(random, playerPos, maxRadius));
         }
 
         renderLines();
@@ -102,43 +102,18 @@ public final class LineGlyphs extends Module {
                 Vec3d start = line.points.get(i);
                 Vec3d end   = line.points.get(i + 1);
 
-                if (start.distanceTo(camPos) > 60 || end.distanceTo(camPos) > 60) continue;
+                float maxDist = radius.getCurrent() + 10f;
+                if (start.distanceTo(camPos) > maxDist || end.distanceTo(camPos) > maxDist) continue;
 
                 float segAlpha = (float)(i + 1) / line.points.size();
                 int segColor   = applyAlpha(baseColor, (int)(segAlpha * 255));
+                float width    = glowing.isEnabled() ? 2.5f : 1.5f;
 
-                float width = glowing.isEnabled() ? 2.5f : 1.5f;
-
-                if (dashed.isEnabled()) {
-                    drawDashedLine(start, end, segColor, width);
-                    if (glowing.isEnabled()) {
-                        drawDashedLine(start, end, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f);
-                    }
-                } else {
-                    Render3DUtil.drawLine(start, end, segColor, width, true);
-                    if (glowing.isEnabled()) {
-                        Render3DUtil.drawLine(start, end, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f, true);
-                    }
+                Render3DUtil.drawLine(start, end, segColor, width, true);
+                if (glowing.isEnabled()) {
+                    Render3DUtil.drawLine(start, end, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f, true);
                 }
             }
-        }
-    }
-
-    private void drawDashedLine(Vec3d start, Vec3d end, int color, float width) {
-        double dashLen  = 0.15;
-        double gapLen   = 0.10;
-        double pattern  = dashLen + gapLen;
-        Vec3d  dir      = end.subtract(start);
-        double len      = dir.length();
-        Vec3d  norm     = dir.normalize();
-        double dist     = 0;
-        while (dist < len) {
-            double dashEnd = Math.min(dist + dashLen, len);
-            Render3DUtil.drawLine(
-                start.add(norm.multiply(dist)),
-                start.add(norm.multiply(dashEnd)),
-                color, width, true);
-            dist += pattern;
         }
     }
 
@@ -166,15 +141,14 @@ public final class LineGlyphs extends Module {
         double currentSegmentLength;
         final Random random          = new Random();
 
-        FallingLine(Random rng, Vec3d playerPos) {
-            // Спавним равномерно вокруг игрока в случайной точке сферы радиусом 8-14 блоков
-            double radius = 8 + rng.nextDouble() * 6;
-            double theta  = rng.nextDouble() * 2 * Math.PI;          // горизонтальный угол
-            double phi    = Math.acos(2 * rng.nextDouble() - 1);      // вертикальный угол (равномерно по сфере)
+        FallingLine(Random rng, Vec3d playerPos, float maxRadius) {
+            double spawnRadius = maxRadius * 0.4 + rng.nextDouble() * maxRadius * 0.6;
+            double theta = rng.nextDouble() * 2 * Math.PI;
+            double phi   = Math.acos(2 * rng.nextDouble() - 1);
 
-            double x = playerPos.x + radius * Math.sin(phi) * Math.cos(theta);
-            double y = playerPos.y + 1 + rng.nextDouble() * 3 + radius * Math.cos(phi) * 0.4;
-            double z = playerPos.z + radius * Math.sin(phi) * Math.sin(theta);
+            double x = playerPos.x + spawnRadius * Math.sin(phi) * Math.cos(theta);
+            double y = playerPos.y + 1 + rng.nextDouble() * 3 + spawnRadius * Math.cos(phi) * 0.4;
+            double z = playerPos.z + spawnRadius * Math.sin(phi) * Math.sin(theta);
 
             points.add(new Vec3d(x, y, z));
             currentDirection     = randomDir();
@@ -204,11 +178,10 @@ public final class LineGlyphs extends Module {
             }
         }
 
-        boolean shouldRespawn(Vec3d playerPos) {
+        boolean shouldRespawn(Vec3d playerPos, float maxRadius) {
             if (points.isEmpty()) return true;
             Vec3d last = points.get(points.size() - 1);
-            // Респавним только если линия ушла слишком далеко от игрока
-            return last.distanceTo(playerPos) > 20;
+            return last.distanceTo(playerPos) > maxRadius + 5f;
         }
 
         private Vec3d randomDir() {
