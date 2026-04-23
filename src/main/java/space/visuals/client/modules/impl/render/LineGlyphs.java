@@ -91,40 +91,48 @@ public final class LineGlyphs extends Module {
         if (lines.isEmpty()) return;
         Camera camera = mc.gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
+        float maxDist = radius.getCurrent() + 10f;
+        float maxDistSq = maxDist * maxDist;
+        boolean glow = glowing.isEnabled();
+        float width = glow ? 2.5f : 1.5f;
+
+        // Кешируем цвет клиента один раз за кадр
+        int clientColor = Zenith.getInstance().getThemeManager().getClientColor(0).getRGB();
 
         for (int li = 0; li < lines.size(); li++) {
             FallingLine line = lines.get(li);
-            if (line.points.size() < 2) continue;
+            int sz = line.points.size();
+            if (sz < 2) continue;
 
-            int baseColor = getColor(li);
+            int baseColor = getColorCached(li, clientColor);
 
-            for (int i = 0; i < line.points.size() - 1; i++) {
+            for (int i = 0; i < sz - 1; i++) {
                 Vec3d start = line.points.get(i);
                 Vec3d end   = line.points.get(i + 1);
 
-                float maxDist = radius.getCurrent() + 10f;
-                if (start.distanceTo(camPos) > maxDist || end.distanceTo(camPos) > maxDist) continue;
+                // squaredDistance вместо distance — нет sqrt
+                if (start.squaredDistanceTo(camPos) > maxDistSq &&
+                    end.squaredDistanceTo(camPos)   > maxDistSq) continue;
 
-                float segAlpha = (float)(i + 1) / line.points.size();
+                float segAlpha = (float)(i + 1) / sz;
                 int segColor   = applyAlpha(baseColor, (int)(segAlpha * 255));
-                float width    = glowing.isEnabled() ? 2.5f : 1.5f;
 
                 Render3DUtil.drawLine(start, end, segColor, width, true);
-                if (glowing.isEnabled()) {
+                if (glow) {
                     Render3DUtil.drawLine(start, end, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f, true);
                 }
             }
         }
     }
 
-    private int getColor(int index) {
+    private int getColorCached(int index, int clientColor) {
         return switch (colorMode.get()) {
-            case "Кастом"   -> color1.getColor().getRGB();
-            case "Двойной"  -> {
+            case "Кастом"  -> color1.getColor().getRGB();
+            case "Двойной" -> {
                 float t = (index % 10) / 10f;
                 yield color1.getColor().mix(color2.getColor(), t).getRGB();
             }
-            default -> Zenith.getInstance().getThemeManager().getClientColor(index * 10).getRGB();
+            default -> clientColor;
         };
     }
 
@@ -139,9 +147,11 @@ public final class LineGlyphs extends Module {
         Vec3d  currentDirection;
         double distanceTraveled      = 0;
         double currentSegmentLength;
-        final Random random          = new Random();
+        double totalLength           = 0; // кешируем длину хвоста
+        final Random random;              // используем переданный rng, не создаём новый
 
         FallingLine(Random rng, Vec3d playerPos, float maxRadius) {
+            this.random = rng;
             double spawnRadius = maxRadius * 0.4 + rng.nextDouble() * maxRadius * 0.6;
             double theta = rng.nextDouble() * 2 * Math.PI;
             double phi   = Math.acos(2 * rng.nextDouble() - 1);
@@ -158,7 +168,13 @@ public final class LineGlyphs extends Module {
         void update(Vec3d playerPos, float speed, float segLen, float zigzag, float maxLen) {
             if (points.isEmpty()) return;
             Vec3d last = points.get(points.size() - 1);
-            points.add(last.add(currentDirection.multiply(speed)));
+            Vec3d next = last.add(currentDirection.multiply(speed));
+
+            // Добавляем новую точку и обновляем кешированную длину
+            if (points.size() >= 2) {
+                totalLength += last.distanceTo(next);
+            }
+            points.add(next);
             distanceTraveled += speed;
 
             if (distanceTraveled >= currentSegmentLength) {
@@ -167,13 +183,9 @@ public final class LineGlyphs extends Module {
                 currentSegmentLength = 0.5 + random.nextDouble() * 1.5;
             }
 
-            // Обрезаем хвост
-            double total = 0;
-            for (int i = points.size() - 1; i > 0; i--) {
-                total += points.get(i).distanceTo(points.get(i - 1));
-            }
-            while (total > maxLen && points.size() > 2) {
-                total -= points.get(0).distanceTo(points.get(1));
+            // Обрезаем хвост — O(1) вместо O(n)
+            while (totalLength > maxLen && points.size() > 2) {
+                totalLength -= points.get(0).distanceTo(points.get(1));
                 points.remove(0);
             }
         }
@@ -181,7 +193,7 @@ public final class LineGlyphs extends Module {
         boolean shouldRespawn(Vec3d playerPos, float maxRadius) {
             if (points.isEmpty()) return true;
             Vec3d last = points.get(points.size() - 1);
-            return last.distanceTo(playerPos) > maxRadius + 5f;
+            return last.squaredDistanceTo(playerPos) > (maxRadius + 5f) * (maxRadius + 5f);
         }
 
         private Vec3d randomDir() {
