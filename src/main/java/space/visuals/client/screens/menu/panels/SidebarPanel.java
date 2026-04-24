@@ -67,17 +67,12 @@ public class SidebarPanel {
                 theme.getForegroundStroke().mulAlpha(progress)
         );
 
-        // --- ИКОНКИ ---
+        // Логотип в верхней части sidebar
         float logoSize = 14;
         float logoX = sidebarX + (collapsedSidebarWidth - logoSize) / 2f;
         float logoY = sidebarY + 8;
-        // Буква "s" по центру collapsed-зоны
-        Font sBoldFont = Fonts.BOLD.getFont(11f);
-        float sW = sBoldFont.width("s");
-        float sH = sBoldFont.height();
-        float sIconX = sidebarX + (collapsedSidebarWidth - sW) / 2f;
-        float sIconY = logoY + (logoSize - sH) / 2f;
-        ctx.drawText(sBoldFont, "s", sIconX, sIconY, Zenith.getInstance().getThemeManager().getColorCycleIcon().toGradient().mulAlpha(progress));
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/logotype.png"),
+                logoX, logoY, logoSize, logoSize, BorderRadius.all(2), ColorRGBA.WHITE.mulAlpha(progress));
 
         ctx.pushMatrix();
         ctx.enableScissor((int) sidebarX, (int) sidebarY,
@@ -149,7 +144,7 @@ public class SidebarPanel {
 
         boolean hover = GuiUtil.isHovered(avatarX, avatarY, avatarSize, avatarSize, ctx);
 
-        DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/space_cat.png"), avatarX, avatarY, avatarSize, avatarSize, BorderRadius.all(4), ColorRGBA.WHITE.mulAlpha(progress));
+        DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/avatar3d.png"), avatarX, avatarY, avatarSize, avatarSize, BorderRadius.all(4), ColorRGBA.WHITE.mulAlpha(progress));
         DrawUtil.drawRoundedBorder(ctx.getMatrices(), avatarX, avatarY, avatarSize, avatarSize, -0.1f, BorderRadius.all(3), new ColorRGBA(181, 162, 255, hover ? 200 : 190).mulAlpha(progress));
 
         {

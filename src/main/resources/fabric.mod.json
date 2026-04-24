@@ -7,7 +7,7 @@
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
-  "icon": "assets/space/icons/avatar.png",
+  "icon": "assets/space/icons/avatar3d.png",
   "environment": "client",
   "entrypoints": {
     "client": [
