@@ -60,3 +60,6 @@ accessible method net/minecraft/client/sound/SoundSystem getAdjustedVolume (FLne
 
 accessible method net/minecraft/client/sound/SoundListener setVolume (F)V
 accessible field net/minecraft/client/sound/SoundListener volume F
+
+accessible method net/minecraft/client/render/GameRenderer getFov (Lnet/minecraft/client/render/Camera;FZ)F
+accessible class net/minecraft/client/gl/ShaderLoader$Cache
