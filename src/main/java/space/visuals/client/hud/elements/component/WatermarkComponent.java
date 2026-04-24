@@ -43,12 +43,12 @@ public class WatermarkComponent extends DraggableHudElement {
         elements.add(new HudElement("s", ()->"","") {
             @Override
             public void calculateWidth(Font font, float iconSize, float cellPadding, float iconTextSpacing) {
-                this.width = cellPadding * 2 + 14f; // ширина под логотип
+                this.width = cellPadding * 2 + 20f;
             }
 
             @Override
             public void drawContent(CustomDrawContext ctx, float blockX, float blockY, float blockHeight, float iconSize, float iconTextSpacing, ColorRGBA iconColor, ColorRGBA textColor, Font font) {
-                float logoW = 14f, logoH = 14f;
+                float logoW = 20f, logoH = 20f;
                 float logoX = blockX + (getWidth() - logoW) / 2f;
                 float logoY = blockY + (blockHeight - logoH) / 2f;
                 DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/logotype.png"),
