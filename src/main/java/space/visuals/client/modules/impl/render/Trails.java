@@ -44,7 +44,6 @@ public final class Trails extends Module {
 
     private ColorRGBA getTrailColor(float hueOffset) {
         if (colorMode.get().equals("Радуга")) {
-            // Используем остаток от деления чтобы избежать переполнения float
             float hue = ((System.currentTimeMillis() % 2000L) / 2000f + hueOffset) % 1f;
             int rgb = java.awt.Color.HSBtoRGB(hue, 1f, 1f);
             return new ColorRGBA((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, 255);
@@ -53,6 +52,25 @@ public final class Trails extends Module {
             return customColor.getColor();
         }
         return space.visuals.Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
+    }
+
+    // Кэш цвета темы — обновляем раз в кадр, не создаём объект на каждый вертекс
+    private ColorRGBA cachedThemeColor = null;
+    private long cachedThemeColorFrame = -1;
+
+    private ColorRGBA getTrailColorCached(float hueOffset) {
+        if (colorMode.get().equals("Радуга")) {
+            float hue = ((System.currentTimeMillis() % 2000L) / 2000f + hueOffset) % 1f;
+            int rgb = java.awt.Color.HSBtoRGB(hue, 1f, 1f);
+            return new ColorRGBA((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, 255);
+        }
+        if (colorMode.get().equals("Кастом")) return customColor.getColor();
+        long frame = mc.getRenderTickCounter() != null ? System.currentTimeMillis() / 16 : 0;
+        if (cachedThemeColor == null || frame != cachedThemeColorFrame) {
+            cachedThemeColor = space.visuals.Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
+            cachedThemeColorFrame = frame;
+        }
+        return cachedThemeColor;
     }
 
     @EventTarget
@@ -90,62 +108,55 @@ public final class Trails extends Module {
 
         float blinkFactor = (float)(Math.sin(System.currentTimeMillis() * BLINK_SPEED) * 0.5 + 0.5);
         int total = points.size();
+        boolean isRainbow = colorMode.get().equals("Радуга");
+
+        // Предвычисляем цвета один раз для всех точек
+        float[] rs = new float[total], gs = new float[total], bs = new float[total];
+        for (int i = 0; i < total; i++) {
+            float t = (float) i / total;
+            float hueOff = isRainbow ? t * 0.3f : 0f;
+            ColorRGBA c = getTrailColorCached(hueOff);
+            rs[i] = Math.min(c.getRed()   / 255f + 0.3f * blinkFactor, 1f);
+            gs[i] = Math.min(c.getGreen() / 255f + 0.3f * blinkFactor, 1f);
+            bs[i] = Math.min(c.getBlue()  / 255f + 0.3f * blinkFactor, 1f);
+        }
+
+        Matrix4f m = ms.peek().getPositionMatrix();
+        float playerH = (float) mc.player.getHeight();
 
         // Quad strip (лента)
         BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
-        Matrix4f m = ms.peek().getPositionMatrix();
         for (int i = 0; i < total; i++) {
-            float t = (float) i / total;
-            float hueOff = colorMode.get().equals("Радуга") ? t * 0.3f : 0f;
-            ColorRGBA c = getTrailColor(hueOff);
-            float r = c.getRed()   / 255f;
-            float g = c.getGreen() / 255f;
-            float b = c.getBlue()  / 255f;
-            float rB = Math.min(r + 0.3f * blinkFactor, 1f);
-            float gB = Math.min(g + 0.3f * blinkFactor, 1f);
-            float bB = Math.min(b + 0.3f * blinkFactor, 1f);
-            float alpha = t * 0.7f;
+            float alpha = (float) i / total * 0.7f;
             Vec3d pos = points.get(i).pos.subtract(cam);
-            buf.vertex(m, (float)pos.x, (float)(pos.y + mc.player.getHeight()), (float)pos.z).color(rB, gB, bB, alpha);
-            buf.vertex(m, (float)pos.x, (float)pos.y, (float)pos.z).color(rB, gB, bB, alpha);
+            buf.vertex(m, (float)pos.x, (float)(pos.y + playerH), (float)pos.z).color(rs[i], gs[i], bs[i], alpha);
+            buf.vertex(m, (float)pos.x, (float)pos.y,             (float)pos.z).color(rs[i], gs[i], bs[i], alpha);
         }
         BufferRenderer.drawWithGlobalProgram(buf.end());
 
-        // Верхняя и нижняя линии
-        renderLine(ms, cam, true,  blinkFactor);
-        renderLine(ms, cam, false, blinkFactor);
+        // Верхняя линия
+        buf = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
+        for (int i = 0; i < total; i++) {
+            float alpha = Math.min((float) i / total * 1.5f, 1f);
+            Vec3d pos = points.get(i).pos.subtract(cam);
+            buf.vertex(m, (float)pos.x, (float)pos.y + playerH, (float)pos.z).color(rs[i], gs[i], bs[i], alpha);
+        }
+        BufferRenderer.drawWithGlobalProgram(buf.end());
+
+        // Нижняя линия
+        buf = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
+        for (int i = 0; i < total; i++) {
+            float alpha = Math.min((float) i / total * 1.5f, 1f);
+            Vec3d pos = points.get(i).pos.subtract(cam);
+            buf.vertex(m, (float)pos.x, (float)pos.y, (float)pos.z).color(rs[i], gs[i], bs[i], alpha);
+        }
+        BufferRenderer.drawWithGlobalProgram(buf.end());
 
         ms.pop();
 
         RenderSystem.enableDepthTest();
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
-    }
-
-    private void renderLine(MatrixStack ms, Vec3d cam, boolean top, float blinkFactor) {
-        BufferBuilder buf = RenderSystem.renderThreadTesselator().begin(VertexFormat.DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
-        Matrix4f m = ms.peek().getPositionMatrix();
-        int total = points.size();
-        for (int i = 0; i < total; i++) {
-            float t = (float) i / total;
-            float hueOff = colorMode.get().equals("Радуга") ? t * 0.3f : 0f;
-            ColorRGBA c = getTrailColor(hueOff);
-            float r = c.getRed()   / 255f;
-            float g = c.getGreen() / 255f;
-            float b = c.getBlue()  / 255f;
-            float rB = Math.min(r + 0.3f * blinkFactor, 1f);
-            float gB = Math.min(g + 0.3f * blinkFactor, 1f);
-            float bB = Math.min(b + 0.3f * blinkFactor, 1f);
-            float alpha = Math.min(t * 1.5f, 1f);
-            Vec3d pos = points.get(i).pos.subtract(cam);
-            float yOff = top ? (float) mc.player.getHeight() : 0f;
-            buf.vertex(m, (float)pos.x, (float)pos.y + yOff, (float)pos.z)
-               .color(MathHelper.lerp(blinkFactor, r, rB),
-                      MathHelper.lerp(blinkFactor, g, gB),
-                      MathHelper.lerp(blinkFactor, b, bB),
-                      alpha);
-        }
-        BufferRenderer.drawWithGlobalProgram(buf.end());
     }
 
     @Override

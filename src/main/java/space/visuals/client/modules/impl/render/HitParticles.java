@@ -156,10 +156,18 @@ public final class HitParticles extends Module {
         ColorRGBA drawColor = color.getColor(alpha);
         int colorInt = drawColor.getRGB();
 
+        // Вычисляем billboard матрицу без push/pop — напрямую через translate+rotate
+        double dx = pos.x - camPos.x;
+        double dy = pos.y - camPos.y;
+        double dz = pos.z - camPos.z;
+
+        float camYaw   = mc.getEntityRenderDispatcher().camera.getYaw();
+        float camPitch = mc.getEntityRenderDispatcher().camera.getPitch();
+
         event.getMatrix().push();
-        event.getMatrix().translate(pos.x - camPos.x, pos.y - camPos.y, pos.z - camPos.z);
-        event.getMatrix().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Y.rotationDegrees(-mc.getEntityRenderDispatcher().camera.getYaw()));
-        event.getMatrix().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotationDegrees(mc.getEntityRenderDispatcher().camera.getPitch()));
+        event.getMatrix().translate(dx, dy, dz);
+        event.getMatrix().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Y.rotationDegrees(-camYaw));
+        event.getMatrix().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotationDegrees(camPitch));
         event.getMatrix().multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Z.rotationDegrees(rotation));
         event.getMatrix().scale(-scale, -scale, scale);
         Matrix4f matrix = event.getMatrix().peek().getPositionMatrix();

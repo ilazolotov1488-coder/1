@@ -216,19 +216,30 @@ public final class JumpCircle extends Module {
 
     // ==================== INNER CLASSES ====================
     private final class WaveEffect {
-        private static final int MAX_PER_FRAME = 400;
+        private static final int MAX_PER_FRAME = 300; // снижено с 400
         private static final float WAVE_WIDTH = 2.5f;
         private final BlockPos centerPos;
         private final long startTime;
         private final long duration;
         private final int maxRadius;
+        // Кэш поверхностей — вычисляем один раз при создании волны
+        private final java.util.HashMap<Long, BlockPos> surfaceCache = new java.util.HashMap<>();
 
         WaveEffect(BlockPos centerPos, long startTime) {
             this.centerPos = centerPos;
             this.startTime = startTime;
             this.duration = (long) rockstarSpeed.getCurrent();
             this.maxRadius = Math.max(1, (int) Math.ceil(rockstarRadius.getCurrent()));
+            // Предвычисляем поверхности для всех позиций в радиусе
+            for (int x = -maxRadius; x <= maxRadius; x++) {
+                for (int z = -maxRadius; z <= maxRadius; z++) {
+                    BlockPos surface = findSurface(centerPos.add(x, 0, z));
+                    if (surface != null) surfaceCache.put(packXZ(x, z), surface);
+                }
+            }
         }
+
+        private long packXZ(int x, int z) { return ((long)(x + 128) << 16) | (z + 128); }
 
         boolean isExpired(long now) { return now - startTime > duration; }
 
@@ -252,7 +263,7 @@ public final class JumpCircle extends Module {
                     if (rendered >= MAX_PER_FRAME) return;
                     double dist = Math.sqrt(x * x + z * z);
                     if (dist > currentRadius + 0.5f || dist < currentRadius - WAVE_WIDTH) continue;
-                    BlockPos renderPos = findSurface(centerPos.add(x, 0, z));
+                    BlockPos renderPos = surfaceCache.get(packXZ(x, z));
                     if (renderPos == null) continue;
                     BlockState state = mc.world.getBlockState(renderPos);
                     VoxelShape shape = state.getOutlineShape((BlockView) mc.world, renderPos);

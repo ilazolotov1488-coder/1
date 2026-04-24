@@ -75,9 +75,12 @@ public final class EntityESP extends Module {
     private final BooleanSetting blur = new BooleanSetting("Блюр", "Требует хорошего пк", false, Interface.INSTANCE::isBlur);
     private final BooleanSetting glow = new BooleanSetting("Свечение", "Нужен мощный пк", false, Interface.INSTANCE::isGlow);
 
-    private EntityESP() {
+    // Кэш видимости entity — обновляем раз в 3 кадра (~50ms), не делаем 5 raycast каждый кадр
+    private final java.util.HashMap<Integer, Boolean> visibilityCache = new java.util.HashMap<>();
+    private int visibilityCacheFrame = 0;
+    private static final int VISIBILITY_CACHE_INTERVAL = 3;
 
-    }
+    private EntityESP() {}
 
     public boolean isRenderName() {
         return this.isEnabled() && this.elements.isEnable(0);
@@ -118,6 +121,9 @@ public final class EntityESP extends Module {
     public void onHudRender(EventRender2D event) {
         Render2DUtil.onRender(event.getContext());
         if (mc.player == null || mc.world == null || mc.getEntityRenderDispatcher().camera == null) return;
+        visibilityCacheFrame++;
+        // Очищаем кэш раз в 60 кадров чтобы не накапливать мёртвые entity
+        if (visibilityCacheFrame % 60 == 0) visibilityCache.clear();
         try {
             RenderSystem.depthMask(false);
             CustomDrawContext context = event.getContext();
@@ -160,21 +166,25 @@ public final class EntityESP extends Module {
 
     /**
      * Проверяет, виден ли хотя бы 1 пиксель сущности (не за стеной).
-     * Делает raycast от камеры к нескольким точкам bounding box.
+     * Кэшируется раз в VISIBILITY_CACHE_INTERVAL кадров для экономии raycast.
      */
     private boolean isEntityVisible(Entity entity) {
+        int id = entity.getId();
+        // Обновляем кэш раз в N кадров
+        if (visibilityCacheFrame % VISIBILITY_CACHE_INTERVAL == 0) {
+            visibilityCache.remove(id); // сбрасываем для пересчёта
+        }
+        Boolean cached = visibilityCache.get(id);
+        if (cached != null) return cached;
+
         Vec3d camPos = mc.gameRenderer.getCamera().getPos();
         Box box = entity.getBoundingBox();
-
-        // Проверяем несколько точек: центр, верх, низ, 4 угла
         Vec3d[] checkPoints = {
             box.getCenter(),
             new Vec3d(box.getCenter().x, box.maxY - 0.1, box.getCenter().z),
             new Vec3d(box.getCenter().x, box.minY + 0.1, box.getCenter().z),
-            new Vec3d(box.minX + 0.1, box.getCenter().y, box.minZ + 0.1),
-            new Vec3d(box.maxX - 0.1, box.getCenter().y, box.maxZ - 0.1),
         };
-
+        boolean visible = false;
         for (Vec3d point : checkPoints) {
             net.minecraft.world.RaycastContext ctx = new net.minecraft.world.RaycastContext(
                     camPos, point,
@@ -183,10 +193,12 @@ public final class EntityESP extends Module {
                     mc.player
             );
             if (mc.world.raycast(ctx).getType() == net.minecraft.util.hit.HitResult.Type.MISS) {
-                return true;
+                visible = true;
+                break;
             }
         }
-        return false;
+        visibilityCache.put(id, visible);
+        return visible;
     }
     private void drawHands(CustomDrawContext context, PlayerEntity player, Vector4d vec) {
         if (player == mc.player && mc.options.getPerspective().isFirstPerson()) return;

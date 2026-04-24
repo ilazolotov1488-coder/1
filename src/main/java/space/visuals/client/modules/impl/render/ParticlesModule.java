@@ -122,7 +122,9 @@ public final class ParticlesModule extends Module {
 
         if (spawnIdle.isEnabled()) {
             int r = (int) idleRange.getCurrent();
-            for (int i = 0; i < (int) idleCount.getCurrent(); i++) {
+            // Ограничиваем кол-во idle частиц в кадр для производительности
+            int spawnThisFrame = Math.min((int) idleCount.getCurrent(), 3);
+            for (int i = 0; i < spawnThisFrame; i++) {
                 Vec3d add = mc.player.getPos().add(rnd(-r, r), 0, rnd(-r, r));
                 BlockPos pos = mc.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, BlockPos.ofFloored(add));
                 double spawnY = mc.player.getY() + rnd(mc.player.getHeight(), r);
@@ -405,29 +407,14 @@ public final class ParticlesModule extends Module {
             return;
         }
 
-        Vec3d cam = mc.gameRenderer.getCamera().getPos();
-        float pitch = mc.gameRenderer.getCamera().getPitch();
-        float yaw   = mc.gameRenderer.getCamera().getYaw();
-
-        double dx = iPos.x - cam.x;
-        double dy = iPos.y - cam.y;
-        double dz = iPos.z - cam.z;
-
-        MatrixStack ms = new MatrixStack();
-        ms.push();
-        ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(pitch));
-        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(yaw + 180.0F));
-        ms.translate(dx, dy, dz);
-        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-yaw));
-        ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(pitch));
-        if (type != ParticleType.STAR)  ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(180F));
-        if (type == ParticleType.HEART) ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(90F));
-        ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotateDeg));
-        if (isAttack) ms.translate(0, -size, 0);
-        else          ms.translate(0, -size, -size);
-
-        drawTextureEntry(ms.peek(), type.texture, -size, -size, size * 2, size * 2, color);
-        ms.pop();
+        // Переиспользуем BILLBOARD_MS вместо new MatrixStack() каждый раз
+        MatrixStack.Entry e = billboardEntry(iPos,
+            mc.gameRenderer.getCamera().getPos(),
+            rotateDeg, size,
+            type != ParticleType.STAR,
+            type == ParticleType.HEART,
+            isAttack);
+        drawTextureEntry(e, type.texture, -size, -size, size * 2, size * 2, color);
     }
 
     private void drawTextureEntry(MatrixStack.Entry entry, Identifier id, float x, float y, float w, float h, int color) {
