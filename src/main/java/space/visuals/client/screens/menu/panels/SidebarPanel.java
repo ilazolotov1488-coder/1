@@ -69,10 +69,11 @@ public class SidebarPanel {
 
         // Логотип в верхней части sidebar
         float logoSize = 10;
-        float logoX = sidebarX + (collapsedSidebarWidth - logoSize) / 2f;
+        float logoW = 14f;
+        float logoX = sidebarX + (collapsedSidebarWidth - logoW) / 2f;
         float logoY = sidebarY + 10;
         DrawUtil.drawRoundedTexture(ctx.getMatrices(), Zenith.id("icons/logotype.png"),
-                logoX, logoY, logoSize, logoSize, BorderRadius.all(2), ColorRGBA.WHITE.mulAlpha(progress));
+                logoX, logoY, logoW, logoSize, BorderRadius.all(2), ColorRGBA.WHITE.mulAlpha(progress));
 
         ctx.pushMatrix();
         ctx.enableScissor((int) sidebarX, (int) sidebarY,
