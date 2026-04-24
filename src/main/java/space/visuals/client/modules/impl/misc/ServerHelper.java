@@ -37,6 +37,7 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.Setting;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.KeySetting;
+import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.impl.render.Predictions;
 import org.lwjgl.glfw.GLFW;
 import space.visuals.base.events.impl.player.EventUpdate;
@@ -61,9 +62,10 @@ import java.util.List;
 public final class ServerHelper extends Module {
 
     private final Map<BlockPos, BlockState> blockStateMap = new HashMap<>();
-    private final List<ServerEvent> serverEvents = new ArrayList<>();
     private final List<Structure> structures = new ArrayList<>();
     private final List<KeyBind> keyBindings = new ArrayList<>();
+    // Временные вейпоинты ивентов: имя → время удаления (ms)
+    private final Map<String, Long> tempEventWaypoints = new HashMap<>();
     
 
     private final Map<BlockPos, Boolean> trapCache = new HashMap<>();
@@ -79,49 +81,58 @@ public final class ServerHelper extends Module {
     }
 
     private final BooleanSetting consumablesSetting = new BooleanSetting("Таймер расходников", true);
-
     private final BooleanSetting autoPointSetting = new BooleanSetting("Авто точка", true);
-
+    private final ModeSetting serverMode = new ModeSetting("Сервер", "HolyWorld", "FunTime");
 
     public void initialize() {
+        // ── HolyWorld ──────────────────────────────────────────────────────────
         keyBindings.add(new KeyBind(Items.PRISMARINE_SHARD,
-                new KeySetting("Взрывная трапка"), 5, new BooleanSettable()));
+                new KeySetting("Взрывная трапка"), 5, new BooleanSettable(), "HolyWorld"));
 
         keyBindings.add(new KeyBind(Items.POPPED_CHORUS_FRUIT,
-                new KeySetting("Обыч трапка"), 0, new BooleanSettable()));
+                new KeySetting("Обыч трапка"), 0, new BooleanSettable(), "HolyWorld"));
 
         keyBindings.add(new KeyBind(Items.NETHER_STAR,
-                new KeySetting("Стан"), 30, new BooleanSettable()));
+                new KeySetting("Стан"), 30, new BooleanSettable(), "HolyWorld"));
 
         keyBindings.add(new KeyBind(Items.FIRE_CHARGE,
-                new KeySetting("Взрывная штука"), 0, new BooleanSettable()));
+                new KeySetting("Взрывная штука"), 0, new BooleanSettable(), "HolyWorld"));
 
         keyBindings.add(new KeyBind(Items.SNOWBALL,
-                new KeySetting("Снежок"), 0, new BooleanSettable()));
+                new KeySetting("Снежок"), 0, new BooleanSettable(), "HolyWorld"));
+
+        // ── FunTime ────────────────────────────────────────────────────────────
+        keyBindings.add(new KeyBind(Items.SNOWBALL,
+                new KeySetting("Снежок"), 0, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.PHANTOM_MEMBRANE,
-                new KeySetting("Божья аура"), 0, new BooleanSettable()));
+                new KeySetting("Божья аура"), 0, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.NETHERITE_SCRAP,
-                new KeySetting("Трапка"), 0, new BooleanSettable()));
+                new KeySetting("Трапка"), 0, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.DRIED_KELP,
-                new KeySetting("Пласт"), 0, new BooleanSettable()));
+                new KeySetting("Пласт"), 0, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.SUGAR,
-                new KeySetting("Явная пыль"), 10, new BooleanSettable()));
+                new KeySetting("Явная пыль"), 10, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.FIRE_CHARGE,
-                new KeySetting("Огненный смерч"), 10, new BooleanSettable()));
+                new KeySetting("Огненный смерч"), 10, new BooleanSettable(), "FunTime"));
 
         keyBindings.add(new KeyBind(Items.ENDER_EYE,
-                new KeySetting("Дезорент"), 10, new BooleanSettable()));
+                new KeySetting("Дезорент"), 10, new BooleanSettable(), "FunTime"));
+
+        // Привязываем видимость каждого бинда к выбранному серверу
+        keyBindings.forEach(bind ->
+            bind.setting().setVisible(() -> serverMode.is(bind.server()))
+        );
     }
 
 
     @Override
     public List<Setting> getSettings() {
-        ArrayList<Setting> settings = new ArrayList<>(List.of(consumablesSetting, autoPointSetting));
+        ArrayList<Setting> settings = new ArrayList<>(List.of(consumablesSetting, autoPointSetting, serverMode));
         settings.addAll(keyBindings.stream().map(KeyBind::setting).toList());
         return settings;
     }
@@ -301,6 +312,24 @@ public final class ServerHelper extends Module {
 
 
     @EventTarget
+    public void onUpdate(EventUpdate e) {
+        // Удаляем просроченные временные вейпоинты ивентов
+        long now = System.currentTimeMillis();
+        tempEventWaypoints.entrySet().removeIf(entry -> {
+            if (now >= entry.getValue()) {
+                // Удаляем вейпоинт по имени (с owner или без)
+                Zenith.getInstance().getWaypointManager().getWaypoints()
+                    .stream()
+                    .filter(w -> w.name.startsWith(entry.getKey()) && w.temporary)
+                    .findFirst()
+                    .ifPresent(w -> Zenith.getInstance().getWaypointManager().remove(w.name));
+                return true;
+            }
+            return false;
+        });
+    }
+
+    @EventTarget
     public void onWorldRender(EventRender3D e) {
         long currentTime = System.currentTimeMillis();
         if (currentTime % 5000 < 16) {
@@ -395,27 +424,7 @@ public final class ServerHelper extends Module {
                 e.getContext().getMatrices().pop();
             }
         });
-        serverEvents.forEach(event -> {
-            Vec3d vec3d = ProjectionUtil.worldSpaceToScreenSpace(event.vec);
-
-            double timeOpen = (event.timeOpen - System.currentTimeMillis()) / 1000;
-            double timeEnd = (event.timeEnd - System.currentTimeMillis()) / 1000;
-            String distance = " [" + MathUtil.round(mc.getEntityRenderDispatcher().camera.getPos().distanceTo(event.vec), 0.1) + "m" + "]";
-            String time = timeOpen > 0 ? ("До начала: " + MathUtil.round(timeOpen, timeOpen < 30 ? 0.1F : 1) + "с").replace(".0", "")
-                    : timeEnd > 0 ? ("До конца: " + MathUtil.round(timeEnd, timeEnd < 30 ? 0.1F : 1) + "с").replace(".0", "")
-                    : "Конец ивента!";
-
-            if (ProjectionUtil.canSee(event.vec) && event.anarchy == Zenith.getInstance().getServerHandler().getAnarchy() && Zenith.getInstance().getServerHandler().getWorldType().equals(event.world)) {
-                List<String> list = new ArrayList<>(Collections.singletonList(event.name + distance));
-                if (event.owner != null) list.add("Призван: " + Formatting.GOLD + event.owner);
-                list.add(time);
-                if (event.lvl != null) list.add(event.lvl);
-                //    draw(matrix, Fonts.getSize(14), list, vec3d);
-            }
-        });
         structures.removeIf(cons -> cons.time - System.currentTimeMillis() <= 0);
-        serverEvents.removeIf(event -> event.timeEnd + 90000 - System.currentTimeMillis() <= 0);
-
     }
 
     private void drawItemCube(BlockPos playerPos, Vec3d smooth, float size, int color) {
@@ -541,11 +550,16 @@ public final class ServerHelper extends Module {
     }
 
     private void addEvent(String name, String lvl, String owner, Vec3d vec3d, String world, int timeOpen, int timeLoot) {
-        if (serverEvents.stream().noneMatch(server -> server.vec.equals(vec3d))) {
-            long open = System.currentTimeMillis() + timeOpen * 1000L;
-            long loot = open + timeLoot * 1000L;
-            serverEvents.add(new ServerEvent(name, lvl, owner, vec3d, world, Zenith.getInstance().getServerHandler().getAnarchy(), open, loot));
-        }
+        // Проверяем что вейпоинта с таким именем ещё нет
+        if (tempEventWaypoints.containsKey(name)) return;
+        long expireMs = System.currentTimeMillis() + (timeOpen + timeLoot + 90) * 1000L;
+        tempEventWaypoints.put(name, expireMs);
+        String label = owner != null ? name + " (" + owner + ")" : name;
+        // Убираем дубли по имени
+        Zenith.getInstance().getWaypointManager().getWaypoints()
+            .stream().filter(w -> w.name.equals(label)).findFirst()
+            .ifPresent(w -> Zenith.getInstance().getWaypointManager().remove(w.name));
+        Zenith.getInstance().getWaypointManager().add(label, vec3d.x, vec3d.y, vec3d.z, true, null);
     }
 
     private void addStructure(Item item, Vec3d vec, double time) {
@@ -676,13 +690,9 @@ public final class ServerHelper extends Module {
         return true;
     }
 
-    public record KeyBind(Item item, KeySetting setting, float distance, BooleanSettable draw) {
+    public record KeyBind(Item item, KeySetting setting, float distance, BooleanSettable draw, String server) {
     }
 
     public record Structure(Item item, Vec3d vec, String world, int anarchy, double time) {
-    }
-
-    public record ServerEvent(String name, String lvl, String owner, Vec3d vec, String world, int anarchy,
-                              double timeOpen, double timeEnd) {
     }
 }
