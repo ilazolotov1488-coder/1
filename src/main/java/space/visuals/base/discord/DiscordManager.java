@@ -148,7 +148,7 @@ public class DiscordManager {
             RichPresence presence = new RichPresence.Builder()
                     .setActivityType(ActivityType.Playing)
                     .setDetails("Playing Minecraft")
-                    .setLargeImage("animlogo", "Space Visuals")
+                    .setLargeImage("https://raw.githubusercontent.com/ilazolotov1488-coder/1/master/animlogo.gif", "Space Visuals")
                     .setStartTimestamp(startTime)
                     .setButtons(buttons)
                     .build();
