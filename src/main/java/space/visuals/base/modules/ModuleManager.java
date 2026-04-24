@@ -73,6 +73,10 @@ public final class ModuleManager implements IMinecraft {
         registerModule(HitParticles.INSTANCE);
         registerModule(WaypointsModule.INSTANCE);
         registerModule(LineGlyphs.INSTANCE);
+        registerModule(Cosmetics.INSTANCE);
+        registerModule(SoulESP.INSTANCE);
+        registerModule(FireFly.INSTANCE);
+        registerModule(TargetESP2.INSTANCE);
         
         // Включаем модули по умолчанию ПОСЛЕ регистрации всех модулей
         // Используем setToggled(true) чтобы принудительно включить без toggle звука
