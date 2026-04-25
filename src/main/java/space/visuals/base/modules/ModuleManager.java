@@ -61,7 +61,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(WorldTweaks.INSTANCE);
         registerModule(EntityESP.INSTANCE);
         registerModule(BlockOverlay.INSTANCE);
-        registerModule(TargetESP.INSTANCE);
+        // registerModule(TargetESP.INSTANCE); // скрыт, заменён на TargetESP2
         registerModule(AnimationModule.INSTANCE);
         registerModule(KillEffects.INSTANCE);
         registerModule(Trails.INSTANCE);
@@ -111,6 +111,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(Sounds.INSTANCE);
         registerModule(AutoJoin.INSTANCE);
         registerModule(FastExp.INSTANCE);
+        registerModule(FakePlayer.INSTANCE);
     }
 
     private void registerModule(Module module) {

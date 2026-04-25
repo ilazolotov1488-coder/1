@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@ModuleAnnotation(name = "TargetESP2", category = Category.RENDER, description = "Визуальный эффект на текущей цели (polyak)")
+@ModuleAnnotation(name = "TargetESP", category = Category.RENDER, description = "Визуальный эффект на текущей цели")
 public final class TargetESP2 extends Module {
     public static final TargetESP2 INSTANCE = new TargetESP2();
 

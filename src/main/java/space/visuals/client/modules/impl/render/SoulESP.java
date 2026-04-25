@@ -55,11 +55,10 @@ public final class SoulESP extends Module {
 
         if (e.getPacket() instanceof EntityStatusS2CPacket packet) {
             byte status = packet.getStatus();
-            if (status != 3) return; // только смерть (не тотем)
+            if (status != 3 && status != 35) return; // смерть (3) или тотем (35)
 
             Entity entity = packet.getEntity(mc.world);
             if (!(entity instanceof PlayerEntity player)) return;
-            if (player == mc.player) return; // себя не показываем
 
             ghosts.add(ghostFromPlayer(player, System.currentTimeMillis()));
         }
@@ -250,6 +249,11 @@ public final class SoulESP extends Module {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    public void spawnGhostAt(Vec3d pos, float yaw, float pitch) {
+        ghosts.add(new Ghost(pos, yaw, pitch, false, 0f, 0f,
+                ItemStack.EMPTY, ItemStack.EMPTY, System.currentTimeMillis()));
+    }
 
     private Ghost ghostFromPlayer(PlayerEntity player, long time) {
         return new Ghost(
