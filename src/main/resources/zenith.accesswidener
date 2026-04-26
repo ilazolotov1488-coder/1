@@ -1,5 +1,6 @@
 accessWidener v2 named
 accessible field net/minecraft/client/render/WorldRenderer frustum Lnet/minecraft/client/render/Frustum;
+accessible method net/minecraft/client/render/item/HeldItemRenderer renderItem (Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/item/ItemStack;Lnet/minecraft/item/ModelTransformationMode;ZLnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumerProvider;I)V
 accessible method net/minecraft/client/network/ClientPlayerEntity isWalking ()Z
 accessible method net/minecraft/client/network/ClientPlayerEntity isBlind ()Z
 accessible method net/minecraft/client/network/ClientPlayerEntity canSprint ()Z

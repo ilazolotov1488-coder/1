@@ -19,6 +19,8 @@ import space.visuals.client.modules.impl.render.SwingAnimation;
 import space.visuals.client.modules.impl.render.ViewModel;
 import space.visuals.utility.render.item.ShaderHandsRenderState;
 
+import static space.visuals.utility.interfaces.IMinecraft.mc;
+
 @Mixin(HeldItemRenderer.class)
 public abstract class HeldItemRendererMixin {
 

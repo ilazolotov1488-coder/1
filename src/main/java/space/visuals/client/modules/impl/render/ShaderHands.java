@@ -23,6 +23,7 @@ public final class ShaderHands extends Module {
     private final NumberSetting  handAlpha       = new NumberSetting("Прозрачность рук", 0.65f, 0.2f, 1f, 0.05f);
     private final NumberSetting  handBrightness  = new NumberSetting("Яркость рук",    1f, 0.5f, 2.5f, 0.05f);
 
+
     private ShaderHands() {}
 
     public boolean shouldShaderHands() { return isEnabled(); }

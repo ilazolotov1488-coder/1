@@ -11,7 +11,8 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.profiler.Profiler;import org.joml.Matrix4f;
+import net.minecraft.util.profiler.Profiler;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -35,15 +36,13 @@ import static space.visuals.utility.interfaces.IMinecraft.mc;
 public abstract class MixinGameRenderer {
 
     @Shadow private float zoom;
-
     @Shadow private float zoomX;
-
     @Shadow private float zoomY;
-
     @Shadow public abstract float getFarPlaneDistance();
 
     @Inject(method = "getBasicProjectionMatrix", at = @At("TAIL"), cancellable = true)
-    public void getBasicProjectionMatrixHook(float fovDegrees, CallbackInfoReturnable<Matrix4f> cir) {        EventAspectRatio eventAspectRatio = new EventAspectRatio();
+    public void getBasicProjectionMatrixHook(float fovDegrees, CallbackInfoReturnable<Matrix4f> cir) {
+        EventAspectRatio eventAspectRatio = new EventAspectRatio();
         EventManager.call(eventAspectRatio);
         if (eventAspectRatio.isCancelled()) {
             Matrix4f matrix4f = new Matrix4f();
@@ -69,7 +68,11 @@ public abstract class MixinGameRenderer {
         if (NoRender.INSTANCE.isRemoveHurtCam()) ci.cancel();
     }
 
-    @Inject(method = "renderWorld", at = @At(value = "FIELD", target = "Lnet/minecraft/client/render/GameRenderer;renderHand:Z", opcode = Opcodes.GETFIELD, ordinal = 0))
+    @Inject(method = "renderWorld",
+            at = @At(value = "FIELD",
+                     target = "Lnet/minecraft/client/render/GameRenderer;renderHand:Z",
+                     opcode = Opcodes.GETFIELD,
+                     ordinal = 0))
     public void hookWorldRender(RenderTickCounter tickCounter, CallbackInfo ci, @Local(ordinal = 2) Matrix4f matrix4f) {
         MatrixStack matrixStack = new MatrixStack();
         matrixStack.multiplyPositionMatrix(matrix4f);
@@ -91,34 +94,32 @@ public abstract class MixinGameRenderer {
                     opcode = Opcodes.GETFIELD,
                     ordinal = 2
             ),
-            locals = LocalCapture.CAPTURE_FAILHARD //Пиздец
+            locals = LocalCapture.CAPTURE_FAILHARD
     )
     private void renderScreenHook(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci,
                                   Profiler profiler, boolean bl, int i, int j,
                                   Window window, Matrix4f matrix4f,
                                   Matrix4fStack matrix4fStack, DrawContext drawContext) {
-        EventManager.call(new EventRenderScreen(UIContext.of(drawContext,i,j,mc.getRenderTickCounter().getTickDelta(false))));
-
+        EventManager.call(new EventRenderScreen(UIContext.of(drawContext, i, j, mc.getRenderTickCounter().getTickDelta(false))));
     }
 
     @Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;draw()V", opcode = Opcodes.GETFIELD, shift = At.Shift.AFTER, ordinal = 0), method = "render")
     void renderHudHook(RenderTickCounter tickCounter, boolean tick, CallbackInfo callbackInfo) {
         triggerHudRenderEvent(tickCounter);
     }
+
     @Unique
     private void triggerHudRenderEvent(RenderTickCounter tickCounter) {
-        // Не рендерим если мир не загружен
         if (mc.world == null || mc.player == null) return;
-        
+
         CustomDrawContext customDrawContext = new CustomDrawContext(mc.getBufferBuilders().getEntityVertexConsumers());
         double saveScale = MinecraftClient.getInstance().getWindow().getScaleFactor();
-        
+
         try {
             setScaleFactorOutAllMods(Interface.INSTANCE.getCustomScale());
         } catch (Exception e) {
             return;
         }
-
 
         RenderSystem.setProjectionMatrix(
                 new Matrix4f().setOrtho(0, mc.getWindow().getScaledWidth(),
@@ -127,9 +128,9 @@ public abstract class MixinGameRenderer {
                 ProjectionType.ORTHOGRAPHIC);
 
         RenderSystem.disableDepthTest();
-        try{
+        try {
             EventManager.call(new EventHudRender(customDrawContext, tickCounter.getTickDelta(false)));
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         customDrawContext.draw();
@@ -140,8 +141,8 @@ public abstract class MixinGameRenderer {
                         mc.getWindow().getScaledHeight(), 0,
                         1000, 21000),
                 ProjectionType.ORTHOGRAPHIC);
-
     }
+
     @Unique
     public void setScaleFactorOutAllMods(double scaleFactor) {
         mc.getWindow().scaleFactor = scaleFactor;

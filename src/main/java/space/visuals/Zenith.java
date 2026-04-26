@@ -131,10 +131,11 @@ public enum Zenith {
                 }
                 @Override
                 public void reload(ResourceManager manager) {
+                    // Инициализируем и сразу загружаем шейдеры при каждом reload
+                    DrawUtil.initializeShaders();
                     GlProgram.loadAndSetupPrograms();
-                }
-            });
-            System.out.println("[ZENITH] step 17: DrawUtil.initializeShaders()");
+                }            });
+            System.out.println("[ZENITH] step 17: DrawUtil.initializeShaders() (initial registration)");
             DrawUtil.initializeShaders();
             System.out.println("[ZENITH] init() COMPLETE!");
         } catch (Throwable t) {

@@ -55,6 +55,8 @@
     "minecraft.render.EntityRendererCullingMixin",
     "minecraft.render.FeatureRendererMixin",
     "minecraft.render.MixinGameRenderer",
+    "minecraft.render.MixinWorldRenderer",
+    "minecraft.render.MixinSkyRendering",
     "minecraft.render.PlayerEntityRendererMixin"
   ],
   "injectors": {

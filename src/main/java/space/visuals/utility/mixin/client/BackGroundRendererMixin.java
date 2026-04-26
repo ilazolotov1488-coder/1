@@ -2,6 +2,7 @@ package space.visuals.utility.mixin.client;
 
 import com.darkmagician6.eventapi.EventManager;
 import com.darkmagician6.eventapi.EventManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.BackgroundRenderer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.Fog;
@@ -13,6 +14,7 @@ import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import space.visuals.base.events.impl.render.EventFog;
 import space.visuals.client.modules.impl.render.NoFluid;
