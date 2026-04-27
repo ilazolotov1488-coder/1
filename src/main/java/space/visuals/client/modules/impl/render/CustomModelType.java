@@ -10,7 +10,8 @@ public enum CustomModelType {
     WHITE_DEMON("Белый демон", Zenith.id("custom_models/whitedemon.png"), ModelKey.DEMON),
     RED_DEMON("Красный демон", Zenith.id("custom_models/reddemon.png"), ModelKey.DEMON),
     FREDDY_BEAR("Фредди медведь", Zenith.id("custom_models/freddy.png"), ModelKey.FREDDY),
-    AMOGUS("Амогус", Zenith.id("custom_models/amogus.png"), ModelKey.AMOGUS);
+    AMOGUS("Амогус", Zenith.id("custom_models/amogus.png"), ModelKey.AMOGUS),
+    RYABCHIK("Рябчик", Zenith.id("custom_models/ryabchik.png"), ModelKey.RYABCHIK);
 
     private final String displayName;
     private final Identifier texture;
@@ -40,6 +41,7 @@ public enum CustomModelType {
             case RED_DEMON    -> "Red Demon".equalsIgnoreCase(name);
             case FREDDY_BEAR  -> "Freddy Bear".equalsIgnoreCase(name);
             case AMOGUS       -> "Amogus".equalsIgnoreCase(name);
+            case RYABCHIK     -> false;
         };
     }
 
@@ -47,5 +49,5 @@ public enum CustomModelType {
         return Arrays.stream(CustomModelType.values()).map(CustomModelType::getDisplayName).toArray(String[]::new);
     }
 
-    public enum ModelKey { RABBIT, DEMON, FREDDY, AMOGUS }
+    public enum ModelKey { RABBIT, DEMON, FREDDY, AMOGUS, RYABCHIK }
 }

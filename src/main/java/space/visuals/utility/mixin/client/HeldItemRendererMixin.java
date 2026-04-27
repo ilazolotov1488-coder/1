@@ -128,7 +128,14 @@ public abstract class HeldItemRendererMixin {
         SwingAnimation swingAnimation = SwingAnimation.INSTANCE;
         if (swingAnimation.isEnabled()) {
             if (arm == Arm.RIGHT) {
-                swingAnimation.renderSwordAnimation(matrices, swingProgress, equipProgress, arm);
+                // Если включён "Только с таргетом" — анимация только когда есть активная цель
+                boolean shouldAnimate = !swingAnimation.onlyAura.isEnabled()
+                        || space.visuals.client.modules.impl.render.TargetESP2.INSTANCE.hasTarget();
+                if (shouldAnimate) {
+                    swingAnimation.renderSwordAnimation(matrices, swingProgress, equipProgress, arm);
+                } else {
+                    this.swingArm(swingProgress, equipProgress, matrices, armX, arm);
+                }
             } else {
                 this.swingArm(swingProgress, equipProgress, matrices, armX, arm);
             }

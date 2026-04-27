@@ -19,6 +19,7 @@ public final class CustomModelsRenderer {
     private static final DemonModel DEMON_MODEL = new DemonModel(DemonModel.createModel());
     private static final FreddyModel FREDDY_MODEL = new FreddyModel(FreddyModel.createModel());
     private static final AmogusModel AMOGUS_MODEL = new AmogusModel(AmogusModel.createModel());
+    private static final RyabchikModel RYABCHIK_MODEL = new RyabchikModel(RyabchikModel.createModel());
 
     private CustomModelsRenderer() {}
 
@@ -46,14 +47,16 @@ public final class CustomModelsRenderer {
             case DEMON -> DEMON_MODEL;
             case FREDDY -> FREDDY_MODEL;
             case AMOGUS -> AMOGUS_MODEL;
+            case RYABCHIK -> RYABCHIK_MODEL;
         };
     }
 
     private static void applyTransform(CustomModelType.ModelKey key, MatrixStack matrices) {
         switch (key) {
-            case RABBIT -> { matrices.scale(1.25f, 1.25f, 1.25f); matrices.translate(0f, -0.3f, 0f); }
-            case FREDDY -> { matrices.scale(0.75f, 0.65f, 0.75f); matrices.translate(0f, 0.85f, 0f); }
-            case AMOGUS -> matrices.translate(0f, -0.5f, 0f);
+            case RABBIT   -> { matrices.scale(1.25f, 1.25f, 1.25f); matrices.translate(0f, -0.3f, 0f); }
+            case FREDDY   -> { matrices.scale(0.75f, 0.65f, 0.75f); matrices.translate(0f, 0.85f, 0f); }
+            case AMOGUS   -> matrices.translate(0f, -0.5f, 0f);
+            case RYABCHIK -> { matrices.scale(1.1f, 1.1f, 1.1f); matrices.translate(0f, -0.15f, 0f); }
             default -> {}
         }
     }
@@ -196,9 +199,95 @@ public final class CustomModelsRenderer {
         }
     }
 
+    // ==================== RYABCHIK (котик-игрушка) ====================
+    private static final class RyabchikModel implements CustomModel {
+        private final ModelPart root, head, leftArm, rightArm, leftLeg, rightLeg;
+
+        private RyabchikModel(ModelPart root) {
+            this.root     = root;
+            this.head     = root.getChild("ryab_head");
+            this.leftArm  = root.getChild("ryab_left_arm");
+            this.rightArm = root.getChild("ryab_right_arm");
+            this.leftLeg  = root.getChild("ryab_left_leg");
+            this.rightLeg = root.getChild("ryab_right_leg");
+        }
+
+        @Override
+        public void applyAngles(ModelPart head, ModelPart leftArm, ModelPart rightArm, ModelPart leftLeg, ModelPart rightLeg) {
+            copyAngles(head,     this.head,     0, 0, 0);
+            copyAngles(leftArm,  this.leftArm,  0, 0, 0);
+            copyAngles(rightArm, this.rightArm, 0, 0, 0);
+            copyAngles(leftLeg,  this.leftLeg,  0, 0, 0);
+            copyAngles(rightLeg, this.rightLeg, 0, 0, 0);
+        }
+
+        @Override
+        public void render(MatrixStack m, VertexConsumer v, int l, int o, int c) {
+            root.render(m, v, l, o, c);
+        }
+
+        static ModelPart createModel() {
+            ModelData md = new ModelData();
+            ModelPartData root = md.getRoot();
+
+            // ── Голова (pivot на уровне шеи, т.е. y=12 от ног) ──────────────
+            // Голова — 8×8×8, центрирована по X и Z
+            ModelPartData head = root.addChild("ryab_head",
+                ModelPartBuilder.create()
+                    .uv(0, 0).cuboid(-4, -8, -4, 8, 8, 8),
+                ModelTransform.pivot(0, 12, 0));
+
+            // Левое ухо — торчит вверх-влево
+            head.addChild("ryab_ear_left",
+                ModelPartBuilder.create()
+                    .uv(32, 0).cuboid(0, -4, -1, 3, 4, 2),
+                ModelTransform.of(2.5f, -8, 0, 0, 0, 0.2618f));
+
+            // Правое ухо — зеркально
+            head.addChild("ryab_ear_right",
+                ModelPartBuilder.create()
+                    .uv(32, 0).mirrored().cuboid(-3, -4, -1, 3, 4, 2).mirrored(false),
+                ModelTransform.of(-2.5f, -8, 0, 0, 0, -0.2618f));
+
+            // ── Туловище (pivot y=12, тело идёт вниз до y=24) ───────────────
+            // Туловище — 8×10×6, чуть уже головы
+            root.addChild("ryab_body",
+                ModelPartBuilder.create()
+                    .uv(0, 16).cuboid(-4, 0, -3, 8, 10, 6),
+                ModelTransform.pivot(0, 12, 0));
+
+            // ── Лапки (маленькие, симметричные, по бокам туловища) ──────────
+            // Левая лапка
+            root.addChild("ryab_left_arm",
+                ModelPartBuilder.create()
+                    .uv(32, 16).cuboid(0, 0, -1.5f, 2, 6, 3),
+                ModelTransform.of(4, 13, 0, 0, 0, 0.2618f));
+
+            // Правая лапка — зеркально
+            root.addChild("ryab_right_arm",
+                ModelPartBuilder.create()
+                    .uv(32, 16).mirrored().cuboid(-2, 0, -1.5f, 2, 6, 3).mirrored(false),
+                ModelTransform.of(-4, 13, 0, 0, 0, -0.2618f));
+
+            // ── Ноги (разделены, симметричные) ──────────────────────────────
+            // Левая нога — pivot смещён вправо от центра
+            root.addChild("ryab_left_leg",
+                ModelPartBuilder.create()
+                    .uv(44, 16).cuboid(-1.5f, 0, -1.5f, 3, 5, 3),
+                ModelTransform.pivot(2.5f, 22, 0));
+
+            // Правая нога — pivot смещён влево от центра
+            root.addChild("ryab_right_leg",
+                ModelPartBuilder.create()
+                    .uv(44, 16).mirrored().cuboid(-1.5f, 0, -1.5f, 3, 5, 3).mirrored(false),
+                ModelTransform.pivot(-2.5f, 22, 0));
+
+            return TexturedModelData.of(md, 64, 64).createModel();
+        }
+    }
+
     // ==================== AMOGUS ====================
-    private static final class AmogusModel implements CustomModel {
-        private final ModelPart root, leftLeg, rightLeg;
+    private static final class AmogusModel implements CustomModel {        private final ModelPart root, leftLeg, rightLeg;
         private AmogusModel(ModelPart root) {
             this.root = root;
             this.leftLeg = root.getChild("amogus_left_leg");

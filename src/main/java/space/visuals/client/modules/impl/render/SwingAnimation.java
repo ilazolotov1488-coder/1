@@ -44,7 +44,7 @@ public final class SwingAnimation extends Module {
             "Пятый"
     );
     public NumberSetting swingPower = new NumberSetting("Сила", 5.0f, 1.0f, 10.0f, 0.05f);
-    public final BooleanSetting onlyAura = new BooleanSetting("Только с аурой", false);
+    public final BooleanSetting onlyAura = new BooleanSetting("Только с таргетом", false);
 
     public void renderSwordAnimation(MatrixStack matrices, float swingProgress, float equipProgress, Arm arm) {
         switch (animationMode.get()) {

@@ -87,6 +87,19 @@ public final class TargetESP2 extends Module {
 
     private TargetESP2() {}
 
+    private long targetLostForSwing = 0L;
+    private static final long SWING_LINGER_MS = 1500L;
+
+    /** Возвращает true если есть активная цель, или прошло менее 1.5с после её потери */
+    public boolean hasTarget() {
+        if (getTarget() != null) {
+            targetLostForSwing = 0L;
+            return true;
+        }
+        if (targetLostForSwing == 0L) targetLostForSwing = System.currentTimeMillis();
+        return System.currentTimeMillis() - targetLostForSwing < SWING_LINGER_MS;
+    }
+
     // ── Target detection ──────────────────────────────────────────────────────
 
     private LivingEntity getTarget() {
