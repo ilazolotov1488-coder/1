@@ -49,7 +49,8 @@ public final class Interface extends Module {
             "Скрореборд",      // 11
             "Таб",             // 12
             "Статус бары",     // 13
-            "Dynamic Island"   // 14
+            "Dynamic Island",  // 14
+            "Компас"           // 15
     ));
 
     private final List<DraggableHudElement> elements = new ArrayList<>();
@@ -57,6 +58,8 @@ public final class Interface extends Module {
     private final java.util.Map<DraggableHudElement, Integer> elementIndexCache = new java.util.IdentityHashMap<>();
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
+    // Слайдер миникарты — отдельный режим drag
+    private CompassHudComponent sliderDragCompass = null;
     private final NumberSetting scale = new NumberSetting("Размер", 2, 1, 3, 0.1f, ((oldValue, newValue) -> {
         try {
             if (mc.getWindow() == null) return;
@@ -114,6 +117,8 @@ public final class Interface extends Module {
         statusBarFoodColor    = statusBarsComponent.foodColor;
 
         addElement(new DynamicIslandComponent("DynamicIsland", 0.0f, 0.0f, 960.0f, 495.5f, 0.0f, 7.0f, DraggableHudElement.Align.TOP_CENTER)); // 14 - Dynamic Island
+
+        addElement(new CompassHudComponent("Compass", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 0.0f, DraggableHudElement.Align.CENTER_LEFT)); // 15 - Компас
 
     }
 
@@ -200,6 +205,11 @@ public final class Interface extends Module {
                 draggingElement.set(ctx, (float) mouseX - dragOffsetX, (float) mouseY - dragOffsetY, this,width,height);
 
             }
+            // Передаём drag в слайдер миникарты
+            if (sliderDragCompass != null) {
+                Vector2f mousePos = GuiUtil.getMouse(getCustomScale());
+                sliderDragCompass.onMouseMove((float) mousePos.getX());
+            }
         }
 
 
@@ -231,9 +241,25 @@ public final class Interface extends Module {
 
             for (DraggableHudElement element : reversedElements) {
                 if (shouldRender(element) && element.isMouseOver(mouseX, mouseY)) {
+                    // Если это миникарта — сначала проверяем слайдер
+                    if (element instanceof CompassHudComponent compass) {
+                        if (compass.onLeftPress((float) mouseX, (float) mouseY)) {
+                            sliderDragCompass = compass;
+                            break; // поглощаем — не двигаем карту
+                        }
+                    }
                     draggingElement = element;
                     dragOffsetX = (float) mouseX - element.getX();
                     dragOffsetY = (float) mouseY - element.getY();
+                    break;
+                }
+            }
+        } else if (event.getAction() == 1 && event.getButton() == 1) {
+            // ПКМ — показать/скрыть слайдер размера миникарты
+            for (DraggableHudElement element : elements) {
+                if (shouldRender(element) && element instanceof CompassHudComponent compass
+                        && compass.isMouseOver(mouseX, mouseY)) {
+                    compass.onRightClick();
                     break;
                 }
             }
@@ -241,6 +267,10 @@ public final class Interface extends Module {
             if (draggingElement != null) {
                 draggingElement.release();
                 draggingElement = null;
+            }
+            if (sliderDragCompass != null) {
+                sliderDragCompass.onLeftRelease();
+                sliderDragCompass = null;
             }
         }
     }

@@ -10,7 +10,6 @@ import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
-import space.visuals.base.autobuy.AutoBuyManager;
 import space.visuals.base.discord.DiscordManager;
 
 
@@ -63,7 +62,6 @@ public enum Zenith {
     private StaffManager staffManager;
     private DeepLearningManager deepLearningManager;
     private RotationManager rotationManager;
-    private AutoBuyManager autoBuyManager;
 
     private NotifyManager notifyManager;
     private CommandManager commandManager;
@@ -108,8 +106,6 @@ public enum Zenith {
             deepLearningManager = new DeepLearningManager();
             System.out.println("[ZENITH] step 9: RotationManager");
             rotationManager = new RotationManager();
-            System.out.println("[ZENITH] step 10: AutoBuyManager");
-            autoBuyManager = new AutoBuyManager();
             System.out.println("[ZENITH] step 11: CommandManager");
             commandManager = new CommandManager();
             System.out.println("[ZENITH] step 11.5: WaypointManager");

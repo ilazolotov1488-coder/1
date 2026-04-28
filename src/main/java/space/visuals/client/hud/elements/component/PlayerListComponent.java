@@ -21,6 +21,7 @@ import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
 import space.visuals.client.hud.elements.draggable.DraggableHudElement;
+import space.visuals.client.modules.impl.render.FriendMarkers;
 import space.visuals.client.modules.impl.render.Interface;
 import space.visuals.utility.game.other.TextUtil;
 import space.visuals.utility.render.display.base.BorderRadius;
@@ -294,8 +295,29 @@ public class PlayerListComponent extends DraggableHudElement {
             }
 
             int nameColor = (ple.getGameMode() == GameMode.SPECTATOR) ? 0x912D2D2F : Colors.WHITE;
-            context.drawTextWithShadow(mc.textRenderer, sde.name(), textX, cellTop, nameColor);
 
+            // FriendMarkers: подсветка фона строки и ника для друзей
+            boolean isFriend = Zenith.getInstance().getFriendManager().isFriend(profile.getName());
+            if (isFriend && FriendMarkers.INSTANCE.isTabHighlightEnabled()) {
+                nameColor = FriendMarkers.INSTANCE.getTabColor().getRGB();
+                // Подсвечиваем весь фон строки цветом друга (полупрозрачный)
+                ColorRGBA friendBg = FriendMarkers.INSTANCE.getTabColor().withAlpha(60);
+                context.fill(cellLeft, cellTop, cellLeft + columnWidth, cellTop + 8, friendBg.getRGB());
+            }
+
+            // Строим отображаемое имя с префиксом
+            net.minecraft.text.Text displayName = sde.name();
+            if (isFriend) {
+                net.minecraft.text.MutableText decorated = net.minecraft.text.Text.empty();
+                if (FriendMarkers.INSTANCE.isTabPrefixEnabled()) {
+                    decorated.append(net.minecraft.text.Text.literal(FriendMarkers.INSTANCE.getTabPrefixSymbol())
+                            .setStyle(net.minecraft.text.Style.EMPTY.withColor(nameColor)));
+                }
+                decorated.append(displayName.copy().setStyle(net.minecraft.text.Style.EMPTY.withColor(nameColor)));
+                context.drawTextWithShadow(mc.textRenderer, decorated, textX, cellTop, nameColor);
+            } else {
+                context.drawTextWithShadow(mc.textRenderer, displayName, textX, cellTop, nameColor);
+            }
             if (objective != null && ple.getGameMode() != GameMode.SPECTATOR) {
                 int scoreLeft = textX + nameColumnWidth + 1;
                 int scoreRight = scoreLeft + extraColumnWidth;

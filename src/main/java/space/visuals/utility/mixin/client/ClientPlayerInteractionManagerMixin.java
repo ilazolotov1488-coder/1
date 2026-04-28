@@ -16,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import space.visuals.base.events.impl.other.EventClickSlot;
 import space.visuals.base.events.impl.player.EventAttack;
-import space.visuals.utility.game.server.AutoBuyUtil;
 
 @Mixin(ClientPlayerInteractionManager.class)
 public class ClientPlayerInteractionManagerMixin {

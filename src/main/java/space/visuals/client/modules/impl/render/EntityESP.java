@@ -24,7 +24,6 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Vector4d;
 import space.visuals.Zenith;
 import com.darkmagician6.eventapi.EventTarget;
-import space.visuals.base.autobuy.item.ItemBuy;
 import space.visuals.base.events.impl.render.EventHudRender;
 import space.visuals.base.events.impl.render.EventRender2D;
 import space.visuals.base.events.impl.render.EventRender3D;
@@ -40,6 +39,7 @@ import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.MultiBooleanSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.client.modules.impl.misc.NameProtect;
+import space.visuals.client.modules.impl.render.FriendMarkers;
 import space.visuals.utility.game.other.MessageUtil;
 import space.visuals.utility.game.other.TextUtil;
 import space.visuals.utility.game.player.PlayerIntersectionUtil;
@@ -588,9 +588,7 @@ public final class EntityESP extends Module {
         if (health <= 7) return new ColorRGBA(255, 0, 0, 255);
         if (health <= 15) return new ColorRGBA(255, 255, 0, 255);
         return new ColorRGBA(0, 255, 0, 255);
-
     }
-
 
 }
 

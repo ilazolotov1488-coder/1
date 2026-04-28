@@ -13,7 +13,6 @@ import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
 import space.visuals.client.modules.impl.misc.AHHelper;
 import space.visuals.client.modules.impl.render.AnimationModule;
-import space.visuals.utility.game.server.AutoBuyUtil;
 import space.visuals.utility.mixin.accessors.HandledScreenAccessor;
 
 @Mixin(HandledScreen.class)
@@ -89,17 +88,34 @@ public abstract class HandledScreenMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void tickScreen(CallbackInfo ci) {
-        if (!isAuc && AHHelper.INSTANCE.isEnabled()) isAuc = AutoBuyUtil.isAuction(this.handler);
+        if (!isAuc && AHHelper.INSTANCE.isEnabled()) isAuc = isAuction(this.handler);
         if (isAuc && AHHelper.INSTANCE.isEnabled()) {
             int lowSum = Integer.MAX_VALUE, allSum = Integer.MAX_VALUE;
             for (int i = 0; i < 44; i++) {
                 Slot slot = this.getScreenHandler().slots.get(i);
                 if (slot.getStack().isEmpty()) continue;
-                int sum = AutoBuyUtil.getPrice(slot.getStack());
+                int sum = getSlotPrice(slot.getStack());
                 if (sum < lowSum) { lowSumSlotId = slot; lowSum = sum; }
                 if (sum / slot.getStack().getCount() < allSum) { allSum = sum / slot.getStack().getCount(); lowAllSumSlotId = slot; }
             }
         }
+    }
+
+    private boolean isAuction(net.minecraft.screen.ScreenHandler h) {
+        return h.slots.size() == 90 && h.getSlot(49).getStack().getItem() == net.minecraft.item.Items.NETHER_STAR;
+    }
+
+    private int getSlotPrice(net.minecraft.item.ItemStack stack) {
+        try {
+            net.minecraft.component.type.NbtComponent customData = stack.get(net.minecraft.component.DataComponentTypes.CUSTOM_DATA);
+            if (customData == null) return Integer.MAX_VALUE;
+            String nbt = customData.getNbt().toString();
+            java.util.regex.Matcher m1 = java.util.regex.Pattern.compile("\\$\\s*([0-9][\\d,]*)").matcher(nbt);
+            if (m1.find()) return Integer.parseInt(m1.group(1).replace(",", ""));
+            java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("Цена:(?:.*?\\{\"text\":\"([\\d ]+)\")").matcher(nbt);
+            if (m2.find()) return Integer.parseInt(m2.group(1).replaceAll(" ", ""));
+        } catch (Exception ignored) {}
+        return Integer.MAX_VALUE;
     }
 
     @Inject(method = "drawSlot(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/screen/slot/Slot;)V", at = @At("HEAD"))

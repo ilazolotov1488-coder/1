@@ -19,7 +19,6 @@ public final class CustomModelsRenderer {
     private static final DemonModel DEMON_MODEL = new DemonModel(DemonModel.createModel());
     private static final FreddyModel FREDDY_MODEL = new FreddyModel(FreddyModel.createModel());
     private static final AmogusModel AMOGUS_MODEL = new AmogusModel(AmogusModel.createModel());
-    private static final RyabchikModel RYABCHIK_MODEL = new RyabchikModel(RyabchikModel.createModel());
 
     private CustomModelsRenderer() {}
 
@@ -47,7 +46,6 @@ public final class CustomModelsRenderer {
             case DEMON -> DEMON_MODEL;
             case FREDDY -> FREDDY_MODEL;
             case AMOGUS -> AMOGUS_MODEL;
-            case RYABCHIK -> RYABCHIK_MODEL;
         };
     }
 
@@ -56,7 +54,6 @@ public final class CustomModelsRenderer {
             case RABBIT   -> { matrices.scale(1.25f, 1.25f, 1.25f); matrices.translate(0f, -0.3f, 0f); }
             case FREDDY   -> { matrices.scale(0.75f, 0.65f, 0.75f); matrices.translate(0f, 0.85f, 0f); }
             case AMOGUS   -> matrices.translate(0f, -0.5f, 0f);
-            case RYABCHIK -> { matrices.scale(1.1f, 1.1f, 1.1f); matrices.translate(0f, -0.15f, 0f); }
             default -> {}
         }
     }
