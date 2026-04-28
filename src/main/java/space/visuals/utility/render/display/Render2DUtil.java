@@ -145,9 +145,13 @@ public class Render2DUtil implements IMinecraft {
     }
 
     private static GlowKey findSimilarKey(int width, int height, int blurRadius) {
-        GlowKey closest = null;
-        int minDiff = Integer.MAX_VALUE;
+        // Сначала пробуем точное совпадение — O(1)
+        GlowKey exact = new GlowKey(width, height, blurRadius);
+        if (glowCache.containsKey(exact)) return exact;
 
+        // Если нет — ищем похожий с допуском 5 пикселей
+        GlowKey closest = null;
+        int minDiff = 5; // порог допуска
         for (GlowKey k : glowCache.keySet()) {
             int diff = Math.abs(k.width() - width)
                     + Math.abs(k.height() - height)
@@ -571,8 +575,7 @@ public class Render2DUtil implements IMinecraft {
         }
 
         public boolean tick() {
-
-            return ++ticksSinceUse > 300;
+            return ++ticksSinceUse > 100;
         }
 
         public void destroy() {

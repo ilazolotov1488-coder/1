@@ -18,11 +18,17 @@ public class InformationComponent extends DraggableHudElement {
 
     public InformationComponent(String name, float initialX, float initialY, float windowWidth, float windowHeight, float offsetX, float offsetY, Align align) {
         super(name,initialX, initialY,windowWidth,windowHeight,offsetX,offsetY,align);
-
     }
 
     Animation cordsWidthAnimation = new Animation(200, Easing.QUAD_IN_OUT);
     Animation speedWidthAnimation = new Animation(200, Easing.QUAD_IN_OUT);
+
+    // Кэш строк — пересчитываем только при изменении значений
+    private int cachedX = Integer.MIN_VALUE, cachedY = Integer.MIN_VALUE, cachedZ = Integer.MIN_VALUE;
+    private String cachedCoordsText = "";
+    private double cachedSpeed = -1;
+    private String cachedSpeedText = "";
+
     @Override
     public void render(CustomDrawContext ctx) {
         float iconSize = 6f;
@@ -40,11 +46,22 @@ public class InformationComponent extends DraggableHudElement {
         Font font = Fonts.MEDIUM.getFont(6);
 
         double speed = Math.hypot(mc.player.getX() - mc.player.prevX, mc.player.getZ() - mc.player.prevZ);
-        String coordsText = String.format(Locale.US, "%d y%d z%d", (int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
-        String speedText = String.format("%.2f", speed * 20F).replace(",", ".");
 
-        float coordsWidth = cellPadding * 2 + iconSize + iconTextSpacing  + coordsText.length()*3.8f;
-        float speedWidth = cellPadding * 2 + iconSize + iconTextSpacing + font.width(speedText) + font.width("bps");
+        // Обновляем строку координат только при изменении
+        int px = (int) mc.player.getX(), py = (int) mc.player.getY(), pz = (int) mc.player.getZ();
+        if (px != cachedX || py != cachedY || pz != cachedZ) {
+            cachedX = px; cachedY = py; cachedZ = pz;
+            cachedCoordsText = String.format(Locale.US, "%d y%d z%d", px, py, pz);
+        }
+
+        // Обновляем строку скорости только при изменении (с порогом 0.001)
+        if (Math.abs(speed - cachedSpeed) > 0.001) {
+            cachedSpeed = speed;
+            cachedSpeedText = String.format("%.2f", speed * 20F).replace(",", ".");
+        }
+
+        float coordsWidth = cellPadding * 2 + iconSize + iconTextSpacing  + cachedCoordsText.length()*3.8f;
+        float speedWidth = cellPadding * 2 + iconSize + iconTextSpacing + font.width(cachedSpeedText) + font.width("bps");
         coordsWidth = cordsWidthAnimation.update(coordsWidth);
         speedWidth=speedWidthAnimation.update(speedWidth);
         float totalWidth = coordsWidth + speedWidth;
@@ -61,28 +78,23 @@ public class InformationComponent extends DraggableHudElement {
         float currentX = x + cellPadding;
         float iconY = y + (totalHeight - iconSize) / 2f;
         float textY = y + (totalHeight - font.height()) / 2f;
-       // ctx.drawTexture(Zenith.id("icons/cord.png"), currentX, iconY, iconSize, iconSize, iconColor);
         Font iconFont =Fonts.ICONS.getFont(6);
         ctx.drawText(iconFont,"J",currentX,iconY,iconColor);
         currentX += iconSize + iconTextSpacing;
-        currentX = drawPrefixedText(ctx, font, "x", String.valueOf((int)mc.player.getX()), currentX, textY, grayTextColor, textColor);
-        currentX = drawPrefixedText(ctx, font, " y", String.valueOf((int)mc.player.getY()), currentX, textY, grayTextColor, textColor);
-        currentX = drawPrefixedText(ctx, font, " z", String.valueOf((int)mc.player.getZ()), currentX, textY, grayTextColor, textColor);
+        currentX = drawPrefixedText(ctx, font, "x", String.valueOf(px), currentX, textY, grayTextColor, textColor);
+        currentX = drawPrefixedText(ctx, font, " y", String.valueOf(py), currentX, textY, grayTextColor, textColor);
+        currentX = drawPrefixedText(ctx, font, " z", String.valueOf(pz), currentX, textY, grayTextColor, textColor);
         ctx.disableScissor();
         currentX = x + coordsWidth + cellPadding;
         ctx.enableScissor((int) currentX, (int) y, (int) (currentX+speedWidth), (int) (y +height));
 
-       // ctx.drawTexture(Zenith.id("icons/bps.png"), currentX, iconY, iconSize, iconSize, iconColor);
-
         ctx.drawText(iconFont,"K", currentX, iconY, iconColor);
         currentX += iconSize + iconTextSpacing;
-        currentX = drawPrefixedText(ctx, font, speedText, "bps", currentX, textY, textColor, grayTextColor);
+        currentX = drawPrefixedText(ctx, font, cachedSpeedText, "bps", currentX, textY, textColor, grayTextColor);
         ctx.disableScissor();
 
         ctx.drawRoundedBorder(x, y, coordsWidth+speedWidth, totalHeight,0.1f,BorderRadius.all(4),theme.getForegroundStroke());
-
         DrawUtil.drawRoundedCorner(ctx.getMatrices(), x, y, coordsWidth+speedWidth, totalHeight,0.1f,12,theme.getColor(),BorderRadius.all(4));
-
     }
 
     private float drawPrefixedText(CustomDrawContext ctx, Font font, String prefix, String value, float x, float y, ColorRGBA prefixColor, ColorRGBA valueColor) {

@@ -78,6 +78,10 @@ public final class TargetESP2 extends Module {
     private float  damageFlashIntensity = 0f;
     private static final long DAMAGE_FLASH_DURATION = 500;
 
+    // Таймер для SwingAnimation
+    private long targetLostForSwing = 0L;
+    private static final long SWING_LINGER_MS = 1500L;
+
     // Cubes
     private final ArrayList<CubeParticle> particles = new ArrayList<>();
     private static final int   PARTICLES_PER_SPAWN = 1;
@@ -86,9 +90,6 @@ public final class TargetESP2 extends Module {
     private long  lastCubeTime     = 0L;
 
     private TargetESP2() {}
-
-    private long targetLostForSwing = 0L;
-    private static final long SWING_LINGER_MS = 1500L;
 
     /** Возвращает true если есть активная цель, или прошло менее 1.5с после её потери */
     public boolean hasTarget() {
@@ -215,6 +216,7 @@ public final class TargetESP2 extends Module {
                 renderCubes(matrices, camera, null, tickDelta, animVal);
         }
     }
+
     // -- Ghost -----------------------------------------------------------------
 
     private void renderGhost(MatrixStack matrices, Camera camera, LivingEntity target, float pt, float alphaMul) {

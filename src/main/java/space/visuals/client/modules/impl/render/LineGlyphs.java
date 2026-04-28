@@ -11,10 +11,13 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.client.modules.api.setting.impl.ColorSetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
+import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.level.Render3DUtil;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -24,18 +27,31 @@ public final class LineGlyphs extends Module {
 
     public static final LineGlyphs INSTANCE = new LineGlyphs();
 
-    private final BooleanSetting glowing    = new BooleanSetting("Свечение", true);
-    private final ModeSetting    colorMode  = new ModeSetting("Цвет", "Клиентский", "Кастом", "Двойной");
-    private final ColorSetting   color1     = new ColorSetting("Цвет 1", new ColorRGBA(100, 200, 255));
-    private final ColorSetting   color2     = new ColorSetting("Цвет 2", new ColorRGBA(255, 100, 200));
-    private final space.visuals.client.modules.api.setting.impl.NumberSetting count   = new space.visuals.client.modules.api.setting.impl.NumberSetting("Количество", 120f, 10f, 300f, 10f);
-    private final space.visuals.client.modules.api.setting.impl.NumberSetting radius  = new space.visuals.client.modules.api.setting.impl.NumberSetting("Дальность", 20f, 5f, 60f, 1f);
+    private final BooleanSetting glowing   = new BooleanSetting("Свечение", true);
+    private final ModeSetting    colorMode = new ModeSetting("Цвет", "Клиентский", "Кастом", "Двойной");
+    private final ColorSetting   color1    = new ColorSetting("Цвет 1", new ColorRGBA(100, 200, 255));
+    private final ColorSetting   color2    = new ColorSetting("Цвет 2", new ColorRGBA(255, 100, 200));
+    private final NumberSetting  count     = new NumberSetting("Количество", 120f, 10f, 300f, 10f);
+    private final NumberSetting  radius    = new NumberSetting("Дальность", 20f, 5f, 60f, 1f);
 
-    private static final int   LINE_COUNT      = 120;
-    private static final float FALL_SPEED      = 0.07f;
+    private static final float FALL_SPEED = 0.07f;
+
+    // Статические направления — не создаём новые Vec3d каждый кадр
+    private static final Vec3d[] DIRS = {
+        new Vec3d( 1,  0,  0),
+        new Vec3d(-1,  0,  0),
+        new Vec3d( 0,  1,  0),
+        new Vec3d( 0, -1,  0),
+        new Vec3d( 0,  0,  1),
+        new Vec3d( 0,  0, -1)
+    };
 
     private final List<FallingLine> lines  = new ArrayList<>();
     private final Random            random = new Random();
+
+    // Кэш цветов — обновляем раз в 3 кадра
+    private final int[] colorCache = new int[300];
+    private int colorCacheFrame = 0;
 
     private LineGlyphs() {}
 
@@ -65,7 +81,6 @@ public final class LineGlyphs extends Module {
 
         Vec3d playerPos = mc.player.getPos();
 
-        // Считаем сколько нужно заспавнить
         int targetCount = (int) count.getCurrent();
         float maxRadius = radius.getCurrent();
         int toSpawn = targetCount - lines.size();
@@ -84,6 +99,16 @@ public final class LineGlyphs extends Module {
             lines.add(new FallingLine(random, playerPos, maxRadius));
         }
 
+        // Обновляем кэш цветов раз в 3 кадра
+        colorCacheFrame++;
+        if (colorCacheFrame >= 3) {
+            colorCacheFrame = 0;
+            int sz = Math.min(lines.size(), colorCache.length);
+            for (int i = 0; i < sz; i++) {
+                colorCache[i] = computeColor(i);
+            }
+        }
+
         renderLines();
     }
 
@@ -91,36 +116,45 @@ public final class LineGlyphs extends Module {
         if (lines.isEmpty()) return;
         Camera camera = mc.gameRenderer.getCamera();
         Vec3d camPos = camera.getPos();
+        float maxDist = radius.getCurrent() + 10f;
+        float maxDistSq = maxDist * maxDist;
+        boolean doGlow = glowing.isEnabled();
+        float lineWidth = doGlow ? 2.5f : 1.5f;
 
         for (int li = 0; li < lines.size(); li++) {
             FallingLine line = lines.get(li);
             if (line.points.size() < 2) continue;
 
-            int baseColor = getColor(li);
+            // Проверяем дистанцию один раз по первой точке линии — не для каждого сегмента
+            Vec3d head = line.points.peekLast();
+            if (head == null) continue;
+            double dx = head.x - camPos.x, dy = head.y - camPos.y, dz = head.z - camPos.z;
+            if (dx*dx + dy*dy + dz*dz > maxDistSq * 4) continue;
 
-            for (int i = 0; i < line.points.size() - 1; i++) {
-                Vec3d start = line.points.get(i);
-                Vec3d end   = line.points.get(i + 1);
+            int baseColor = li < colorCache.length ? colorCache[li] : computeColor(li);
+            int pointCount = line.points.size();
+            int idx = 0;
 
-                float maxDist = radius.getCurrent() + 10f;
-                if (start.distanceTo(camPos) > maxDist || end.distanceTo(camPos) > maxDist) continue;
-
-                float segAlpha = (float)(i + 1) / line.points.size();
-                int segColor   = applyAlpha(baseColor, (int)(segAlpha * 255));
-                float width    = glowing.isEnabled() ? 2.5f : 1.5f;
-
-                Render3DUtil.drawLine(start, end, segColor, width, true);
-                if (glowing.isEnabled()) {
-                    Render3DUtil.drawLine(start, end, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f, true);
+            Vec3d prev = null;
+            for (Vec3d pt : line.points) {
+                if (prev != null) {
+                    float segAlpha = (float) idx / pointCount;
+                    int segColor = applyAlpha(baseColor, (int)(segAlpha * 255));
+                    Render3DUtil.drawLine(prev, pt, segColor, lineWidth, true);
+                    if (doGlow) {
+                        Render3DUtil.drawLine(prev, pt, applyAlpha(baseColor, (int)(segAlpha * 100)), 4.0f, true);
+                    }
                 }
+                prev = pt;
+                idx++;
             }
         }
     }
 
-    private int getColor(int index) {
+    private int computeColor(int index) {
         return switch (colorMode.get()) {
-            case "Кастом"   -> color1.getColor().getRGB();
-            case "Двойной"  -> {
+            case "Кастом"  -> color1.getColor().getRGB();
+            case "Двойной" -> {
                 float t = (index % 10) / 10f;
                 yield color1.getColor().mix(color2.getColor(), t).getRGB();
             }
@@ -135,11 +169,12 @@ public final class LineGlyphs extends Module {
     // ── Внутренний класс ──────────────────────────────────────────────────────
 
     private static class FallingLine {
-        final List<Vec3d> points     = new ArrayList<>();
+        // ArrayDeque вместо ArrayList — O(1) удаление с обоих концов
+        final Deque<Vec3d> points = new ArrayDeque<>();
         Vec3d  currentDirection;
-        double distanceTraveled      = 0;
+        double distanceTraveled   = 0;
         double currentSegmentLength;
-        final Random random          = new Random();
+        double totalLength        = 0; // накопленная длина — не пересчитываем каждый кадр
 
         FallingLine(Random rng, Vec3d playerPos, float maxRadius) {
             double spawnRadius = maxRadius * 0.4 + rng.nextDouble() * maxRadius * 0.6;
@@ -151,48 +186,41 @@ public final class LineGlyphs extends Module {
             double z = playerPos.z + spawnRadius * Math.sin(phi) * Math.sin(theta);
 
             points.add(new Vec3d(x, y, z));
-            currentDirection     = randomDir();
+            currentDirection     = DIRS[rng.nextInt(6)];
             currentSegmentLength = 0.5 + rng.nextDouble() * 1.5;
         }
 
         void update(Vec3d playerPos, float speed, float segLen, float zigzag, float maxLen) {
             if (points.isEmpty()) return;
-            Vec3d last = points.get(points.size() - 1);
-            points.add(last.add(currentDirection.multiply(speed)));
+            Vec3d last = points.peekLast();
+            Vec3d next = last.add(currentDirection.multiply(speed));
+            points.addLast(next);
+
+            // Обновляем накопленную длину инкрементально
+            totalLength += speed;
             distanceTraveled += speed;
 
             if (distanceTraveled >= currentSegmentLength) {
-                currentDirection     = randomDir();
+                // Используем статические направления — без new Vec3d
+                currentDirection     = DIRS[(int)(Math.random() * 6)];
                 distanceTraveled     = 0;
-                currentSegmentLength = 0.5 + random.nextDouble() * 1.5;
+                currentSegmentLength = 0.5 + Math.random() * 1.5;
             }
 
-            // Обрезаем хвост
-            double total = 0;
-            for (int i = points.size() - 1; i > 0; i--) {
-                total += points.get(i).distanceTo(points.get(i - 1));
-            }
-            while (total > maxLen && points.size() > 2) {
-                total -= points.get(0).distanceTo(points.get(1));
-                points.remove(0);
+            // Обрезаем хвост — O(1) с ArrayDeque
+            while (totalLength > maxLen && points.size() > 2) {
+                Vec3d first  = points.peekFirst();
+                Vec3d second = points.stream().skip(1).findFirst().orElse(first);
+                double removed = first.distanceTo(second);
+                totalLength -= removed;
+                points.pollFirst();
             }
         }
 
         boolean shouldRespawn(Vec3d playerPos, float maxRadius) {
             if (points.isEmpty()) return true;
-            Vec3d last = points.get(points.size() - 1);
+            Vec3d last = points.peekLast();
             return last.distanceTo(playerPos) > maxRadius + 5f;
-        }
-
-        private Vec3d randomDir() {
-            return switch (random.nextInt(6)) {
-                case 0 -> new Vec3d( 1,  0,  0);
-                case 1 -> new Vec3d(-1,  0,  0);
-                case 2 -> new Vec3d( 0,  1,  0);
-                case 3 -> new Vec3d( 0, -1,  0);
-                case 4 -> new Vec3d( 0,  0,  1);
-                default -> new Vec3d( 0,  0, -1);
-            };
         }
     }
 }

@@ -53,6 +53,8 @@ public final class Interface extends Module {
     ));
 
     private final List<DraggableHudElement> elements = new ArrayList<>();
+    // Кэш индексов для O(1) shouldRender вместо O(n) indexOf
+    private final java.util.Map<DraggableHudElement, Integer> elementIndexCache = new java.util.IdentityHashMap<>();
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
     private final NumberSetting scale = new NumberSetting("Размер", 2, 1, 3, 0.1f, ((oldValue, newValue) -> {
@@ -154,6 +156,7 @@ public final class Interface extends Module {
 
 
     private void addElement(DraggableHudElement element) {
+        elementIndexCache.put(element, elements.size());
         elements.add(element);
     }
 
@@ -204,8 +207,8 @@ public final class Interface extends Module {
 
 
     private boolean shouldRender(DraggableHudElement element) {
-        int index = elements.indexOf(element);
-        if (index < 0 || index >= elementsSetting.getBooleanSettings().size()) return false;
+        Integer index = elementIndexCache.get(element);
+        if (index == null || index >= elementsSetting.getBooleanSettings().size()) return false;
         return elementsSetting.getBooleanSettings().get(index).isEnabled();
     }
 
@@ -344,7 +347,7 @@ public final class Interface extends Module {
     @EventTarget
     public void update(EventUpdate eventUpdate) {
 
-        if(glowCache.size()>400){
+        if(glowCache.size()>80){
             glowCache.values().removeIf(v -> {
                 if (v.tick()) {
                     v.destroy();

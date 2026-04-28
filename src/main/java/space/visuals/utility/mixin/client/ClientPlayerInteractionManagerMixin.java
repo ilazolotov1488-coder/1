@@ -1,8 +1,6 @@
 package space.visuals.utility.mixin.client;
 
 import com.darkmagician6.eventapi.EventManager;
-import net.minecraft.block.*;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
@@ -18,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import space.visuals.base.events.impl.other.EventClickSlot;
 import space.visuals.base.events.impl.player.EventAttack;
-import space.visuals.client.modules.impl.misc.NoInteract;
 import space.visuals.utility.game.server.AutoBuyUtil;
 
 @Mixin(ClientPlayerInteractionManager.class)
@@ -43,29 +40,6 @@ public class ClientPlayerInteractionManagerMixin {
 
     @Inject(method = "interactBlock", at = @At("HEAD"), cancellable = true)
     private void interactBlock(ClientPlayerEntity player, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> cir) {
-        Block bs = null;
-        if (MinecraftClient.getInstance().world != null) {
-            bs = MinecraftClient.getInstance().world.getBlockState(hitResult.getBlockPos()).getBlock();
-        }
-
-        NoInteract noInteract =NoInteract.INSTANCE;
-        if (noInteract != null && noInteract.isEnabled() && (
-                bs == Blocks.CHEST ||
-                bs == Blocks.TRAPPED_CHEST ||
-                bs == Blocks.FURNACE ||
-                bs == Blocks.ANVIL ||
-                bs == Blocks.CRAFTING_TABLE ||
-                bs == Blocks.HOPPER ||
-                bs == Blocks.JUKEBOX ||
-                bs == Blocks.NOTE_BLOCK ||
-                bs == Blocks.ENDER_CHEST ||
-                bs == Blocks.DISPENSER ||
-                bs == Blocks.DROPPER ||
-                bs instanceof ShulkerBoxBlock ||
-                bs instanceof FenceBlock ||
-                bs instanceof FenceGateBlock)) {
-            cir.setReturnValue(ActionResult.PASS);
-        }
     }
 
 }

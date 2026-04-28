@@ -230,53 +230,41 @@ public final class CustomModelsRenderer {
             ModelData md = new ModelData();
             ModelPartData root = md.getRoot();
 
-            // ── Голова (pivot на уровне шеи, т.е. y=12 от ног) ──────────────
-            // Голова — 8×8×8, центрирована по X и Z
             ModelPartData head = root.addChild("ryab_head",
                 ModelPartBuilder.create()
                     .uv(0, 0).cuboid(-4, -8, -4, 8, 8, 8),
                 ModelTransform.pivot(0, 12, 0));
 
-            // Левое ухо — торчит вверх-влево
             head.addChild("ryab_ear_left",
                 ModelPartBuilder.create()
                     .uv(32, 0).cuboid(0, -4, -1, 3, 4, 2),
                 ModelTransform.of(2.5f, -8, 0, 0, 0, 0.2618f));
 
-            // Правое ухо — зеркально
             head.addChild("ryab_ear_right",
                 ModelPartBuilder.create()
                     .uv(32, 0).mirrored().cuboid(-3, -4, -1, 3, 4, 2).mirrored(false),
                 ModelTransform.of(-2.5f, -8, 0, 0, 0, -0.2618f));
 
-            // ── Туловище (pivot y=12, тело идёт вниз до y=24) ───────────────
-            // Туловище — 8×10×6, чуть уже головы
             root.addChild("ryab_body",
                 ModelPartBuilder.create()
                     .uv(0, 16).cuboid(-4, 0, -3, 8, 10, 6),
                 ModelTransform.pivot(0, 12, 0));
 
-            // ── Лапки (маленькие, симметричные, по бокам туловища) ──────────
-            // Левая лапка
             root.addChild("ryab_left_arm",
                 ModelPartBuilder.create()
                     .uv(32, 16).cuboid(0, 0, -1.5f, 2, 6, 3),
                 ModelTransform.of(4, 13, 0, 0, 0, 0.2618f));
 
-            // Правая лапка — зеркально
             root.addChild("ryab_right_arm",
                 ModelPartBuilder.create()
                     .uv(32, 16).mirrored().cuboid(-2, 0, -1.5f, 2, 6, 3).mirrored(false),
                 ModelTransform.of(-4, 13, 0, 0, 0, -0.2618f));
 
-            // ── Ноги (разделены, симметричные) ──────────────────────────────
-            // Левая нога — pivot смещён вправо от центра
             root.addChild("ryab_left_leg",
                 ModelPartBuilder.create()
                     .uv(44, 16).cuboid(-1.5f, 0, -1.5f, 3, 5, 3),
                 ModelTransform.pivot(2.5f, 22, 0));
 
-            // Правая нога — pivot смещён влево от центра
             root.addChild("ryab_right_leg",
                 ModelPartBuilder.create()
                     .uv(44, 16).mirrored().cuboid(-1.5f, 0, -1.5f, 3, 5, 3).mirrored(false),
