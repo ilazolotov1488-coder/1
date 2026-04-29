@@ -93,13 +93,15 @@ public final class AutoSwap extends Module {
             if (isJumpPressed()) mc.options.jumpKey.setPressed(true);
 
             if (swapTick >= 2) {
+                // Сохраняем стек ДО свапа — это то что придёт в оффхенд
+                ItemStack incomingStack = validSlot != null ? validSlot.getStack().copy() : ItemStack.EMPTY;
                 PlayerInventoryUtil.swapHand(validSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
-                // Уведомление о свапе
+                // Уведомление о свапе — показываем что пришло в руку
                 if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
                         && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.autoSwap.isEnabled()
-                        && validSlot != null) {
-                    Zenith.getInstance().getNotifyManager().addSwapNotification(validSlot.getStack());
+                        && !incomingStack.isEmpty()) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(incomingStack);
                 }
                 startSwap = false;
                 swapTick = 0;

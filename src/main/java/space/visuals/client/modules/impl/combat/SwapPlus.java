@@ -115,13 +115,15 @@ public final class SwapPlus extends Module {
             if (isJumpPressed()) mc.options.jumpKey.setPressed(true);
 
             if (swapTick >= 2) {
+                // Сохраняем стек ДО свапа — это то что придёт в оффхенд
+                ItemStack incomingStack = pendingSwapSlot != null ? pendingSwapSlot.getStack().copy() : ItemStack.EMPTY;
                 PlayerInventoryUtil.swapHand(pendingSwapSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
-                // Уведомление о свапе
+                // Уведомление о свапе — показываем что пришло в руку
                 if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
                         && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.swapPlus.isEnabled()
-                        && pendingSwapSlot != null) {
-                    Zenith.getInstance().getNotifyManager().addSwapNotification(pendingSwapSlot.getStack());
+                        && !incomingStack.isEmpty()) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(incomingStack);
                 }
                 startSwap = false;
                 swapTick = 0;
