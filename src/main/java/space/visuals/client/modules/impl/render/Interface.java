@@ -41,19 +41,18 @@ public final class Interface extends Module {
             "Ватермарка",      // 0
             "Эффекты",         // 1
             "Стафф",           // 2
-            "Уведомления",     // 3
-            "Инвентарь",       // 4
-            "Кулдауны",        // 5
-            "Информация",      // 6
-            "Бинды",           // 7
-            "Таргет худ",      // 8
-            "Музыка",          // 9
-            "Хотбар",          // 10
-            "Скрореборд",      // 11
-            "Таб",             // 12
-            "Статус бары",     // 13
-            "Dynamic Island",  // 14
-            "Компас"           // 15
+            "Инвентарь",       // 3
+            "Кулдауны",        // 4
+            "Информация",      // 5
+            "Бинды",           // 6
+            "Таргет худ",      // 7
+            "Музыка",          // 8
+            "Хотбар",          // 9
+            "Скрореборд",      // 10
+            "Таб",             // 11
+            "Статус бары",     // 12
+            "Dynamic Island",  // 13
+            "Компас"           // 14
     ));
 
     private final List<DraggableHudElement> elements = new ArrayList<>();
@@ -95,21 +94,17 @@ public final class Interface extends Module {
         addElement(new PotionsComponent("Potions", 0.0f, 0.0f, 960.0f, 495.5f, 119.15234f, 73.0f, DraggableHudElement.Align.TOP_LEFT));       // 1 - Эффекты
         addElement(new StaffComponent("Staff", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 73.0f, DraggableHudElement.Align.TOP_LEFT));                // 2 - Стафф
 
-        NotifyComponent notifyComponent = new NotifyComponent("Notify", 181.80615f, 135.5f, 960.0f, 495.5f, 157.03516f, -72.5f, DraggableHudElement.Align.CENTER); // 3 - Уведомления
-        addElement(notifyComponent);
-        Zenith.getInstance().getNotifyManager().setNotifyComponent(notifyComponent);
+        addElement(new InventoryComponent("Inventory", 269.0f, 229.0f, 960.0f, 495.5f, -11.5f, -74.0f, DraggableHudElement.Align.BOTTOM_RIGHT)); // 3 - Инвентарь
+        addElement(new CooldownComponent("Cooldown", 349.0f, 0.0f, 960.0f, 495.5f, -11.5f, 73.0f, DraggableHudElement.Align.TOP_RIGHT));        // 4 - Кулдауны
+        addElement(new InformationComponent("Information", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 41.5f, DraggableHudElement.Align.TOP_LEFT));     // 5 - Информация
+        addElement(new KeybindsComponent("Keybinds", 349.0f, 0.0f, 960.0f, 495.5f, -122.0f, 73.0f, DraggableHudElement.Align.TOP_RIGHT));      // 6 - Бинды
+        addElement(new TargetHudComponent("TargetHUD", 166.5f, 128.5f, 960.0f, 495.5f, 0.0f, 31.75f, DraggableHudElement.Align.CENTER));       // 7 - Таргет худ
+        addElement(new MusicInfoComponent("MusicInfo", 342.0f, 257.0f, 960.0f, 495.5f, -11.5f, -16.5f, DraggableHudElement.Align.BOTTOM_RIGHT)); // 8 - Музыка
+        addElement(new HootBarComponent("Hotbar", 116.5f, 265.0f, 960.0f, 495.5f, 0.0f, -16.5f, DraggableHudElement.Align.BOTTOM_CENTER));      // 9 - Hotbar
+        addElement(new ScoreBoardComponent("Скрореборд",0, 0.0f, 960.0f, 495.5f, -10, 10, DraggableHudElement.Align.CENTER_RIGHT));               // 10 - Скрореборд
+        addElement(new PlayerListComponent("Таб"));                                                                                                 // 11 - Таб
 
-        addElement(new InventoryComponent("Inventory", 269.0f, 229.0f, 960.0f, 495.5f, -11.5f, -74.0f, DraggableHudElement.Align.BOTTOM_RIGHT)); // 4 - Инвентарь
-        addElement(new CooldownComponent("Cooldown", 349.0f, 0.0f, 960.0f, 495.5f, -11.5f, 73.0f, DraggableHudElement.Align.TOP_RIGHT));        // 5 - Кулдауны
-        addElement(new InformationComponent("Information", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 41.5f, DraggableHudElement.Align.TOP_LEFT));     // 6 - Информация
-        addElement(new KeybindsComponent("Keybinds", 349.0f, 0.0f, 960.0f, 495.5f, -122.0f, 73.0f, DraggableHudElement.Align.TOP_RIGHT));      // 7 - Бинды
-        addElement(new TargetHudComponent("TargetHUD", 166.5f, 128.5f, 960.0f, 495.5f, 0.0f, 31.75f, DraggableHudElement.Align.CENTER));       // 8 - Таргет худ
-        addElement(new MusicInfoComponent("MusicInfo", 342.0f, 257.0f, 960.0f, 495.5f, -11.5f, -16.5f, DraggableHudElement.Align.BOTTOM_RIGHT)); // 9 - Музыка
-        addElement(new HootBarComponent("Hotbar", 116.5f, 265.0f, 960.0f, 495.5f, 0.0f, -16.5f, DraggableHudElement.Align.BOTTOM_CENTER));      // 10 - Hotbar
-        addElement(new ScoreBoardComponent("Скрореборд",0, 0.0f, 960.0f, 495.5f, -10, 10, DraggableHudElement.Align.CENTER_RIGHT));               // 11 - Скрореборд
-        addElement(new PlayerListComponent("Таб"));                                                                                                 // 12 - Таб
-
-        statusBarsComponent = new StatusBarsComponent("StatusBars", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, -60.0f, DraggableHudElement.Align.BOTTOM_LEFT); // 13 - Статус бары
+        statusBarsComponent = new StatusBarsComponent("StatusBars", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, -60.0f, DraggableHudElement.Align.BOTTOM_LEFT); // 12 - Статус бары
         addElement(statusBarsComponent);
 
         // Привязываем настройки компонента как поля модуля (для отображения в меню)
@@ -119,9 +114,9 @@ public final class Interface extends Module {
         statusBarHpColor      = statusBarsComponent.hpColor;
         statusBarFoodColor    = statusBarsComponent.foodColor;
 
-        addElement(new DynamicIslandComponent("DynamicIsland", 0.0f, 0.0f, 960.0f, 495.5f, 0.0f, 7.0f, DraggableHudElement.Align.TOP_CENTER)); // 14 - Dynamic Island
+        addElement(new DynamicIslandComponent("DynamicIsland", 0.0f, 0.0f, 960.0f, 495.5f, 0.0f, 7.0f, DraggableHudElement.Align.TOP_CENTER)); // 13 - Dynamic Island
 
-        addElement(new CompassHudComponent("Compass", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 0.0f, DraggableHudElement.Align.CENTER_LEFT)); // 15 - Компас
+        addElement(new CompassHudComponent("Compass", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 0.0f, DraggableHudElement.Align.CENTER_LEFT)); // 14 - Компас
 
     }
 
@@ -201,15 +196,15 @@ public final class Interface extends Module {
 
             }
 
-            // Рендерим SwapNotifications компонент если модуль включён
+            // Рендерим Notifications компонент если модуль включён
             if (SwapNotifications.INSTANCE.isEnabled()) {
-                NotifyComponent swapComp = SwapNotifications.INSTANCE.getNotifyComponent();
-                if (swapComp != null) {
+                NotifyComponent notifyComp = SwapNotifications.INSTANCE.getNotifyComponent();
+                if (notifyComp != null) {
                     try {
-                        swapComp.render(ctx);
+                        notifyComp.render(ctx);
                     } catch (Exception ignored) {}
                     if (System.currentTimeMillis() - init < 5000) {
-                        swapComp.windowResized(width, height);
+                        notifyComp.windowResized(width, height);
                     }
                 }
             }
@@ -367,19 +362,19 @@ public final class Interface extends Module {
         return nearest;
     }
     public boolean isEnableScoreBar() {
-        return elementsSetting.isEnable(11); //11 - scoreboard
+        return elementsSetting.isEnable(10); //10 - scoreboard
     }
     public boolean isEnableHotBar() {
-        return elementsSetting.isEnable(10); //10 - hotbar
+        return elementsSetting.isEnable(9); //9 - hotbar
     }
     public boolean isEnableTab() {
-        return elementsSetting.isEnable(12); //12 - tab (PlayerList)
+        return elementsSetting.isEnable(11); //11 - tab (PlayerList)
     }
     public boolean isEnableStatusBars() {
-        return elementsSetting.isEnable(13); //13 - статус бары
+        return elementsSetting.isEnable(12); //12 - статус бары
     }
     public boolean isEnableDynamicIsland() {
-        return elementsSetting.isEnable(14); //14 - dynamic island
+        return elementsSetting.isEnable(13); //13 - dynamic island
     }
 
     @Native(critical = true)

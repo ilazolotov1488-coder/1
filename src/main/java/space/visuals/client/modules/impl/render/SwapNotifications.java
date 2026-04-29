@@ -10,72 +10,58 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 
 /**
- * Модуль управляет уведомлениями о свапах предметов.
- * Содержит собственный NotifyComponent для свап-уведомлений,
- * отдельный от базовых уведомлений Interface.
+ * Модуль "Уведомления" — единственный владелец NotifyComponent.
+ * Управляет как базовыми уведомлениями (вкл/выкл модулей),
+ * так и уведомлениями о свапах предметов.
  */
-@ModuleAnnotation(name = "SwapNotifications", category = Category.RENDER, description = "Уведомления о свапах предметов")
+@ModuleAnnotation(name = "Notifications", category = Category.RENDER, description = "Уведомления о модулях и свапах предметов")
 public final class SwapNotifications extends Module {
     public static final SwapNotifications INSTANCE = new SwapNotifications();
 
-    // Настройки — какие модули показывают уведомления
+    // Настройки свап-уведомлений
     public final BooleanSetting autoSwap     = new BooleanSetting("AutoSwap",     true);
     public final BooleanSetting swapPlus     = new BooleanSetting("Swap+",        true);
     public final BooleanSetting elytraHelper = new BooleanSetting("ElytraHelper", true);
     public final BooleanSetting serverHelper = new BooleanSetting("ServerHelper", true);
     public final BooleanSetting autoTotem    = new BooleanSetting("AutoTotem",    true);
 
+    // Оригинальные координаты из Interface
     private NotifyComponent notifyComponent;
 
     private SwapNotifications() {}
 
     @Override
     public void onEnable() {
-        // Создаём компонент при первом включении если ещё нет
         if (notifyComponent == null) {
             notifyComponent = new NotifyComponent(
-                    "SwapNotify",
-                    0.0f, 0.0f, 960.0f, 495.5f,
-                    10.0f, 135.0f,
-                    DraggableHudElement.Align.TOP_LEFT
+                    "Notify",
+                    181.80615f, 135.5f, 960.0f, 495.5f,
+                    157.03516f, -72.5f,
+                    DraggableHudElement.Align.CENTER
             );
         }
-        // Регистрируем компонент в NotifyManager как swap-компонент
+        // Единый компонент — и для базовых уведомлений, и для свапов
+        Zenith.getInstance().getNotifyManager().setNotifyComponent(notifyComponent);
         Zenith.getInstance().getNotifyManager().setSwapNotifyComponent(notifyComponent);
         super.onEnable();
     }
 
     @Override
     public void onDisable() {
+        Zenith.getInstance().getNotifyManager().setNotifyComponent(null);
         Zenith.getInstance().getNotifyManager().setSwapNotifyComponent(null);
         super.onDisable();
     }
 
-    /** Вызывается из Interface для рендера компонента */
     public NotifyComponent getNotifyComponent() {
         return notifyComponent;
-    }
-
-    /** Инициализирует компонент (вызывается из Interface при создании) */
-    public void initComponent(float windowWidth, float windowHeight) {
-        if (notifyComponent == null) {
-            notifyComponent = new NotifyComponent(
-                    "SwapNotify",
-                    0.0f, 0.0f, windowWidth, windowHeight,
-                    10.0f, 135.0f,
-                    DraggableHudElement.Align.TOP_LEFT
-            );
-        }
-        if (isEnabled()) {
-            Zenith.getInstance().getNotifyManager().setSwapNotifyComponent(notifyComponent);
-        }
     }
 
     @Override
     public JsonObject save() {
         JsonObject obj = super.save();
         if (notifyComponent != null) {
-            obj.add("SwapNotifyPos", notifyComponent.save());
+            obj.add("NotifyPos", notifyComponent.save());
         }
         return obj;
     }
@@ -83,8 +69,8 @@ public final class SwapNotifications extends Module {
     @Override
     public void load(JsonObject obj) {
         super.load(obj);
-        if (obj != null && obj.has("SwapNotifyPos") && notifyComponent != null) {
-            notifyComponent.load(obj.getAsJsonObject("SwapNotifyPos"));
+        if (obj != null && obj.has("NotifyPos") && notifyComponent != null) {
+            notifyComponent.load(obj.getAsJsonObject("NotifyPos"));
         }
     }
 }

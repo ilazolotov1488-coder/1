@@ -47,6 +47,7 @@ public class NotifyManager {
             notifyComponent.addNotification(module, enabled);
         }
     }
+
     public void addNotification(String icon, Text module) {
         if (notifyComponent != null) {
             notifyComponent.addTextNotification(icon, module);
@@ -54,12 +55,10 @@ public class NotifyManager {
     }
 
     public void addSwapNotification(ItemStack stack) {
-        // Если SwapNotifications модуль активен — показываем в его компоненте
-        if (swapNotifyComponent != null) {
-            swapNotifyComponent.addSwapNotification(stack);
-        } else if (notifyComponent != null) {
-            // Fallback на основной компонент если SwapNotifications выключен
-            notifyComponent.addSwapNotification(stack);
+        // Используем swapNotifyComponent если задан, иначе основной
+        NotifyComponent target = swapNotifyComponent != null ? swapNotifyComponent : notifyComponent;
+        if (target != null) {
+            target.addSwapNotification(stack);
         }
     }
 }
