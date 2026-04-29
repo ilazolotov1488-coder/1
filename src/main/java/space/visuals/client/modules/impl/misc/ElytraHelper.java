@@ -58,6 +58,11 @@ public final class ElytraHelper extends Module {
         if (e.isKeyDown(elytraSetting.getKeyCode()) && !startElytraSwap) {
             Slot slot = chestPlate();
             if (slot != null) {
+                // Уведомление о свапе элитры
+                if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                        && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.elytraHelper.isEnabled()) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(slot.getStack());
+                }
                 pendingElytraSlot = slot;
                 startElytraSwap = true;
                 elytraSwapTick = 0;

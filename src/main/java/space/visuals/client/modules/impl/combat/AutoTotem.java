@@ -51,6 +51,8 @@ public final class AutoTotem extends Module {
     // Флаг что тотем был взят нами
     private boolean totemTaken = false;
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onPlayerTick(EventUpdate event) {
         if (mc.player == null || mc.world == null) return;
@@ -169,6 +171,11 @@ public final class AutoTotem extends Module {
 
     private void doSwap(Slot slot) {
         if (swapping) return;
+        // Уведомление о свапе тотема
+        if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.autoTotem.isEnabled()) {
+            Zenith.getInstance().getNotifyManager().addSwapNotification(slot.getStack());
+        }
         pendingSlot = slot;
         swapping = true;
         swapTick = 0;

@@ -95,6 +95,12 @@ public final class AutoSwap extends Module {
             if (swapTick >= 2) {
                 PlayerInventoryUtil.swapHand(validSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
+                // Уведомление о свапе
+                if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                        && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.autoSwap.isEnabled()
+                        && validSlot != null) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(validSlot.getStack());
+                }
                 startSwap = false;
                 swapTick = 0;
             } else {

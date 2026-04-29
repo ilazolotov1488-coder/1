@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.render;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.google.gson.JsonObject;
 import net.minecraft.client.gui.screen.ChatScreen;
@@ -12,6 +14,7 @@ import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.base.events.impl.render.EventHudRender;
 import space.visuals.base.events.impl.input.EventMouse;
 import space.visuals.client.hud.elements.component.*;
+import space.visuals.client.hud.elements.component.NotifyComponent;
 import space.visuals.client.hud.elements.draggable.DraggableHudElement;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
@@ -165,6 +168,8 @@ public final class Interface extends Module {
         elements.add(element);
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onRender(EventHudRender event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -195,6 +200,19 @@ public final class Interface extends Module {
                 }
 
             }
+
+            // Рендерим SwapNotifications компонент если модуль включён
+            if (SwapNotifications.INSTANCE.isEnabled()) {
+                NotifyComponent swapComp = SwapNotifications.INSTANCE.getNotifyComponent();
+                if (swapComp != null) {
+                    try {
+                        swapComp.render(ctx);
+                    } catch (Exception ignored) {}
+                    if (System.currentTimeMillis() - init < 5000) {
+                        swapComp.windowResized(width, height);
+                    }
+                }
+            }
         }
         if ((mc.currentScreen instanceof ChatScreen)) {
 
@@ -222,6 +240,8 @@ public final class Interface extends Module {
         return elementsSetting.getBooleanSettings().get(index).isEnabled();
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onMouse(EventMouse event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -362,6 +382,8 @@ public final class Interface extends Module {
         return elementsSetting.isEnable(14); //14 - dynamic island
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void resize(EventWindowResize eventWindowResize) {
         float width = mc.getWindow().getWidth() / getCustomScale();
@@ -374,6 +396,8 @@ public final class Interface extends Module {
         }
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void update(EventUpdate eventUpdate) {
 
@@ -406,6 +430,8 @@ public final class Interface extends Module {
     public boolean isCorners() {
         return corners.isEnabled();
     }
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void screenEvent(EventSetScreen event) {
         if(event.getScreen() instanceof ChatScreen){

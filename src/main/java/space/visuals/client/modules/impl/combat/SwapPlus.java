@@ -117,6 +117,12 @@ public final class SwapPlus extends Module {
             if (swapTick >= 2) {
                 PlayerInventoryUtil.swapHand(pendingSwapSlot, Hand.OFF_HAND, false);
                 PlayerInventoryUtil.closeScreen(true);
+                // Уведомление о свапе
+                if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                        && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.swapPlus.isEnabled()
+                        && pendingSwapSlot != null) {
+                    Zenith.getInstance().getNotifyManager().addSwapNotification(pendingSwapSlot.getStack());
+                }
                 startSwap = false;
                 swapTick = 0;
                 pendingSwapSlot = null;

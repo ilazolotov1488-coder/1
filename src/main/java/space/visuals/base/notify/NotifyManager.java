@@ -14,6 +14,7 @@ public class NotifyManager {
     
     private static NotifyManager instance;
     private NotifyComponent notifyComponent;
+    private NotifyComponent swapNotifyComponent;
     
     public NotifyManager() {
         EventManager.register(this);
@@ -28,6 +29,10 @@ public class NotifyManager {
     
     public void setNotifyComponent(NotifyComponent component) {
         this.notifyComponent = component;
+    }
+
+    public void setSwapNotifyComponent(NotifyComponent component) {
+        this.swapNotifyComponent = component;
     }
     
     @EventTarget
@@ -49,7 +54,11 @@ public class NotifyManager {
     }
 
     public void addSwapNotification(ItemStack stack) {
-        if (notifyComponent != null) {
+        // Если SwapNotifications модуль активен — показываем в его компоненте
+        if (swapNotifyComponent != null) {
+            swapNotifyComponent.addSwapNotification(stack);
+        } else if (notifyComponent != null) {
+            // Fallback на основной компонент если SwapNotifications выключен
             notifyComponent.addSwapNotification(stack);
         }
     }

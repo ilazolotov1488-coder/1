@@ -166,6 +166,12 @@ public final class ServerHelper extends Module {
         net.minecraft.screen.slot.Slot slot = PlayerInventoryUtil.getSlot(item);
         if (slot == null) return;
 
+        // Уведомление о свапе предмета
+        if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.serverHelper.isEnabled()) {
+            Zenith.getInstance().getNotifyManager().addSwapNotification(slot.getStack());
+        }
+
         space.visuals.utility.game.player.rotation.Rotation angle = Zenith.getInstance().getRotationManager().getCurrentRotation();
         int prevSlot = mc.player.getInventory().selectedSlot;
         boolean inHotbar = slot.id >= 36 && slot.id <= 44;

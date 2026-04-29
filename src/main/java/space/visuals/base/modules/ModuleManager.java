@@ -45,6 +45,7 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ItemRadius.INSTANCE);
         registerModule(AutoTool.INSTANCE);
         registerModule(ShiftTap.INSTANCE);
+        registerModule(KTLeave.INSTANCE);
     }
 
     private void registerMovement() {
@@ -55,6 +56,7 @@ public final class ModuleManager implements IMinecraft {
     private void registerRender() {
         registerModule(Interface.INSTANCE);
         registerModule(Menu.INSTANCE);
+        registerModule(SwapNotifications.INSTANCE);
         registerModule(NoRender.INSTANCE);
         registerModule(Predictions.INSTANCE);
         registerModule(SwingAnimation.INSTANCE);
@@ -85,6 +87,9 @@ public final class ModuleManager implements IMinecraft {
         // Используем setToggled(true) чтобы принудительно включить без toggle звука
         if (!Interface.INSTANCE.isEnabled()) {
             Interface.INSTANCE.setToggled(true);
+        }
+        if (!SwapNotifications.INSTANCE.isEnabled()) {
+            SwapNotifications.INSTANCE.setToggled(true);
         }
         // Для Waypoints всегда вызываем onEnable чтобы зарегистрировать события
         if (!WaypointsModule.INSTANCE.isEnabled()) {

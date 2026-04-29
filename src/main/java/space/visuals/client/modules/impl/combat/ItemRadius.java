@@ -45,6 +45,8 @@ public final class ItemRadius extends Module {
 
     private ItemRadius() {}
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null) return;
