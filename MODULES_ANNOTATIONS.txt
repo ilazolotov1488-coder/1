@@ -1,0 +1,245 @@
+================================================================
+  SPACE VISUALS — СПИСОК МОДУЛЕЙ И АННОТАЦИИ
+================================================================
+
+[ КЛАССЫ С @Native(critical=true) НА УРОВНЕ КЛАССА ]
+----------------------------------------------------------------
+@Native(critical = true)
+public enum Zenith                          — главный класс клиента
+  src/main/java/space/visuals/Zenith.java
+
+@Native(critical = true)
+public final class ModuleManager            — менеджер всех модулей
+  src/main/java/space/visuals/base/modules/ModuleManager.java
+
+@Native(critical = true)
+public class RotationManager                — система ротаций
+  src/main/java/space/visuals/base/rotation/RotationManager.java
+
+
+================================================================
+[ COMBAT ]
+================================================================
+
+@Native(critical = true) @CompileToNative
+public final class AutoSwap
+  → onKey()   — обработка клавиш
+  → onTick()  — логика свапа
+  src/main/java/space/visuals/client/modules/impl/combat/AutoSwap.java
+
+@Native(critical = true) @CompileToNative
+public final class AutoTotem
+  → onPlayerTick() — авто тотем
+  src/main/java/space/visuals/client/modules/impl/combat/AutoTotem.java
+
+@Native(critical = true) @CompileToNative
+public final class SwapPlus
+  → onTick()   — логика
+  → onKey()    — клавиши
+  → onMouse()  — мышь
+  src/main/java/space/visuals/client/modules/impl/combat/SwapPlus.java
+
+@Native(critical = true) @CompileToNative
+public final class ShiftTap
+  → onTick() — логика
+  src/main/java/space/visuals/client/modules/impl/combat/ShiftTap.java
+
+@Native(critical = true) @CompileToNative
+public final class ItemRadius
+  → onRender3D() — рендер радиусов предметов
+  src/main/java/space/visuals/client/modules/impl/combat/ItemRadius.java
+
+public final class ClickPearl               — нет @EventTarget методов, только onEnable()
+  src/main/java/space/visuals/client/modules/impl/combat/ClickPearl.java
+
+
+================================================================
+[ MOVEMENT ]
+================================================================
+
+@Native(critical = true) @CompileToNative
+public final class AutoSprint
+  → onUpdate() — авто спринт
+  src/main/java/space/visuals/client/modules/impl/movement/AutoSprint.java
+
+public final class Taksa                    — питомец, рендер
+  src/main/java/space/visuals/client/modules/impl/render/Taksa.java
+
+
+================================================================
+[ MISC ]
+================================================================
+
+@Native(critical = true) @CompileToNative
+public final class ServerHelper
+  → onKey()         — бинды предметов (трапки, стан и т.д.)
+  → onPacket()      — обработка пакетов (ивенты, трапки)
+  → onUpdate()      — тик логика
+  → onWorldRender() — 3D рендер
+  → onDraw()        — 2D рендер HUD
+  src/main/java/space/visuals/client/modules/impl/misc/ServerHelper.java
+
+@Native(critical = true) @CompileToNative
+public final class AutoAuth
+  → onReceive() — авто регистрация/логин
+  src/main/java/space/visuals/client/modules/impl/misc/AutoAuth.java
+
+@Native(critical = true) @CompileToNative
+public final class AutoDuels
+  → onUpdate()        — отправка дуэлей
+  → onReceivePacket() — обработка ответов
+  src/main/java/space/visuals/client/modules/impl/misc/AutoDuels.java
+
+public final class ElytraHelper
+  src/main/java/space/visuals/client/modules/impl/misc/ElytraHelper.java
+
+public final class ItemScroller
+  src/main/java/space/visuals/client/modules/impl/misc/ItemScroller.java
+
+public final class ClickAction
+  src/main/java/space/visuals/client/modules/impl/misc/ClickAction.java
+
+public final class CameraTweaks
+  src/main/java/space/visuals/client/modules/impl/misc/CameraTweaks.java
+
+public final class AHHelper
+  src/main/java/space/visuals/client/modules/impl/misc/AHHelper.java
+
+public final class AutoAccept
+  src/main/java/space/visuals/client/modules/impl/misc/AutoAccept.java
+
+public final class AutoRespawn
+  src/main/java/space/visuals/client/modules/impl/misc/AutoRespawn.java
+
+public final class NameProtect
+  src/main/java/space/visuals/client/modules/impl/misc/NameProtect.java
+
+public final class Sounds
+  src/main/java/space/visuals/client/modules/impl/misc/Sounds.java
+
+public final class AutoJoin
+  src/main/java/space/visuals/client/modules/impl/misc/AutoJoin.java
+
+public final class FastExp
+  src/main/java/space/visuals/client/modules/impl/misc/FastExp.java
+
+public final class FakePlayer
+  src/main/java/space/visuals/client/modules/impl/misc/FakePlayer.java
+
+
+================================================================
+[ RENDER ]
+================================================================
+
+public final class Interface                — HUD интерфейс клиента
+  src/main/java/space/visuals/client/modules/impl/render/Interface.java
+
+public final class Menu                     — меню чита
+  src/main/java/space/visuals/client/modules/impl/render/Menu.java
+
+public final class NoRender
+  src/main/java/space/visuals/client/modules/impl/render/NoRender.java
+
+public final class Predictions              — траектория предметов
+  src/main/java/space/visuals/client/modules/impl/render/Predictions.java
+
+public final class SwingAnimation           — анимации замаха
+  src/main/java/space/visuals/client/modules/impl/render/SwingAnimation.java
+
+public final class Crosshair
+  src/main/java/space/visuals/client/modules/impl/render/Crosshair.java
+
+public final class ViewModel
+  src/main/java/space/visuals/client/modules/impl/render/ViewModel.java
+
+public final class WorldTweaks
+  src/main/java/space/visuals/client/modules/impl/render/WorldTweaks.java
+
+public final class EntityESP
+  src/main/java/space/visuals/client/modules/impl/render/EntityESP.java
+
+public final class BlockOverlay
+  src/main/java/space/visuals/client/modules/impl/render/BlockOverlay.java
+
+public final class AnimationModule
+  src/main/java/space/visuals/client/modules/impl/render/AnimationModule.java
+
+public final class KillEffects
+  src/main/java/space/visuals/client/modules/impl/render/KillEffects.java
+
+public final class Trails
+  src/main/java/space/visuals/client/modules/impl/render/Trails.java
+
+public final class ParticlesModule
+  src/main/java/space/visuals/client/modules/impl/render/ParticlesModule.java
+
+public final class CustomModels
+  src/main/java/space/visuals/client/modules/impl/render/CustomModels.java
+
+public final class JumpCircle
+  src/main/java/space/visuals/client/modules/impl/render/JumpCircle.java
+
+public final class ShaderHands
+  src/main/java/space/visuals/client/modules/impl/render/ShaderHands.java
+
+public final class NoFluid
+  src/main/java/space/visuals/client/modules/impl/render/NoFluid.java
+
+public final class HitParticles
+  src/main/java/space/visuals/client/modules/impl/render/HitParticles.java
+
+public class WaypointsModule
+  src/main/java/space/visuals/client/modules/impl/render/WaypointsModule.java
+
+public final class LineGlyphs
+  src/main/java/space/visuals/client/modules/impl/render/LineGlyphs.java
+
+public final class Cosmetics
+  src/main/java/space/visuals/client/modules/impl/render/Cosmetics.java
+
+public final class SoulESP
+  src/main/java/space/visuals/client/modules/impl/render/SoulESP.java
+
+public final class FireFly
+  src/main/java/space/visuals/client/modules/impl/render/FireFly.java
+
+public final class TargetESP2
+  src/main/java/space/visuals/client/modules/impl/render/TargetESP2.java
+
+public final class FriendMarkers
+  src/main/java/space/visuals/client/modules/impl/render/FriendMarkers.java
+
+
+================================================================
+[ PLAYER ]
+================================================================
+
+public final class AutoTool
+  src/main/java/space/visuals/client/modules/impl/player/AutoTool.java
+
+
+================================================================
+[ СИСТЕМНЫЕ КЛАССЫ С АННОТАЦИЯМИ ]
+================================================================
+
+@Native(critical = true) @CompileToNative
+RotationManager
+  → update()  — обновление ротаций
+  → packet()  — обработка пакетов ротации
+
+@Native
+ConfigManager
+  → saveConfig() — сохранение конфига
+  → loadConfig() — загрузка конфига
+
+@Native(critical = true) @CompileToNative
+ClientPlayerEntityMixin
+  → invokeSprintUpdate() — mixin на спринт
+
+@Native(critical = true)
+UserInfo
+  → refresh()     — чтение данных (нативка → файлы → fallback)
+  → getUsername() — логин
+  → getUID()      — uid
+
+================================================================

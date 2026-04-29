@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.misc;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -49,6 +51,8 @@ public final class ElytraHelper extends Module {
     private boolean isSPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS; }
     private boolean isJumpPressed() { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS; }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onKey(EventKey e) {
         if (e.isKeyDown(elytraSetting.getKeyCode()) && !startElytraSwap) {
@@ -63,6 +67,8 @@ public final class ElytraHelper extends Module {
         }
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate e) {
         if (fireworkCooldown > 0) fireworkCooldown--;

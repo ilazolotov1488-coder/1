@@ -51,8 +51,6 @@ public final class AutoTotem extends Module {
     // Флаг что тотем был взят нами
     private boolean totemTaken = false;
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onPlayerTick(EventUpdate event) {
         if (mc.player == null || mc.world == null) return;

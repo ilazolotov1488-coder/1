@@ -16,8 +16,6 @@ public final class AutoAuth extends Module {
     public static final AutoAuth INSTANCE = new AutoAuth();
     private AutoAuth() {
     }
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onReceive(EventPacket event) {
         if(!event.isReceive())return;

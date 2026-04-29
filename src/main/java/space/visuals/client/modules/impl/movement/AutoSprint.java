@@ -14,8 +14,6 @@ public final class AutoSprint extends Module {
 
     private AutoSprint() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate event) {
         mc.options.sprintKey.setPressed(true);

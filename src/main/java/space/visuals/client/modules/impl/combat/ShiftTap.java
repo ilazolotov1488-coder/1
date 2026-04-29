@@ -38,8 +38,6 @@ public final class ShiftTap extends Module {
         shouldReleaseNext = false;
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;
