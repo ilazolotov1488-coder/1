@@ -121,6 +121,12 @@ public final class ElytraHelper extends Module {
         Slot slot = PlayerInventoryUtil.getSlot(Items.FIREWORK_ROCKET);
         if (slot == null) return;
 
+        // Уведомление о фейерверке
+        if (space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.isEnabled()
+                && space.visuals.client.modules.impl.render.SwapNotifications.INSTANCE.elytraHelper.isEnabled()) {
+            Zenith.getInstance().getNotifyManager().addSwapNotification(slot.getStack());
+        }
+
         Rotation angle = new Rotation(mc.player.getYaw(), mc.player.getPitch());
         fireworkCooldown = 8 + (int)(Math.random() * 5);
 
