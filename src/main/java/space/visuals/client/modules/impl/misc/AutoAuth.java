@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.misc;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 
@@ -14,6 +16,8 @@ public final class AutoAuth extends Module {
     public static final AutoAuth INSTANCE = new AutoAuth();
     private AutoAuth() {
     }
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onReceive(EventPacket event) {
         if(!event.isReceive())return;

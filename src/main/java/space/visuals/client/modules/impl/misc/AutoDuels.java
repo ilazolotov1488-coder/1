@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.misc;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
@@ -42,6 +44,8 @@ public final class AutoDuels extends Module {
     private final Timer timer = new Timer();
     private final List<String> sent = new ArrayList<>();
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate event) {
         List<String> playerNames = new ArrayList<>();
@@ -71,6 +75,8 @@ public final class AutoDuels extends Module {
         }
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onReceivePacket(EventPacket event) {
         if(!event.isReceive())return;

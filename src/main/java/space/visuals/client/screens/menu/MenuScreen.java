@@ -466,6 +466,12 @@ public class MenuScreen extends CustomScreen {
         super.close();
     }
 
+    @Override
+    public boolean shouldPause() {
+        // Не останавливаем игру при открытом меню — игрок должен ходить
+        return false;
+    }
+
 
     private void renderModules(UIContext ctx, float mouseX, float mouseY, float alpha, float contentStartX, float contentWidth, float startY) {
 

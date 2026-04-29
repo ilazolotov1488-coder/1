@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.combat;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
@@ -49,6 +51,8 @@ public final class AutoTotem extends Module {
     // Флаг что тотем был взят нами
     private boolean totemTaken = false;
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onPlayerTick(EventUpdate event) {
         if (mc.player == null || mc.world == null) return;

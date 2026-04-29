@@ -1,6 +1,8 @@
 package space.visuals.client.modules.impl.misc;
 
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -138,6 +140,8 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onKey(EventKey e) {
         if (e.getAction() == GLFW.GLFW_RELEASE) {
@@ -246,6 +250,8 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onPacket(EventPacket e) {
 
@@ -311,6 +317,8 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate e) {
         // Удаляем просроченные временные вейпоинты ивентов
@@ -329,6 +337,8 @@ public final class ServerHelper extends Module {
         });
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onWorldRender(EventRender3D e) {
         long currentTime = System.currentTimeMillis();
@@ -392,6 +402,8 @@ public final class ServerHelper extends Module {
         });
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onDraw(EventRender2D e) {
         DrawContext context = e.getContext();

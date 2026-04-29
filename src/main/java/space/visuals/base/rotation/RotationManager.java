@@ -1,5 +1,7 @@
 package space.visuals.base.rotation;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventManager;
 import com.darkmagician6.eventapi.EventTarget;
 import com.darkmagician6.eventapi.types.Priority;
@@ -51,6 +53,8 @@ public class RotationManager implements IMinecraft {
         }
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget(Priority.LOW)
     public void update(EventUpdate event) {
 
@@ -136,6 +140,8 @@ public class RotationManager implements IMinecraft {
         direction.setPitch(currentRotation.getPitch());
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void packet(EventPacket eventPacket) {
 

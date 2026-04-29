@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.combat;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -90,6 +92,8 @@ public final class SwapPlus extends Module {
         return List.of(mode, bind, wheelBind, firstItem, secondItem, wheelSlots, swapDelay, closeDelay);
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;
@@ -129,6 +133,8 @@ public final class SwapPlus extends Module {
         });
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onKey(EventKey e) {
         if (mc.player == null || mc.currentScreen != null) return;
@@ -143,6 +149,8 @@ public final class SwapPlus extends Module {
         }
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onMouse(EventMouse event) {
         if (mc.player == null) return;

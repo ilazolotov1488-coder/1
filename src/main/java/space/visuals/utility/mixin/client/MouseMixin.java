@@ -49,6 +49,9 @@ public class MouseMixin {
     }
     @WrapWithCondition(method = "updateMouse", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;changeLookDirection(DD)V"), require = 1, allow = 1)
     private boolean modifyMouseRotationInput(ClientPlayerEntity instance, double cursorDeltaX, double cursorDeltaY) {
+        // Когда меню открыто — не поворачиваем камеру
+        if (mc.currentScreen instanceof space.visuals.client.screens.menu.MenuScreen) return false;
+
         EventMouseRotation event = new EventMouseRotation((float) cursorDeltaX, (float) cursorDeltaY);
         EventManager.call(event);
         if (event.isCancelled()) return false;
@@ -58,15 +61,9 @@ public class MouseMixin {
     @Unique
     private boolean isAnim(){
         Screen screen = MinecraftClient.getInstance().currentScreen;
-//        if(screen instanceof InventoryScreen inventoryScreen){
-//            return inventoryScreen.isAnimationClose();
-//        }
-//        if(screen instanceof ContainerScreen containerScreen){
-//            return  containerScreen.isAnimationClose();
-//        }
-//        if(screen instanceof MenuScreen menuScreen){
-//            return menuScreen.isClosing();
-//        }
+        if (screen instanceof space.visuals.client.screens.menu.MenuScreen menuScreen) {
+            return !menuScreen.isClosing();
+        }
         return false;
     }
 }

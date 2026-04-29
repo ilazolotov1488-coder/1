@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.combat;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.util.hit.EntityHitResult;
 import space.visuals.base.events.impl.player.EventUpdate;
@@ -36,6 +38,8 @@ public final class ShiftTap extends Module {
         shouldReleaseNext = false;
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;

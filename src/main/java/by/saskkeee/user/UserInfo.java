@@ -1,6 +1,7 @@
 package by.saskkeee.user;
 
 import com.adl.nativeprotect.Native;
+import com.adl.nativeprotect.User;
 import net.minecraft.client.MinecraftClient;
 
 import java.io.IOException;
@@ -21,35 +22,44 @@ public class UserInfo {
         if (now - lastCheck < 10_000) return;
         lastCheck = now;
 
-        // Базовые пути для поиска
+        // Приоритет 1: нативка протера (User.java) — работает с любым лоадером
+        try {
+            String nativeUsername = User.getInstance().profile("username");
+            String nativeUid      = User.getInstance().profile("uid");
+            if (nativeUsername != null && !nativeUsername.isEmpty()) cachedLogin = nativeUsername;
+            if (nativeUid      != null && !nativeUid.isEmpty())      cachedUid   = nativeUid;
+        } catch (Throwable ignored) {}
+
+        // Приоритет 2: файлы нашего лоадера (C:\Space Visuals\)
         Path spaceVisuals = Path.of("C:\\Space Visuals");
         Path minecraft    = spaceVisuals.resolve(".minecraft");
         Path spaceDir     = minecraft.resolve("SpaceVisuals");
 
-        // uid.txt — создаётся лоадером после авторизации
-        for (Path base : new Path[]{ spaceVisuals, minecraft, spaceDir }) {
-            try {
-                Path p = base.resolve("uid.txt");
-                if (Files.exists(p)) {
-                    String v = Files.readString(p).trim();
-                    if (!v.isEmpty()) { cachedUid = v; break; }
-                }
-            } catch (IOException ignored) {}
+        if (cachedUid == null || cachedUid.isEmpty()) {
+            for (Path base : new Path[]{ spaceVisuals, minecraft, spaceDir }) {
+                try {
+                    Path p = base.resolve("uid.txt");
+                    if (Files.exists(p)) {
+                        String v = Files.readString(p).trim();
+                        if (!v.isEmpty()) { cachedUid = v; break; }
+                    }
+                } catch (IOException ignored) {}
+            }
         }
 
-        // login.txt — создаётся лоадером после авторизации
-        // Fallback: last_account.txt из AltManager
-        for (Path base : new Path[]{ spaceVisuals, minecraft, spaceDir }) {
-            try {
-                Path p = base.resolve("login.txt");
-                if (Files.exists(p)) {
-                    String v = Files.readString(p).trim();
-                    if (!v.isEmpty()) { cachedLogin = v; break; }
-                }
-            } catch (IOException ignored) {}
+        if (cachedLogin == null || cachedLogin.isEmpty()) {
+            for (Path base : new Path[]{ spaceVisuals, minecraft, spaceDir }) {
+                try {
+                    Path p = base.resolve("login.txt");
+                    if (Files.exists(p)) {
+                        String v = Files.readString(p).trim();
+                        if (!v.isEmpty()) { cachedLogin = v; break; }
+                    }
+                } catch (IOException ignored) {}
+            }
         }
 
-        // Fallback на last_account.txt если login.txt нет
+        // Приоритет 3: last_account.txt из AltManager
         if (cachedLogin == null || cachedLogin.isEmpty()) {
             try {
                 Path p = spaceDir.resolve("last_account.txt");
@@ -61,7 +71,7 @@ public class UserInfo {
         }
     }
 
-    /** Логин из лоадера / AltManager (или ник сессии как последний fallback) */
+    /** Логин из нативки / лоадера / AltManager (или ник сессии как последний fallback) */
     @Native
     public static String getUsername() {
         refresh();
@@ -69,7 +79,7 @@ public class UserInfo {
         return mc.getSession().getUsername();
     }
 
-    /** UID из лоадера (или пустая строка если ещё не получен) */
+    /** UID из нативки / лоадера (или пустая строка если ещё не получен) */
     @Native
     public static String getUID() {
         refresh();
