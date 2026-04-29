@@ -58,6 +58,8 @@ public final class Interface extends Module {
     private final List<DraggableHudElement> elements = new ArrayList<>();
     // Кэш индексов для O(1) shouldRender вместо O(n) indexOf
     private final java.util.Map<DraggableHudElement, Integer> elementIndexCache = new java.util.IdentityHashMap<>();
+    // Notifications компонент — управляется модулем SwapNotifications, не MultiBooleanSetting
+    private DraggableHudElement notifyElement = null;
     private DraggableHudElement draggingElement = null;
     private float dragOffsetX, dragOffsetY;
     // Слайдер миникарты — отдельный режим drag
@@ -117,6 +119,14 @@ public final class Interface extends Module {
         addElement(new DynamicIslandComponent("DynamicIsland", 0.0f, 0.0f, 960.0f, 495.5f, 0.0f, 7.0f, DraggableHudElement.Align.TOP_CENTER)); // 13 - Dynamic Island
 
         addElement(new CompassHudComponent("Compass", 0.0f, 0.0f, 960.0f, 495.5f, 10.0f, 0.0f, DraggableHudElement.Align.CENTER_LEFT)); // 14 - Компас
+
+        // Notifications — управляется модулем SwapNotifications, не MultiBooleanSetting
+        // Инициализируем компонент и добавляем в elements для поддержки drag
+        SwapNotifications.INSTANCE.initComponent(960.0f, 495.5f);
+        notifyElement = SwapNotifications.INSTANCE.getNotifyComponent();
+        if (notifyElement != null) {
+            elements.add(notifyElement); // не через addElement — не попадает в elementIndexCache
+        }
 
     }
 
@@ -196,18 +206,7 @@ public final class Interface extends Module {
 
             }
 
-            // Рендерим Notifications компонент если модуль включён
-            if (SwapNotifications.INSTANCE.isEnabled()) {
-                NotifyComponent notifyComp = SwapNotifications.INSTANCE.getNotifyComponent();
-                if (notifyComp != null) {
-                    try {
-                        notifyComp.render(ctx);
-                    } catch (Exception ignored) {}
-                    if (System.currentTimeMillis() - init < 5000) {
-                        notifyComp.windowResized(width, height);
-                    }
-                }
-            }
+            // Notifications рендерится через стандартный цикл elements (поддержка drag)
         }
         if ((mc.currentScreen instanceof ChatScreen)) {
 
@@ -230,6 +229,10 @@ public final class Interface extends Module {
 
 
     private boolean shouldRender(DraggableHudElement element) {
+        // Notifications компонент управляется своим модулем
+        if (element == notifyElement) {
+            return SwapNotifications.INSTANCE.isEnabled();
+        }
         Integer index = elementIndexCache.get(element);
         if (index == null || index >= elementsSetting.getBooleanSettings().size()) return false;
         return elementsSetting.getBooleanSettings().get(index).isEnabled();

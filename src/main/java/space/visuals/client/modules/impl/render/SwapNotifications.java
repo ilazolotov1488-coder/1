@@ -57,6 +57,22 @@ public final class SwapNotifications extends Module {
         return notifyComponent;
     }
 
+    /** Инициализирует компонент при старте Interface */
+    public void initComponent(float windowWidth, float windowHeight) {
+        if (notifyComponent == null) {
+            notifyComponent = new NotifyComponent(
+                    "Notify",
+                    181.80615f, 135.5f, windowWidth, windowHeight,
+                    157.03516f, -72.5f,
+                    DraggableHudElement.Align.CENTER
+            );
+        }
+        if (isEnabled()) {
+            Zenith.getInstance().getNotifyManager().setNotifyComponent(notifyComponent);
+            Zenith.getInstance().getNotifyManager().setSwapNotifyComponent(notifyComponent);
+        }
+    }
+
     @Override
     public JsonObject save() {
         JsonObject obj = super.save();
