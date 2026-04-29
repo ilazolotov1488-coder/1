@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.render;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -33,11 +35,15 @@ public final class KillEffects extends Module {
 
     private KillEffects() {}
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onAttack(EventAttack e) {
         if (e.getTarget() instanceof net.minecraft.entity.player.PlayerEntity) trackedEntity = e.getTarget();
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate ignored) {
         if (mc.player == null || mc.world == null) return;

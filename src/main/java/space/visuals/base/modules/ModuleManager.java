@@ -45,7 +45,6 @@ public final class ModuleManager implements IMinecraft {
         registerModule(ItemRadius.INSTANCE);
         registerModule(AutoTool.INSTANCE);
         registerModule(ShiftTap.INSTANCE);
-        registerModule(KTLeave.INSTANCE);
     }
 
     private void registerMovement() {

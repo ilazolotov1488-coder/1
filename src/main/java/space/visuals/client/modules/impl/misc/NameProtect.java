@@ -1,5 +1,6 @@
 package space.visuals.client.modules.impl.misc;
 
+import com.adl.nativeprotect.Native;
 import space.visuals.Zenith;
 import com.darkmagician6.eventapi.EventTarget;
 import space.visuals.base.events.impl.player.EventUpdate;
@@ -11,6 +12,7 @@ import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import java.util.List;
 
 // ООО<<МИНЦЕТ ПАСТИНГ INC>>ООО
+@Native(critical = true)
 @ModuleAnnotation(name = "NameProtect", category = Category.MISC, description = "Защищает имена игроков")
 public final class NameProtect extends Module {
     public static final NameProtect INSTANCE = new NameProtect();

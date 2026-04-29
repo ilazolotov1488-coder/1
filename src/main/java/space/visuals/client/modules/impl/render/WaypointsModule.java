@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.render;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -30,6 +32,8 @@ public class WaypointsModule extends Module {
 
     private final Map<String, Animation> fadeAnims = new HashMap<>();
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onRender2D(EventRender2D event) {
         if (mc.player == null || mc.world == null) return;

@@ -1,5 +1,7 @@
 package space.visuals.client.modules.impl.combat;
 
+import by.saskkeee.annotations.CompileToNative;
+import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.TrapdoorBlock;
@@ -82,6 +84,8 @@ public final class KTLeave extends Module {
         connectedPeers.clear();
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onKey(EventKey e) {
         if (!isEnabled()) return;
@@ -100,6 +104,8 @@ public final class KTLeave extends Module {
         writeSignal();
     }
 
+    @Native(critical = true)
+    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate e) {
         if (!isEnabled()) return;
