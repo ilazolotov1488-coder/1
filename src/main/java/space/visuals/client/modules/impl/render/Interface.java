@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.google.gson.JsonObject;
 import net.minecraft.client.gui.screen.ChatScreen;
@@ -173,8 +171,6 @@ public final class Interface extends Module {
         elements.add(element);
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onRender(EventHudRender event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -238,8 +234,6 @@ public final class Interface extends Module {
         return elementsSetting.getBooleanSettings().get(index).isEnabled();
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onMouse(EventMouse event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -380,8 +374,6 @@ public final class Interface extends Module {
         return elementsSetting.isEnable(13); //13 - dynamic island
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void resize(EventWindowResize eventWindowResize) {
         float width = mc.getWindow().getWidth() / getCustomScale();
@@ -394,8 +386,6 @@ public final class Interface extends Module {
         }
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void update(EventUpdate eventUpdate) {
 
@@ -428,8 +418,6 @@ public final class Interface extends Module {
     public boolean isCorners() {
         return corners.isEnabled();
     }
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void screenEvent(EventSetScreen event) {
         if(event.getScreen() instanceof ChatScreen){

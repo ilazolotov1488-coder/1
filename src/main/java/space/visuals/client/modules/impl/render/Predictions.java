@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -58,8 +56,6 @@ public final class Predictions extends Module {
     public static Predictions INSTANCE = new Predictions();
     private Predictions() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onDraw(EventRender2D e) {
 
@@ -117,8 +113,6 @@ public final class Predictions extends Module {
         }
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onWorldRender(EventRender3D e) {
         points.clear();

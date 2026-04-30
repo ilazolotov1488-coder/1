@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.misc;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
@@ -24,8 +22,6 @@ public final class FastExp extends Module {
 
     private FastExp() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onUpdate(EventUpdate event) {
         if (mc.player == null || mc.world == null) { cooldownTimer = 0; return; }

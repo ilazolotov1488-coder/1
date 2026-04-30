@@ -1,7 +1,5 @@
 package space.visuals.base.modules;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventManager;
 import com.darkmagician6.eventapi.EventTarget;
 import lombok.Getter;

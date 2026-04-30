@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.combat;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gl.ShaderProgramKeys;
@@ -45,8 +43,6 @@ public final class ItemRadius extends Module {
 
     private ItemRadius() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null) return;

@@ -1,7 +1,5 @@
 package space.visuals;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import lombok.Getter;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -70,8 +68,6 @@ public enum Zenith {
     private DiscordManager discordManager;
     private WaypointManager waypointManager;
 
-    @Native(critical = true)
-    @CompileToNative
     public void init() {
         System.out.println("[ZENITH] init() started");
         try {
@@ -140,8 +136,6 @@ public enum Zenith {
         }
     }
 
-    @Native(critical = true)
-    @CompileToNative
     public void shutdown() {
         friendManager.save();
         staffManager.save();
@@ -163,8 +157,6 @@ public enum Zenith {
     }
 
     /** Проверяет что мод запущен с авторизованного устройства */
-    @Native(critical = true)
-    @CompileToNative
     private static void checkHwid() {
         try {
             java.nio.file.Path hwidFile = java.nio.file.Path.of("C:\\Space Visuals\\hwid.txt");

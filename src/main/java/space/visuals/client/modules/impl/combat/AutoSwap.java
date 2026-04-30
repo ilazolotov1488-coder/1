@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.combat;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.item.Item;
@@ -38,8 +36,6 @@ public final class AutoSwap extends Module {
 
     private AutoSwap() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onKey(EventKey event) {
         if (mc.currentScreen != null) return;
@@ -69,8 +65,6 @@ public final class AutoSwap extends Module {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS;
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate event) {
         if (!startSwap) return;

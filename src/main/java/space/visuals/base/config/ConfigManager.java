@@ -4,7 +4,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import com.adl.nativeprotect.Native;
 import lombok.Getter;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.player.EventUpdate;
@@ -39,7 +38,6 @@ public class ConfigManager {
         }, 5, 5, TimeUnit.MINUTES);
     }
 
-    @Native
     public boolean saveConfig(String configName) {
         try {
             configDirectory.mkdirs();
@@ -61,7 +59,6 @@ public class ConfigManager {
         }
     }
 
-    @Native
     public boolean loadConfig(String configName) {
         try {
             File file = new File(configDirectory, configName + ".space");

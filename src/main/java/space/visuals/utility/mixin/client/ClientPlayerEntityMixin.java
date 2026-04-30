@@ -1,7 +1,5 @@
 package space.visuals.utility.mixin.client;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventManager;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.MinecraftClient;
@@ -49,8 +47,6 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
         EventManager.call(new EventUpdate());
 
     }
-    @Native(critical = true)
-    @CompileToNative
     @Redirect(method = "sendMovementPackets", at = @At(value = "INVOKE", target ="Lnet/minecraft/client/network/ClientPlayerEntity;sendSprintingPacket()V"))
     public void invokeSprintUpdate(ClientPlayerEntity instance) {
         EventSprintUpdate eventSprintUpdate = new EventSprintUpdate();

@@ -1,6 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import com.adl.nativeprotect.Native;
 import com.google.gson.JsonObject;
 import space.visuals.Zenith;
 import space.visuals.client.hud.elements.component.NotifyComponent;
@@ -15,7 +14,6 @@ import space.visuals.client.modules.api.setting.impl.BooleanSetting;
  * Управляет как базовыми уведомлениями (вкл/выкл модулей),
  * так и уведомлениями о свапах предметов.
  */
-@Native(critical = true)
 @ModuleAnnotation(name = "Notifications", category = Category.RENDER, description = "Уведомления о модулях и свапах предметов")
 public final class SwapNotifications extends Module {
     public static final SwapNotifications INSTANCE = new SwapNotifications();

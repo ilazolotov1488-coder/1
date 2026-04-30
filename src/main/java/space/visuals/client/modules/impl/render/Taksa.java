@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
@@ -30,8 +28,6 @@ public final class Taksa extends Module {
 
     private Taksa() {}
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onTick(EventUpdate e) {
         if (mc.player == null || mc.world == null) return;
@@ -39,8 +35,6 @@ public final class Taksa extends Module {
         brain.tick();
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null) return;

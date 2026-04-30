@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
@@ -99,8 +97,6 @@ public final class EntityESP extends Module {
         return player.distanceTo(mc.player) <= 30;
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onHudRender(EventRender3D event) {
         if (!elements.isEnable(4)) return;
@@ -121,8 +117,6 @@ public final class EntityESP extends Module {
         }
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onHudRender(EventRender2D event) {
         Render2DUtil.onRender(event.getContext());

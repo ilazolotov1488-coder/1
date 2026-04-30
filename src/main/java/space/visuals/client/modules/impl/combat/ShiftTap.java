@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.combat;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.util.hit.EntityHitResult;
 import space.visuals.base.events.impl.player.EventUpdate;

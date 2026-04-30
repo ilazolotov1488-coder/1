@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.misc;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -61,8 +59,6 @@ public final class ClickAction extends Module {
         return settings;
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onKey(EventKey e) {
         if (e.isKeyDown(friendBind.getKeyCode())
@@ -233,8 +229,6 @@ public final class ClickAction extends Module {
         mc.options.jumpKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS);
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onWorldRender(EventRender3D e) {
         Predictions.INSTANCE.drawPredictionInHand(e.getMatrix(),
@@ -244,8 +238,6 @@ public final class ClickAction extends Module {
 
     private Slot saveSlot = null;
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onExpTick(EventRotate e) {
         boolean isMainHandItem = mc.player.getMainHandStack().getItem().equals(Items.EXPERIENCE_BOTTLE);

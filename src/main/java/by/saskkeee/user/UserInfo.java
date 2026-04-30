@@ -1,6 +1,5 @@
 package by.saskkeee.user;
 
-import com.adl.nativeprotect.Native;
 import com.adl.nativeprotect.User;
 import net.minecraft.client.MinecraftClient;
 
@@ -16,8 +15,7 @@ public class UserInfo {
     private static String cachedLogin = null;
     private static long   lastCheck   = 0;
 
-    @Native(critical = true)
-    private static void refresh() {
+        private static void refresh() {
         long now = System.currentTimeMillis();
         if (now - lastCheck < 10_000) return;
         lastCheck = now;
@@ -72,7 +70,6 @@ public class UserInfo {
     }
 
     /** Логин из нативки / лоадера / AltManager (или ник сессии как последний fallback) */
-    @Native
     public static String getUsername() {
         refresh();
         if (cachedLogin != null && !cachedLogin.isEmpty()) return cachedLogin;
@@ -80,7 +77,6 @@ public class UserInfo {
     }
 
     /** UID из нативки / лоадера (или пустая строка если ещё не получен) */
-    @Native
     public static String getUID() {
         refresh();
         return cachedUid != null ? cachedUid : "";

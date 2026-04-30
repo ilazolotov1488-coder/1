@@ -1,7 +1,5 @@
 package space.visuals.client.modules.impl.render;
 
-import by.saskkeee.annotations.CompileToNative;
-import com.adl.nativeprotect.Native;
 import com.darkmagician6.eventapi.EventTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -77,8 +75,6 @@ public final class Cosmetics extends Module {
         });
     }
 
-    @Native(critical = true)
-    @CompileToNative
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null || mc.gameRenderer == null) return;
