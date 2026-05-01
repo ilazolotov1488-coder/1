@@ -7,6 +7,7 @@ import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
+import com.adl.nativeprotect.Native;
 import space.visuals.utility.sounds.ClientSounds;
 
 @ModuleAnnotation(name = "Sounds", category = Category.MISC, description = "Добавляет звуки клиента")
@@ -21,9 +22,12 @@ public final class Sounds extends Module {
 
     private Sounds() {}
 
+    @Native
     @Override public void onEnable()  { super.onEnable(); }
+    @Native
     @Override public void onDisable() { super.onDisable(); }
 
+    @Native
     @EventTarget
     public void onPacket(EventPacket e) {
         if (!e.isReceive()) return;

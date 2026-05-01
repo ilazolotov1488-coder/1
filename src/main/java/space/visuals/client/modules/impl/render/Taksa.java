@@ -7,6 +7,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import com.adl.nativeprotect.Native;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.player.EventUpdate;
 import space.visuals.base.events.impl.render.EventRender3D;
@@ -28,6 +29,7 @@ public final class Taksa extends Module {
 
     private Taksa() {}
 
+    @Native
     @EventTarget
     public void onTick(EventUpdate e) {
         if (mc.player == null || mc.world == null) return;
@@ -35,6 +37,7 @@ public final class Taksa extends Module {
         brain.tick();
     }
 
+    @Native
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null) return;
@@ -59,6 +62,7 @@ public final class Taksa extends Module {
         matrices.pop();
     }
 
+    @Native
     @Override
     public void onDisable() {
         brain.setEntity(null);

@@ -22,6 +22,7 @@ import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import com.adl.nativeprotect.Native;
 import space.visuals.Zenith;
 import space.visuals.base.events.impl.render.EventRender3D;
 import space.visuals.client.modules.api.Category;
@@ -75,6 +76,7 @@ public final class Cosmetics extends Module {
         });
     }
 
+    @Native
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null || mc.gameRenderer == null) return;
@@ -115,10 +117,12 @@ public final class Cosmetics extends Module {
         stack.pop();
     }
 
+    @Native
     private boolean hasElytra(PlayerEntity player) {
         return player.getEquippedStack(EquipmentSlot.CHEST).isOf(Items.ELYTRA);
     }
 
+    @Native
     private void renderWings(MatrixStack stack, PlayerEntity player, float tickDelta, Vec3d camera) {
         double x = MathHelper.lerp(tickDelta, player.prevX, player.getX()) - camera.x;
         double y = MathHelper.lerp(tickDelta, player.prevY, player.getY()) - camera.y;
@@ -156,6 +160,7 @@ public final class Cosmetics extends Module {
         stack.pop();
     }
 
+    @Native
     private void renderWingSide(MatrixStack stack, float side, float open,
                                 int baseColor, int glowColor, int coreColor, int outlineColor,
                                 WingPose pose) {
@@ -179,6 +184,7 @@ public final class Cosmetics extends Module {
         stack.pop();
     }
 
+    @Native
     private void drawWingLayer(MatrixStack stack, float side, float scale, int rootColor, int edgeColor) {
         Matrix4f matrix = stack.peek().getPositionMatrix();
         BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
@@ -192,6 +198,7 @@ public final class Cosmetics extends Module {
         BufferRenderer.drawWithGlobalProgram(buffer.end());
     }
 
+    @Native
     private void drawWingOutline(MatrixStack stack, float side, float scale, int color) {
         Matrix4f matrix = stack.peek().getPositionMatrix();
         RenderSystem.lineWidth(1.35f);
@@ -204,6 +211,7 @@ public final class Cosmetics extends Module {
         GL11.glDisable(GL11.GL_LINE_SMOOTH);
     }
 
+    @Native
     private void drawWingRibs(MatrixStack stack, float side, float scale, int color) {
         Matrix4f matrix = stack.peek().getPositionMatrix();
         int[] ribIndices = {2, 4, 7, 9, 11};
@@ -219,16 +227,19 @@ public final class Cosmetics extends Module {
 
     // ── Color helpers ──────────────────────────────────────────────────────────
 
+    @Native
     private int resolveBaseColor() {
         // Используем цвет темы клиента
         var c = Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
         return (255 << 24) | (c.getRed() << 16) | (c.getGreen() << 8) | c.getBlue();
     }
 
+    @Native
     private int resolveGlowColor(int base) {
         return interpolateColor(base, 0xFFFFFFFF, 0.28f);
     }
 
+    @Native
     private int resolveCoreColor(int base) {
         return interpolateColor(base, 0xFFFFFFFF, 0.55f);
     }
@@ -242,6 +253,7 @@ public final class Cosmetics extends Module {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
+    @Native
     private int applyPointAlpha(int color, float multiplier) {
         return setAlpha(color, Math.max(0, Math.min(255, (int)(alpha(color) * multiplier))));
     }
@@ -255,6 +267,7 @@ public final class Cosmetics extends Module {
     private static int green(int c) { return (c >>  8) & 0xFF; }
     private static int blue(int c)  { return  c        & 0xFF; }
 
+    @Native
     private void vertex(BufferBuilder buffer, Matrix4f matrix, float x, float y, float z, int color) {
         buffer.vertex(matrix, x, y, z)
                 .color(red(color) / 255f, green(color) / 255f, blue(color) / 255f, alpha(color) / 255f);
@@ -262,6 +275,7 @@ public final class Cosmetics extends Module {
 
     // ── Body yaw ───────────────────────────────────────────────────────────────
 
+    @Native
     private float resolveBodyYaw(PlayerEntity player, float tickDelta) {
         float target = MathHelper.lerpAngleDegrees(tickDelta, player.prevBodyYaw, player.bodyYaw);
         if (player != mc.player) return target;
@@ -282,6 +296,7 @@ public final class Cosmetics extends Module {
 
     // ── Pose ───────────────────────────────────────────────────────────────────
 
+    @Native
     private WingPose resolvePose(PlayerEntity player, float tickDelta) {
         float pitch = MathHelper.lerp(tickDelta, player.prevPitch, player.getPitch());
 
@@ -304,6 +319,7 @@ public final class Cosmetics extends Module {
                 1f, 1f, 0.18f, 4.5f, 0.06f, 0.02f, -11f, -4f, 0.12f);
     }
 
+    @Native
     @Override
     public void onDisable() {
         selfBodyYawInitialized = false;

@@ -1,6 +1,7 @@
 package space.visuals.client.modules.impl.misc;
 
 import lombok.Getter;
+import com.adl.nativeprotect.Native;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.screen.slot.Slot;
 import space.visuals.client.modules.api.Category;
@@ -21,11 +22,13 @@ public final class AHHelper extends Module {
 
 
 
+    @Native
     public void renderCheat(DrawContext context, Slot slot){
 
 
         context.fill(slot.x,slot.y,slot.x+16,slot.y+16,cheapSlotColor.getIntColor());
     }
+    @Native
     public void renderGood(DrawContext context, Slot slot){
         context.fill(slot.x,slot.y,slot.x+16,slot.y+16,goodSlotColor.getIntColor());
     }

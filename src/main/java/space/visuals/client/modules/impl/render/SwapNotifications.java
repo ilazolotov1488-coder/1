@@ -1,6 +1,7 @@
 package space.visuals.client.modules.impl.render;
 
 import com.google.gson.JsonObject;
+import com.adl.nativeprotect.Native;
 import space.visuals.Zenith;
 import space.visuals.client.hud.elements.component.NotifyComponent;
 import space.visuals.client.hud.elements.draggable.DraggableHudElement;
@@ -30,6 +31,7 @@ public final class SwapNotifications extends Module {
 
     private SwapNotifications() {}
 
+    @Native
     @Override
     public void onEnable() {
         if (notifyComponent == null) {
@@ -46,6 +48,7 @@ public final class SwapNotifications extends Module {
         super.onEnable();
     }
 
+    @Native
     @Override
     public void onDisable() {
         Zenith.getInstance().getNotifyManager().setNotifyComponent(null);
@@ -53,11 +56,13 @@ public final class SwapNotifications extends Module {
         super.onDisable();
     }
 
+    @Native
     public NotifyComponent getNotifyComponent() {
         return notifyComponent;
     }
 
     /** Инициализирует компонент при старте Interface */
+    @Native
     public void initComponent(float windowWidth, float windowHeight) {
         if (notifyComponent == null) {
             notifyComponent = new NotifyComponent(
@@ -73,6 +78,7 @@ public final class SwapNotifications extends Module {
         }
     }
 
+    @Native
     @Override
     public JsonObject save() {
         JsonObject obj = super.save();
@@ -82,6 +88,7 @@ public final class SwapNotifications extends Module {
         return obj;
     }
 
+    @Native
     @Override
     public void load(JsonObject obj) {
         super.load(obj);

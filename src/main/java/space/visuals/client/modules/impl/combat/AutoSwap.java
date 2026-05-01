@@ -20,6 +20,7 @@ import space.visuals.client.modules.api.setting.impl.KeySetting;
 import space.visuals.utility.game.player.PlayerInventoryComponent;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 
+import com.adl.nativeprotect.Native;
 import java.util.Comparator;
 import java.util.List;
 
@@ -36,6 +37,7 @@ public final class AutoSwap extends Module {
 
     private AutoSwap() {}
 
+    @Native
     @EventTarget
     public void onKey(EventKey event) {
         if (mc.currentScreen != null) return;
@@ -45,26 +47,32 @@ public final class AutoSwap extends Module {
         }
     }
 
+    @Native
     public boolean isWPressed() {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_W) == GLFW.GLFW_PRESS;
     }
 
+    @Native
     public boolean isAPressed() {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS;
     }
 
+    @Native
     public boolean isDPressed() {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_D) == GLFW.GLFW_PRESS;
     }
 
+    @Native
     public boolean isSPressed() {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_S) == GLFW.GLFW_PRESS;
     }
 
+    @Native
     public boolean isJumpPressed() {
         return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS;
     }
 
+    @Native
     @EventTarget
     public void onTick(EventUpdate event) {
         if (!startSwap) return;
@@ -112,6 +120,7 @@ public final class AutoSwap extends Module {
         });
     }
 
+    @Native
     @Override
     public void onDisable() {
         startSwap = false;
@@ -119,6 +128,7 @@ public final class AutoSwap extends Module {
         super.onDisable();
     }
 
+    @Native
     private Item getItemByType(String type) {
         return switch (type) {
             case "Щит"   -> Items.SHIELD;

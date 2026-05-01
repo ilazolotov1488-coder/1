@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.base.animations.base.Animation;
 import space.visuals.base.animations.base.Easing;
-import space.visuals.client.modules.api.setting.impl.ItemSlotPickerManager;
+import space.visuals.client.screens.menu.settings.impl.ItemSlotPickerManager;
 import space.visuals.client.modules.impl.misc.AHHelper;
 import space.visuals.client.modules.impl.render.AnimationModule;
 import space.visuals.utility.mixin.accessors.HandledScreenAccessor;
@@ -131,23 +131,7 @@ public abstract class HandledScreenMixin {
             at = @At("HEAD"), cancellable = true)
     private void onSlotClick(Slot slot, int slotId, int button, net.minecraft.screen.slot.SlotActionType actionType, CallbackInfo ci) {
         if (!ItemSlotPickerManager.INSTANCE.isPicking()) return;
-        if (slot == null || slot.getStack().isEmpty()) return;
-        if (actionType != net.minecraft.screen.slot.SlotActionType.PICKUP) return;
-
-        boolean handled = ItemSlotPickerManager.INSTANCE.onSlotClicked(slot.getStack());
-        if (handled) {
-            ci.cancel(); // не выполняем реальный своп
-            // Закрываем инвентарь и открываем меню обратно
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-            mc.execute(() -> {
-                mc.setScreen(null);
-                mc.execute(() -> {
-                    space.visuals.Zenith zenith = space.visuals.Zenith.getInstance();
-                    if (zenith != null && zenith.getMenuScreen() != null) {
-                        mc.setScreen(zenith.getMenuScreen());
-                    }
-                });
-            });
-        }
+        boolean handled = ItemSlotPickerManager.INSTANCE.onClickSlot(slot, actionType);
+        if (handled) ci.cancel();
     }
 }

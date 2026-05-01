@@ -23,6 +23,7 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.BooleanSetting;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 
+import com.adl.nativeprotect.Native;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,7 @@ public final class SoulESP extends Module {
 
     // ── Смерть игрока → создаём душу ─────────────────────────────────────────
 
+    @Native
     @EventTarget
     public void onPacket(EventPacket e) {
         if (!e.isReceive()) return;
@@ -66,6 +68,7 @@ public final class SoulESP extends Module {
 
     // ── Приземление → трейл-призрак (только себя) ────────────────────────────
 
+    @Native
     @EventTarget
     public void onUpdate(EventUpdate e) {
         if (mc.player == null || !trail.isEnabled()) return;
@@ -81,6 +84,7 @@ public final class SoulESP extends Module {
 
     // ── Рендер ────────────────────────────────────────────────────────────────
 
+    @Native
     @EventTarget
     public void onRender3D(EventRender3D e) {
         if (mc.player == null || mc.world == null) return;
@@ -127,6 +131,7 @@ public final class SoulESP extends Module {
 
     // ── Рендер одного призрака ────────────────────────────────────────────────
 
+    @Native
     private void renderGhost(MatrixStack m, Vec3d cam, Ghost g, float alpha, float rise) {
         ColorRGBA c = Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
         float r  = c.getRed()   / 255f;
@@ -206,6 +211,7 @@ public final class SoulESP extends Module {
         m.pop();
     }
 
+    @Native
     private void renderHandItems(MatrixStack m, Vec3d cam, Ghost g, float alpha) {
         // Рисуем иконки предметов в руках как 2D billboard
         if (g.mainHand.isEmpty() && g.offHand.isEmpty()) return;
@@ -234,6 +240,7 @@ public final class SoulESP extends Module {
         }
     }
 
+    @Native
     private void drawItemIndicator(MatrixStack m, float alpha) {
         ColorRGBA c = Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
         float r = c.getRed()/255f, g = c.getGreen()/255f, b = c.getBlue()/255f;
@@ -250,11 +257,13 @@ public final class SoulESP extends Module {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    @Native
     public void spawnGhostAt(Vec3d pos, float yaw, float pitch) {
         ghosts.add(new Ghost(pos, yaw, pitch, false, 0f, 0f,
                 ItemStack.EMPTY, ItemStack.EMPTY, System.currentTimeMillis()));
     }
 
+    @Native
     private Ghost ghostFromPlayer(PlayerEntity player, long time) {
         return new Ghost(
                 player.getPos(),
@@ -269,6 +278,7 @@ public final class SoulESP extends Module {
         );
     }
 
+    @Native
     private void box(BufferBuilder b, Matrix4f m,
                      float x, float y, float z,
                      float sx, float sy, float sz,
@@ -282,10 +292,12 @@ public final class SoulESP extends Module {
         b.vertex(m,x, y, z ).color(r,g,bl,a); b.vertex(m,x2,y, z ).color(r,g,bl,a); b.vertex(m,x2,y, z2).color(r,g,bl,a); b.vertex(m,x, y, z2).color(r,g,bl,a);
     }
 
+    @Native
     private float ease(float t) {
         return 1f - (float) Math.pow(1f - MathHelper.clamp(t, 0f, 1f), 3);
     }
 
+    @Native
     @Override
     public void onDisable() {
         ghosts.clear();

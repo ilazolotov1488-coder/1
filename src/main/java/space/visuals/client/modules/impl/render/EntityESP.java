@@ -53,6 +53,7 @@ import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.utility.render.level.Render3DUtil;
 
+import com.adl.nativeprotect.Native;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -82,6 +83,7 @@ public final class EntityESP extends Module {
 
     private EntityESP() {}
 
+    @Native
     public boolean isRenderName() {
         return this.isEnabled() && this.elements.isEnable(0);
     }
@@ -91,12 +93,14 @@ public final class EntityESP extends Module {
      * Скрываем только если игрок ближе 30 блоков — тогда рисуем свой кастомный.
      * Дальше 30 блоков — оставляем ванильный.
      */
+    @Native
     public boolean shouldHideVanillaName(PlayerEntity player) {
         if (!this.isEnabled() || !this.elements.isEnable(0)) return false;
         if (mc.player == null) return false;
         return player.distanceTo(mc.player) <= 30;
     }
 
+    @Native
     @EventTarget
     public void onHudRender(EventRender3D event) {
         if (!elements.isEnable(4)) return;
@@ -117,6 +121,7 @@ public final class EntityESP extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void onHudRender(EventRender2D event) {
         Render2DUtil.onRender(event.getContext());
@@ -168,6 +173,7 @@ public final class EntityESP extends Module {
      * Проверяет, виден ли хотя бы 1 пиксель сущности (не за стеной).
      * Кэшируется раз в VISIBILITY_CACHE_INTERVAL кадров для экономии raycast.
      */
+    @Native
     private boolean isEntityVisible(Entity entity) {
         int id = entity.getId();
         // Обновляем кэш раз в N кадров
@@ -200,6 +206,7 @@ public final class EntityESP extends Module {
         visibilityCache.put(id, visible);
         return visible;
     }
+    @Native
     private void drawHands(CustomDrawContext context, PlayerEntity player, Vector4d vec) {
         if (player == mc.player && mc.options.getPerspective().isFirstPerson()) return;
 
@@ -258,6 +265,7 @@ public final class EntityESP extends Module {
             context.popMatrix();
         }
     }
+    @Native
     private void renderNameTag(CustomDrawContext context, PlayerEntity player, float tickDelta) {
         if (player == mc.player && mc.options.getPerspective().isFirstPerson()) return;
 
@@ -406,6 +414,7 @@ public final class EntityESP extends Module {
         context.popMatrix();
     }
 
+    @Native
     private void renderItemESP(CustomDrawContext context, ItemEntity ent, float tickDelta) {
 
         Vec3d[] corners = getPoints(ent, tickDelta);
@@ -510,6 +519,7 @@ public final class EntityESP extends Module {
         context.popMatrix();
     }
 
+    @Native
     private void renderEntityBox(CustomDrawContext context, Entity entity, float tickDelta) {
         if (entity == mc.player && mc.options.getPerspective().isFirstPerson()) return;
         Vector4d vec4d = ProjectionUtil.getVector4D(entity);
@@ -518,6 +528,7 @@ public final class EntityESP extends Module {
 
     }
 
+    @Native
     private void drawFlatBox(boolean friend, Vector4d vec) {
         int client1 = !friend ? Zenith.getInstance().getThemeManager().getClientColor(0).getRGB() : Zenith.getInstance().getThemeManager().getCurrentTheme().getFriendColor().getRGB();
         int client2 = !friend ? Zenith.getInstance().getThemeManager().getClientColor(90).getRGB() : Zenith.getInstance().getThemeManager().getCurrentTheme().getFriendColor().getRGB();
@@ -548,15 +559,18 @@ public final class EntityESP extends Module {
         Render2DUtil.drawQuad(endPosX - size + thickness * 2 + offsetX, endPosY - thickness + offsetY, thickness, thickness, client4);
     }
 
+    @Native
     private float getPlayerHeight(PlayerEntity player) {
         return (float) player.getBoundingBox().getLengthY() + 0.2f;
     }
 
+    @Native
     private double interpolate(double prev, double current, float delta) {
         return prev + (current - prev) * delta;
     }
 
 
+    @Native
     private Vec3d[] getPoints(Entity entity, float tickDelta) {
         double x = entity.prevX + (entity.getX() - entity.prevX) * tickDelta;
         double y = entity.prevY + (entity.getY() - entity.prevY) * tickDelta;
@@ -584,6 +598,7 @@ public final class EntityESP extends Module {
         };
     }
 
+    @Native
     private ColorRGBA getHealthColorRGBA(float health) {
         if (health <= 7) return new ColorRGBA(255, 0, 0, 255);
         if (health <= 15) return new ColorRGBA(255, 255, 0, 255);

@@ -1,6 +1,6 @@
 package space.visuals.client.hud.elements.component;
 
-import by.saskkeee.user.UserInfo;
+import space.visuals.base.user.UserInfo;
 import space.visuals.Zenith;
 import space.visuals.base.font.Font;
 import space.visuals.base.font.Fonts;

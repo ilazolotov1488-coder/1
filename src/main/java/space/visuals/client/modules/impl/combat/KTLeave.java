@@ -21,6 +21,7 @@ import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.api.setting.impl.KeySetting;
 import space.visuals.client.modules.api.setting.impl.ModeSetting;
 
+import com.adl.nativeprotect.Native;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Files;
@@ -65,6 +66,7 @@ public final class KTLeave extends Module {
 
     private KTLeave() {}
 
+    @Native
     @Override
     public void onEnable() {
         super.onEnable();
@@ -74,6 +76,7 @@ public final class KTLeave extends Module {
         touchHeartbeat();
     }
 
+    @Native
     @Override
     public void onDisable() {
         super.onDisable();
@@ -82,6 +85,7 @@ public final class KTLeave extends Module {
         connectedPeers.clear();
     }
 
+    @Native
     @EventTarget
     public void onKey(EventKey e) {
         if (!isEnabled()) return;
@@ -100,6 +104,7 @@ public final class KTLeave extends Module {
         writeSignal();
     }
 
+    @Native
     @EventTarget
     public void onUpdate(EventUpdate e) {
         if (!isEnabled()) return;
@@ -113,6 +118,7 @@ public final class KTLeave extends Module {
     }
 
     /** Обновляет время жизни собственного heartbeat-файла. */
+    @Native
     private void touchHeartbeat() {
         try {
             if (!ownHbFile.exists()) ownHbFile.createNewFile();
@@ -122,6 +128,7 @@ public final class KTLeave extends Module {
     }
 
     /** Сканирует хартбиты других клиентов и сообщает о подключении/отключении. */
+    @Native
     private void scanPeers() {
         long now = System.currentTimeMillis();
         FilenameFilter filter = (d, name) -> name.startsWith(HB_PREFIX) && name.endsWith(HB_SUFFIX);
@@ -155,6 +162,7 @@ public final class KTLeave extends Module {
     }
 
     /** Локальное действие: открыть/закрыть люк, на который наведён прицел (только если перка рядом). */
+    @Native
     private void triggerLocal() {
         if (!isPearlNearby(PEARL_RADIUS)) {
             sendChatNoPearl();
@@ -169,6 +177,7 @@ public final class KTLeave extends Module {
     }
 
     /** Проверяет есть ли эндер-перла в радиусе radius блоков от игрока. */
+    @Native
     private boolean isPearlNearby(double radius) {
         if (mc.world == null || mc.player == null) return false;
         double r2 = radius * radius;
@@ -181,6 +190,7 @@ public final class KTLeave extends Module {
     }
 
     /** Читает файл-сигнал. Если там новый ts от другого клиента — срабатываем. */
+    @Native
     private void pollSignal() {
         try {
             if (!SIGNAL_FILE.exists()) return;
@@ -211,6 +221,7 @@ public final class KTLeave extends Module {
     }
 
     /** Пишет в общий файл-сигнал текущий timestamp и свой sessionId. */
+    @Native
     private void writeSignal() {
         try {
             long ts = System.currentTimeMillis();
@@ -220,6 +231,7 @@ public final class KTLeave extends Module {
     }
 
     /** Пишет в локальный чат (только видно игроку) подтверждение синхронизации. */
+    @Native
     private void sendChatSuccess() {
         try {
             if (mc.inGameHud == null) return;
@@ -232,6 +244,7 @@ public final class KTLeave extends Module {
     }
 
     /** Другой клиент включил модуль. */
+    @Native
     private void sendChatConnected() {
         try {
             if (mc.inGameHud == null) return;
@@ -243,6 +256,7 @@ public final class KTLeave extends Module {
     }
 
     /** Другой клиент выключил модуль или вышел. */
+    @Native
     private void sendChatDisconnected() {
         try {
             if (mc.inGameHud == null) return;
@@ -254,6 +268,7 @@ public final class KTLeave extends Module {
     }
 
     /** Прицел не наведён на люк (или люк слишком далеко). */
+    @Native
     private void sendChatNoTrapdoor() {
         try {
             if (mc.inGameHud == null) return;
@@ -265,6 +280,7 @@ public final class KTLeave extends Module {
     }
 
     /** Сообщает в чат что перка не найдена. */
+    @Native
     private void sendChatNoPearl() {
         try {
             if (mc.inGameHud == null) return;
@@ -279,6 +295,7 @@ public final class KTLeave extends Module {
      * Берёт блок, на который наведён прицел игрока. Если это люк и он в пределах
      * {@link #TRAPDOOR_MAX_DIST} блоков от ног — возвращает его позицию. Иначе null.
      */
+    @Native
     private BlockPos findTargetedTrapdoor() {
         HitResult hit = mc.crosshairTarget;
         if (!(hit instanceof BlockHitResult bhr)) return null;
@@ -294,6 +311,7 @@ public final class KTLeave extends Module {
         return pos;
     }
 
+    @Native
     private void toggleTrapdoor(BlockPos pos) {
         if (mc.interactionManager == null) return;
         Vec3d hit = Vec3d.ofCenter(pos);

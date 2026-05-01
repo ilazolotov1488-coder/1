@@ -1,4 +1,4 @@
-package by.saskkeee.user;
+package space.visuals.base.user;
 
 import com.adl.nativeprotect.User;
 import net.minecraft.client.MinecraftClient;
@@ -15,12 +15,12 @@ public class UserInfo {
     private static String cachedLogin = null;
     private static long   lastCheck   = 0;
 
-        private static void refresh() {
+    private static void refresh() {
         long now = System.currentTimeMillis();
         if (now - lastCheck < 10_000) return;
         lastCheck = now;
 
-        // Приоритет 1: нативка протера (User.java) — работает с любым лоадером
+        // Приоритет 1: нативка протера (User.java)
         try {
             String nativeUsername = User.getInstance().profile("username");
             String nativeUid      = User.getInstance().profile("uid");
@@ -28,7 +28,7 @@ public class UserInfo {
             if (nativeUid      != null && !nativeUid.isEmpty())      cachedUid   = nativeUid;
         } catch (Throwable ignored) {}
 
-        // Приоритет 2: файлы нашего лоадера (C:\Space Visuals\)
+        // Приоритет 2: файлы лоадера (C:\Space Visuals\)
         Path spaceVisuals = Path.of("C:\\Space Visuals");
         Path minecraft    = spaceVisuals.resolve(".minecraft");
         Path spaceDir     = minecraft.resolve("SpaceVisuals");

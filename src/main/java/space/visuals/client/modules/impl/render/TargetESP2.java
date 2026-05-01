@@ -28,6 +28,7 @@ import space.visuals.client.modules.api.setting.impl.ModeSetting;
 import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 
+import com.adl.nativeprotect.Native;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -92,6 +93,7 @@ public final class TargetESP2 extends Module {
     private TargetESP2() {}
 
     /** Возвращает true если есть активная цель, или прошло менее 1.5с после её потери */
+    @Native
     public boolean hasTarget() {
         if (getTarget() != null) {
             targetLostForSwing = 0L;
@@ -103,6 +105,7 @@ public final class TargetESP2 extends Module {
 
     // ── Target detection ──────────────────────────────────────────────────────
 
+    @Native
     private LivingEntity getTarget() {
         if (mc.player == null || mc.world == null) return null;
         var hit = mc.crosshairTarget;
@@ -117,6 +120,7 @@ public final class TargetESP2 extends Module {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    @Native
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null) return;
@@ -219,6 +223,7 @@ public final class TargetESP2 extends Module {
 
     // -- Ghost -----------------------------------------------------------------
 
+    @Native
     private void renderGhost(MatrixStack matrices, Camera camera, LivingEntity target, float pt, float alphaMul) {
         Vec3d camPos = camera.getPos();
         float camYaw = camera.getYaw(), camPitch = camera.getPitch();
@@ -260,6 +265,7 @@ public final class TargetESP2 extends Module {
         restoreRenderState();
     }
 
+    @Native
     private void renderPrizraki(MatrixStack matrices, Camera camera, LivingEntity target, float pt, float alphaMul) {
         Vec3d camPos = camera.getPos();
         float camYaw = camera.getYaw(), camPitch = camera.getPitch();
@@ -292,6 +298,7 @@ public final class TargetESP2 extends Module {
         BufferRenderer.drawWithGlobalProgram(buffer.end()); restoreRenderState();
     }
 
+    @Native
     private void renderKolco(MatrixStack matrices, Camera camera, LivingEntity target, float pt, float animProgress) {
         if (animProgress <= 0f || target == null) return;
         Vec3d camPos = camera.getPos(); float camYaw = camera.getYaw(), camPitch = camera.getPitch();
@@ -321,8 +328,10 @@ public final class TargetESP2 extends Module {
         if (has) BufferRenderer.drawWithGlobalProgram(builder.end()); restoreRenderState();
     }
 
+    @Native
     private double absSin(double input) { return Math.abs(1 + Math.sin(input)) / 2.0; }
 
+    @Native
     private int getKolcoColor(int offsetAngle, long now) {
         int color;
         if (kolcoRainbow.isEnabled()) {
@@ -337,6 +346,7 @@ public final class TargetESP2 extends Module {
         return applyDamageFlash(color);
     }
 
+    @Native
     private int applyDamageFlash(int color) {
         if (!kolcoDamageRed.isEnabled()) return color;
         long timeSince = System.currentTimeMillis() - lastDamageTime;
@@ -350,6 +360,7 @@ public final class TargetESP2 extends Module {
                 | (int) MathHelper.lerp(damageFlashIntensity, b, 50);
     }
 
+    @Native
     private void renderCrystals(MatrixStack matrices, Camera camera, LivingEntity target, boolean sharp, float anim, float pt) {
         if (target == null || mc.player == null) return;
         float eased = easeOutCubic(anim), time = (mc.player.age + pt) * 6.0f;
@@ -414,11 +425,13 @@ public final class TargetESP2 extends Module {
         RenderSystem.defaultBlendFunc(); RenderSystem.disableBlend();
     }
 
+    @Native
     private float getCrystalLookY(float cy, float h, float pelvis, float torso, float neck) {
         float n = cy / h;
         return n < 0.33f ? pelvis : n < 0.6f ? torso : neck;
     }
 
+    @Native
     private void drawCrystalShape(BufferBuilder buf, MatrixStack ms, float x, float y, float z,
                                    float scale, float yaw, float pitch, int r, int g, int b, int a, boolean sharp) {
         ms.push();
@@ -435,10 +448,12 @@ public final class TargetESP2 extends Module {
         ms.pop();
     }
 
+    @Native
     private void tri(BufferBuilder buf, Matrix4f m, float x1,float y1,float z1, float x2,float y2,float z2, float x3,float y3,float z3, int r,int g,int b,int a) {
         buf.vertex(m,x1,y1,z1).color(r,g,b,a); buf.vertex(m,x2,y2,z2).color(r,g,b,a); buf.vertex(m,x3,y3,z3).color(r,g,b,a);
     }
 
+    @Native
     private void renderCubes(MatrixStack matrices, Camera camera, LivingEntity target, float pt, float alphaMul) {
         long now = System.currentTimeMillis();
         if (lastCubeTime == 0L) lastCubeTime = now;
@@ -483,6 +498,7 @@ public final class TargetESP2 extends Module {
 
     // ── Cubes2 (наши вращающиеся кубы из TargetESP) ──────────────────────────
 
+    @Native
     private void renderCubes2(MatrixStack ms, Camera camera, LivingEntity target, float pt, float alphaMul) {
         Vec3d camPos = camera.getPos();
         Vec3d targetPos = new Vec3d(
@@ -534,6 +550,7 @@ public final class TargetESP2 extends Module {
         RenderSystem.disableBlend();
     }
 
+    @Native
     private void drawCubes2Cube(BufferBuilder buf, MatrixStack ms, float x, float y, float z,
                                  float size, float rotY, float rotX, int color, float alpha) {
         if (size <= 0f) return;
@@ -554,6 +571,7 @@ public final class TargetESP2 extends Module {
         ms.pop();
     }
 
+    @Native
     private void addCubes2Quad(BufferBuilder buf, Matrix4f m,
                                 float x1,float y1,float z1, float x2,float y2,float z2,
                                 float x3,float y3,float z3, float x4,float y4,float z4,
@@ -564,6 +582,7 @@ public final class TargetESP2 extends Module {
 
     // -- Helpers ---------------------------------------------------------------
 
+    @Native
     private void putBloomQuad(BufferBuilder builder, MatrixStack ms, double x, double y, double z,
                                float scale, float r, float g, float b, float a, float camYaw, float camPitch) {
         if (a <= 0.001f || scale <= 0.0001f) return;
@@ -581,19 +600,23 @@ public final class TargetESP2 extends Module {
         ms.pop();
     }
 
+    @Native
     private static float easeOutCubic(float t) { float u = 1f - t; return 1f - u * u * u; }
 
+    @Native
     private void restoreRenderState() {
         RenderSystem.enableDepthTest(); RenderSystem.depthMask(true);
         RenderSystem.defaultBlendFunc(); RenderSystem.disableBlend();
         RenderSystem.enableCull(); RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
     }
 
+    @Native
     private float[] themeRgb() {
         ColorRGBA c = Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
         return new float[]{ c.getRed() / 255f, c.getGreen() / 255f, c.getBlue() / 255f };
     }
 
+    @Native
     private int themeColorInt() {
         ColorRGBA c = Zenith.getInstance().getThemeManager().getCurrentTheme().getColor();
         return (255 << 24) | (c.getRed() << 16) | (c.getGreen() << 8) | c.getBlue();

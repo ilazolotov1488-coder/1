@@ -10,6 +10,7 @@ import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
 import space.visuals.client.modules.impl.render.SoulESP;
 
+import com.adl.nativeprotect.Native;
 import java.util.UUID;
 
 @ModuleAnnotation(name = "FakePlayer", category = Category.MISC, description = "Спавнит фейкового игрока на месте")
@@ -24,9 +25,11 @@ public final class FakePlayer extends Module {
 
     private FakePlayer() {}
 
+    @Native
     public OtherClientPlayerEntity getFakePlayer() { return fakePlayer; }
 
     /** Вызывается из mixin при атаке */
+    @Native
     public void onAttack() {
         if (fakePlayer == null || mc.player == null || mc.world == null) return;
 
@@ -72,6 +75,7 @@ public final class FakePlayer extends Module {
         applyDamage(dmg);
     }
 
+    @Native
     private void applyDamage(float amount) {
         if (fakePlayer == null || mc.world == null) return;
         health = Math.max(0f, health - amount);
@@ -109,6 +113,7 @@ public final class FakePlayer extends Module {
         }
     }
 
+    @Native
     @Override
     public void onEnable() {
         if (mc.player == null || mc.world == null) return;
@@ -121,6 +126,7 @@ public final class FakePlayer extends Module {
         fakePlayer.setHealth(MAX_HEALTH);
     }
 
+    @Native
     @Override
     public void onDisable() {
         if (mc.world != null && fakePlayer != null) {

@@ -32,6 +32,7 @@ import space.visuals.utility.game.player.rotation.RotationUtil;
 import space.visuals.utility.math.Timer;
 import space.visuals.utility.other.BooleanSettable;
 
+import com.adl.nativeprotect.Native;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +51,7 @@ public final class ClickAction extends Module {
         keyBindings.add(new KeyBind(Items.WIND_CHARGE, new KeySetting("Заряд ветра"), new BooleanSettable()));
     }
 
+    @Native
     @Override
     public List<Setting> getSettings() {
         ArrayList<Setting> settings = new ArrayList<>();
@@ -59,6 +61,7 @@ public final class ClickAction extends Module {
         return settings;
     }
 
+    @Native
     @EventTarget
     public void onKey(EventKey e) {
         if (e.isKeyDown(friendBind.getKeyCode())
@@ -95,6 +98,7 @@ public final class ClickAction extends Module {
     }
 
     // Легитный бросок снаряда — логика как в ServerHelper (пакетный своп без открытия инвентаря)
+    @Native
     private void swapAndUseWithReset(Item item) {
         if (mc.player == null) return;
         if (!Zenith.getInstance().getScriptManager().isFinished()) return;
@@ -219,6 +223,7 @@ public final class ClickAction extends Module {
         task.schedule(EventUpdate.class, ev -> { restoreMoveKeys(); return true; });
     }
 
+    @Native
     private void restoreMoveKeys() {
         long win = mc.getWindow().getHandle();
         mc.options.sprintKey.setPressed(GLFW.glfwGetKey(win,  GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS);
@@ -229,6 +234,7 @@ public final class ClickAction extends Module {
         mc.options.jumpKey.setPressed(GLFW.glfwGetKey(win,    GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS);
     }
 
+    @Native
     @EventTarget
     public void onWorldRender(EventRender3D e) {
         Predictions.INSTANCE.drawPredictionInHand(e.getMatrix(),
@@ -238,6 +244,7 @@ public final class ClickAction extends Module {
 
     private Slot saveSlot = null;
 
+    @Native
     @EventTarget
     public void onExpTick(EventRotate e) {
         boolean isMainHandItem = mc.player.getMainHandStack().getItem().equals(Items.EXPERIENCE_BOTTLE);

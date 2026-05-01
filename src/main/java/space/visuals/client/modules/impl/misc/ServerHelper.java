@@ -55,6 +55,7 @@ import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.utility.render.level.Render3DUtil;
 
 
+import com.adl.nativeprotect.Native;
 import java.util.*;
 import java.util.List;
 
@@ -84,6 +85,7 @@ public final class ServerHelper extends Module {
     private final BooleanSetting autoPointSetting = new BooleanSetting("Авто точка", true);
     private final ModeSetting serverMode = new ModeSetting("Сервер", "HolyWorld", "FunTime");
 
+    @Native
     public void initialize() {
         // ── HolyWorld ──────────────────────────────────────────────────────────
         keyBindings.add(new KeyBind(Items.PRISMARINE_SHARD,
@@ -130,6 +132,7 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native
     @Override
     public List<Setting> getSettings() {
         ArrayList<Setting> settings = new ArrayList<>(List.of(consumablesSetting, autoPointSetting, serverMode));
@@ -138,6 +141,7 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native
     @EventTarget
     public void onKey(EventKey e) {
         if (e.getAction() == GLFW.GLFW_RELEASE) {
@@ -153,6 +157,7 @@ public final class ServerHelper extends Module {
     }
 
     // Свап с 2 тиками сброса движения — своп пакетом в руку, использовать, вернуть
+    @Native
     private void swapAndUseWithReset(net.minecraft.item.Item item) {
         if (mc.player == null) return;
         if (!Zenith.getInstance().getScriptManager().isFinished()) return;
@@ -241,6 +246,7 @@ public final class ServerHelper extends Module {
         task.schedule(EventUpdate.class, ev -> { restoreMoveKeys(); return true; });
     }
 
+    @Native
     private void restoreMoveKeys() {
         long win = mc.getWindow().getHandle();
         mc.options.sprintKey.setPressed(GLFW.glfwGetKey(win,  GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS);
@@ -252,6 +258,7 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native
     @EventTarget
     public void onPacket(EventPacket e) {
 
@@ -317,6 +324,7 @@ public final class ServerHelper extends Module {
     }
 
 
+    @Native
     @EventTarget
     public void onUpdate(EventUpdate e) {
         // Удаляем просроченные временные вейпоинты ивентов
@@ -335,6 +343,7 @@ public final class ServerHelper extends Module {
         });
     }
 
+    @Native
     @EventTarget
     public void onWorldRender(EventRender3D e) {
         long currentTime = System.currentTimeMillis();
@@ -398,6 +407,7 @@ public final class ServerHelper extends Module {
         });
     }
 
+    @Native
     @EventTarget
     public void onDraw(EventRender2D e) {
         DrawContext context = e.getContext();
@@ -433,12 +443,14 @@ public final class ServerHelper extends Module {
         structures.removeIf(cons -> cons.time - System.currentTimeMillis() <= 0);
     }
 
+    @Native
     private void drawItemCube(BlockPos playerPos, Vec3d smooth, float size, int color) {
         Box box = new Box(playerPos.up()).offset(smooth).contract(0, 0.2f, 0).expand(size);
         boolean inBox = mc.world.getPlayers().stream().anyMatch(ent -> ent != mc.player && box.intersects(ent.getBoundingBox()) && !Zenith.getInstance().getFriendManager().isFriend(ent.getGameProfile().getName()));
         Render3DUtil.drawBox(box, inBox ? Zenith.getInstance().getThemeManager().getCurrentTheme().getColor().getRGB() : color, 3, true, true, true);
     }
 
+    @Native
     private void drawItemRadius(MatrixStack matrix, float distance, int clr) {
         float playerHalfWidth = mc.player.getWidth() / 2;
         int color = validDistance(distance) ? Zenith.getInstance().getThemeManager().getCurrentTheme().getColor().getRGB() : clr;
@@ -470,6 +482,7 @@ public final class ServerHelper extends Module {
         GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
     }
 
+    @Native
     private void draw(MatrixStack matrix, Font font, List<String> list, Vec3d vec3d) {
         float offsetY = 0;
         for (int i = 0; i < list.size(); i++) {
@@ -481,6 +494,7 @@ public final class ServerHelper extends Module {
         }
     }
 
+    @Native
     public void drawSidePlast(BlockPos blockPos, Vec3d smooth, int color, int i, boolean ff) {
         Vec3d vec3d = Vec3d.of(blockPos).add(smooth);
         float width = 2;
@@ -493,6 +507,7 @@ public final class ServerHelper extends Module {
         drawVerticalQuads(vec3d, quadColor, i, ff);
     }
 
+    @Native
     private void drawHorizontalLines(Vec3d vec3d, int color, float width, int i, boolean ff) {
         float x = ff ? i : -i;
         Vec3d current = vec3d;
@@ -515,6 +530,7 @@ public final class ServerHelper extends Module {
         Render3DUtil.drawLine(current, current.add(0, 0, i * -2), color, width, true);
     }
 
+    @Native
     private void drawVerticalLines(Vec3d vec3d, int color, float width, int i, boolean ff) {
         float x = ff ? i : -i;
         Render3DUtil.drawLine(vec3d, vec3d.add(0, 5, 0), color, width, true);
@@ -529,6 +545,7 @@ public final class ServerHelper extends Module {
         }
     }
 
+    @Native
     private void drawHorizontalQuads(Vec3d vec3d, int color, int i, boolean ff) {
         vec3d = vec3d.add(0, 1e-3, 0);
         float x = ff ? i : -i;
@@ -538,6 +555,7 @@ public final class ServerHelper extends Module {
         Render3DUtil.drawQuad(vec3d = vec3d.add(x, 0, i), vec3d.add(x, 0, 0), vec3d.add(x, 0, i), vec3d.add(0, 0, i), color, true);
     }
 
+    @Native
     private void drawVerticalQuads(Vec3d vec3d, int color, int i, boolean ff) {
         float x = ff ? i : -i;
         Render3DUtil.drawQuad(vec3d, vec3d.add(x, 0, 0), vec3d.add(x, 5, 0), vec3d.add(0, 5, 0), color, true);
@@ -555,6 +573,7 @@ public final class ServerHelper extends Module {
         Render3DUtil.drawQuad(vec3d = vec3d.add(x * -1, 0, 0), vec3d.add(0, 0, i * -2), vec3d.add(0, 5, i * -2), vec3d.add(0, 5, 0), color, true);
     }
 
+    @Native
     private void addEvent(String name, String lvl, String owner, Vec3d vec3d, String world, int timeOpen, int timeLoot) {
         // Проверяем что вейпоинта с таким именем ещё нет
         if (tempEventWaypoints.containsKey(name)) return;
@@ -568,12 +587,14 @@ public final class ServerHelper extends Module {
         Zenith.getInstance().getWaypointManager().add(label, vec3d.x, vec3d.y, vec3d.z, true, null);
     }
 
+    @Native
     private void addStructure(Item item, Vec3d vec, double time) {
         if (structures.stream().noneMatch(str -> str.vec.equals(vec))) {
             structures.add(new Structure(item, vec, Zenith.getInstance().getServerHandler().getWorldType(), Zenith.getInstance().getServerHandler().getAnarchy(), time));
         }
     }
 
+    @Native
     private Vector4f getRound(Font font, List<String> list, int i, float width) {
         if (i == 0) {
             float next = font.width(list.get(i + 1));
@@ -588,10 +609,12 @@ public final class ServerHelper extends Module {
         return prev >= width ? next >= width ? new Vector4f() : new Vector4f(0, 2, 0, 2) : new Vector4f(2);
     }
 
+    @Native
     private boolean validDistance(float dist) {
         return dist == 0 || mc.world.getPlayers().stream().anyMatch(p -> p != mc.player && !Zenith.getInstance().getFriendManager().isFriend(p.getGameProfile().getName()) && mc.player.distanceTo(p) <= dist);
     }
 
+    @Native
     private boolean isTrap(BlockPos center) {
         long currentTime = System.currentTimeMillis();
         if (trapCacheTime.containsKey(center) && currentTime - trapCacheTime.get(center) < CACHE_DURATION) {
@@ -604,6 +627,7 @@ public final class ServerHelper extends Module {
         return result;
     }
 
+    @Native
     private boolean checkTrap(BlockPos center) {
         int inconsistencies = 0;
         for (BlockPos pos : PlayerIntersectionUtil.getCube(center, 2)) {
@@ -619,6 +643,7 @@ public final class ServerHelper extends Module {
         return true;
     }
 
+    @Native
     private boolean isBigTrap(BlockPos center) {
         long currentTime = System.currentTimeMillis();
         if (bigTrapCacheTime.containsKey(center) && currentTime - bigTrapCacheTime.get(center) < CACHE_DURATION) {
@@ -631,6 +656,7 @@ public final class ServerHelper extends Module {
         return result;
     }
 
+    @Native
     private boolean checkBigTrap(BlockPos center) {
         int inconsistencies = 0;
         for (BlockPos pos : PlayerIntersectionUtil.getCube(center, 3)) {
@@ -646,10 +672,12 @@ public final class ServerHelper extends Module {
         return true;
     }
 
+    @Native
     private static boolean isSolid(BlockState state) {
         return state != null && !state.isAir();
     }
     
+    @Native
     private void cleanCache() {
         long currentTime = System.currentTimeMillis();
         
@@ -669,6 +697,7 @@ public final class ServerHelper extends Module {
         }
     }
 
+    @Native
     private boolean matchesMask(BlockPos center,
                                 byte[][][] mask,
                                 int radius,

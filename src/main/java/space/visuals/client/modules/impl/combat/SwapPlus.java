@@ -38,6 +38,7 @@ import space.visuals.utility.render.display.base.CustomDrawContext;
 import org.lwjgl.glfw.GLFW;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 
+import com.adl.nativeprotect.Native;
 import java.util.Comparator;
 
 import java.util.Arrays;
@@ -85,11 +86,13 @@ public final class SwapPlus extends Module {
         Arrays.fill(wheelStacks, ItemStack.EMPTY);
     }
 
+    @Native
     @Override
     public List<Setting> getSettings() {
         return List.of(mode, bind, wheelBind, firstItem, secondItem, wheelSlots, swapDelay, closeDelay);
     }
 
+    @Native
     @EventTarget
     public void onTick(EventUpdate event) {
         if (mc.player == null) return;
@@ -137,6 +140,7 @@ public final class SwapPlus extends Module {
         });
     }
 
+    @Native
     @EventTarget
     public void onKey(EventKey e) {
         if (mc.player == null || mc.currentScreen != null) return;
@@ -151,6 +155,7 @@ public final class SwapPlus extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void onMouse(EventMouse event) {
         if (mc.player == null) return;
@@ -188,11 +193,13 @@ public final class SwapPlus extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void onRender(EventHudRender event) {
         renderWheel(event.getContext());
     }
 
+    @Native
     private void renderWheel(CustomDrawContext ctx) {
         if (!mode.get().equals("Колесо") || !wheelOpen || mc.currentScreen != null || mc.player == null) return;
         updateCursor(true);
@@ -265,6 +272,7 @@ public final class SwapPlus extends Module {
     }
 
     // Вызывается из HandledScreenMixin при клике на слот в инвентаре
+    @Native
     public void onClickSlot(int slotId, SlotActionType actionType) {
         if (!mode.get().equals("Колесо") || pendingPickSlot == -1
                 || !(mc.currentScreen instanceof InventoryScreen)
@@ -279,10 +287,13 @@ public final class SwapPlus extends Module {
         mc.execute(() -> updateCursor(true));
     }
 
+    @Native
     public boolean isPendingPick() { return pendingPickSlot != -1; }
 
+    @Native
     public boolean isWheelOpen() { return wheelOpen; }
 
+    @Native
     @Override
     public void onDisable() {
         startSwap = false;
@@ -294,6 +305,7 @@ public final class SwapPlus extends Module {
 
     // --- приватные методы ---
 
+    @Native
     private void startItemSwap() {
         if (mc.player == null || mc.currentScreen != null || startSwap) return;
         Item item1 = getItemByMode(firstItem.get());
@@ -308,6 +320,7 @@ public final class SwapPlus extends Module {
         startSwap = true;
     }
 
+    @Native
     private void startWheelSwap(int idx) {
         if (mc.player == null || startSwap) return;
         ItemStack saved = isWheelEmpty(idx) ? ItemStack.EMPTY : wheelStacks[idx];
@@ -319,6 +332,7 @@ public final class SwapPlus extends Module {
         startSwap = true;
     }
 
+    @Native
     private void openWheel() { 
         if (!wheelOpen) { 
             wheelOpen = true; 
@@ -327,27 +341,37 @@ public final class SwapPlus extends Module {
             updateCursor(true); 
         } 
     }
+    @Native
     private void releaseWheel() { if (wheelOpen) { wheelOpen = false; removeFlashIndex = -1; removeFlashUntilMs = 0L; updateCursor(false); } }
+    @Native
     private void closeWheel() { wheelOpen = false; pendingPickSlot = -1; pendingPickDelay = 0; removeFlashIndex = -1; removeFlashUntilMs = 0L; updateCursor(false); }
 
+    @Native
     private void updateCursor(boolean unlock) {
         if (mc == null || mc.mouse == null) return;
         if (unlock) { if (!cursorUnlocked) { mc.mouse.unlockCursor(); cursorUnlocked = true; } }
         else { if (cursorUnlocked) { if (mc.currentScreen == null) mc.mouse.lockCursor(); cursorUnlocked = false; } }
     }
 
+    @Native
     private boolean isWheelEmpty(int i) {
         if (i < 0 || i >= wheelStacks.length) return true;
         ItemStack s = wheelStacks[i];
         return s == null || s.isEmpty() || s.getItem() == Items.AIR;
     }
 
+    @Native
     public boolean isWPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_W)     == GLFW.GLFW_PRESS; }
+    @Native
     public boolean isAPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_A)     == GLFW.GLFW_PRESS; }
+    @Native
     public boolean isDPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_D)     == GLFW.GLFW_PRESS; }
+    @Native
     public boolean isSPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS; }
+    @Native
     public boolean isJumpPressed() { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS; }
 
+    @Native
     private Item getItemByMode(String name) {
         return switch (name) {
             case "Тотем" -> Items.TOTEM_OF_UNDYING;
@@ -358,8 +382,10 @@ public final class SwapPlus extends Module {
         };
     }
 
+    @Native
     private int getWheelSlotCount() { return MathHelper.clamp(Math.round(wheelSlots.getCurrent()), 3, 8); }
 
+    @Native
     private Slot findSlotByStack(ItemStack target) {
         if (mc.player == null || target.isEmpty()) return null;
         List<Slot> slots = mc.player.currentScreenHandler.slots;
@@ -371,6 +397,7 @@ public final class SwapPlus extends Module {
         return null;
     }
 
+    @Native
     private int getHoverPanelIndex(float mx, float my, float cx, float cy, int count, float animProgress) {
         for (int i = 0; i < count; i++) {
             float angle = (float)(2.0 * Math.PI * i / count - Math.PI / 2.0);
@@ -387,10 +414,12 @@ public final class SwapPlus extends Module {
         return -1;
     }
     
+    @Native
     private float easeOutCubic(float t) {
         return 1f - (float)Math.pow(1f - t, 3);
     }
     
+    @Native
     private void drawCross(Tessellator tess, float cx, float cy, float size, int alpha) {
         float thick = 1.5f;
         int r = 120, g = 120, b = 120;
@@ -419,6 +448,7 @@ public final class SwapPlus extends Module {
         RenderSystem.disableBlend();
     }
     
+    @Native
     private void drawRoundedRect(Tessellator tess, float x, float y, float w, float h, float r, int color) {
         int a = (color >> 24) & 0xFF;
         int red = (color >> 16) & 0xFF;
@@ -461,6 +491,7 @@ public final class SwapPlus extends Module {
         BufferRenderer.drawWithGlobalProgram(buf.end());
     }
     
+    @Native
     private void drawCorner(BufferBuilder buf, float cx, float cy, float r, float startDeg, float endDeg, int red, int g, int b, int a) {
         int steps = 8;
         float startRad = (float)Math.toRadians(startDeg);

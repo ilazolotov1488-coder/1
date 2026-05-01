@@ -18,6 +18,7 @@ import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.client.modules.impl.misc.ElytraHelper;
 import space.visuals.Zenith;
 
+import com.adl.nativeprotect.Native;
 import java.util.Comparator;
 
 import static net.minecraft.item.Items.TOTEM_OF_UNDYING;
@@ -49,6 +50,7 @@ public final class AutoTotem extends Module {
     // Флаг что тотем был взят нами
     private boolean totemTaken = false;
 
+    @Native
     @EventTarget
     public void onPlayerTick(EventUpdate event) {
         if (mc.player == null || mc.world == null) return;
@@ -165,6 +167,7 @@ public final class AutoTotem extends Module {
         }
     }
 
+    @Native
     private void doSwap(Slot slot) {
         if (swapping) return;
         // Уведомление о свапе тотема
@@ -177,6 +180,7 @@ public final class AutoTotem extends Module {
         swapTick = 0;
     }
 
+    @Native
     private boolean shouldUseTotem() {
         float healthValue = mc.player.getHealth() + mc.player.getAbsorptionAmount();
 
@@ -185,6 +189,7 @@ public final class AutoTotem extends Module {
         return fall.isEnabled() && mc.player.fallDistance >= fallDistance.getCurrent();
     }
 
+    @Native
     @Override
     public void onDisable() {
         totemTaken = false;

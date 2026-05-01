@@ -20,6 +20,7 @@ import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.base.font.Fonts;
 import space.visuals.base.font.Font;
 
+import com.adl.nativeprotect.Native;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class WaypointsModule extends Module {
 
     private final Map<String, Animation> fadeAnims = new HashMap<>();
 
+    @Native
     @EventTarget
     public void onRender2D(EventRender2D event) {
         if (mc.player == null || mc.world == null) return;
@@ -127,17 +129,20 @@ public class WaypointsModule extends Module {
         );
     }
 
+    @Native
     private String formatDistance(float dist) {
         if (dist >= 1000) return String.format("%.1fkm", dist / 1000f);
         return String.format("%.0fm", dist);
     }
 
+    @Native
     @Override
     public void onEnable() {
         super.onEnable();
         System.out.println("[WaypointsModule] onEnable() called - registering events");
     }
 
+    @Native
     @Override
     public void onDisable() {
         super.onDisable();

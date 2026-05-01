@@ -29,6 +29,7 @@ import space.visuals.base.repository.RCTRepository;
 import space.visuals.utility.render.display.shader.DrawUtil;
 import space.visuals.utility.render.display.shader.GlProgram;
 
+import com.adl.nativeprotect.Native;
 import java.io.File;
 
 /*
@@ -68,6 +69,7 @@ public enum Zenith {
     private DiscordManager discordManager;
     private WaypointManager waypointManager;
 
+    @Native
     public void init() {
         System.out.println("[ZENITH] init() started");
         try {
@@ -136,6 +138,7 @@ public enum Zenith {
         }
     }
 
+    @Native
     public void shutdown() {
         friendManager.save();
         staffManager.save();
@@ -144,19 +147,23 @@ public enum Zenith {
         if (discordManager != null) discordManager.shutdown();
     }
 
+    @Native
     public static Identifier id(String path) {
         return Identifier.of(MOD_ID, path);
     }
 
+    @Native
     public static Zenith getInstance() {
         return INSTANCE;
     }
 
+    @Native
     public RCTRepository getRCTRepository() {
         return rctRepository;
     }
 
     /** Проверяет что мод запущен с авторизованного устройства */
+    @Native
     private static void checkHwid() {
         try {
             java.nio.file.Path hwidFile = java.nio.file.Path.of("C:\\Space Visuals\\hwid.txt");

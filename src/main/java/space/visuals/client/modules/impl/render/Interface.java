@@ -27,6 +27,7 @@ import space.visuals.utility.math.MathUtil;
 import space.visuals.utility.render.display.base.CustomDrawContext;
 import space.visuals.utility.render.display.base.GuiUtil;
 
+import com.adl.nativeprotect.Native;
 import java.util.*;
 
 import static space.visuals.utility.render.display.Render2DUtil.glowCache;
@@ -130,12 +131,14 @@ public final class Interface extends Module {
 
     long init = 0;
 
+    @Native
     @Override
     public void onEnable() {
         init = System.currentTimeMillis();
         super.onEnable();
     }
 
+    @Native
     @Override
     public JsonObject save() {
         JsonObject object = super.save();
@@ -149,6 +152,7 @@ public final class Interface extends Module {
         return object;
     }
 
+    @Native
     @Override
     public void load(JsonObject object) {
         super.load(object);
@@ -166,11 +170,13 @@ public final class Interface extends Module {
     }
 
 
+    @Native
     private void addElement(DraggableHudElement element) {
         elementIndexCache.put(element, elements.size());
         elements.add(element);
     }
 
+    @Native
     @EventTarget
     public void onRender(EventHudRender event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -224,6 +230,7 @@ public final class Interface extends Module {
     }
 
 
+    @Native
     private boolean shouldRender(DraggableHudElement element) {
         // Notifications компонент управляется своим модулем
         if (element == notifyElement) {
@@ -234,6 +241,7 @@ public final class Interface extends Module {
         return elementsSetting.getBooleanSettings().get(index).isEnabled();
     }
 
+    @Native
     @EventTarget
     public void onMouse(EventMouse event) {
         if (!(mc.currentScreen instanceof ChatScreen)) {
@@ -287,10 +295,12 @@ public final class Interface extends Module {
         }
     }
 
+    @Native
     public float getCustomScale() {
         return scale.getCurrent();
     }
 
+    @Native
     public org.joml.Vector2f getNearest(float x, float y) {
 
         float minDeltaX = Float.MAX_VALUE;
@@ -348,6 +358,7 @@ public final class Interface extends Module {
         return nearest;
     }
 
+    @Native
     public float getNearest(float a, float b, float c, float target) {
         float nearest = a;
         if (MathUtil.goodSubtract(b, target) < MathUtil.goodSubtract(nearest, target)) {
@@ -358,22 +369,28 @@ public final class Interface extends Module {
         }
         return nearest;
     }
+    @Native
     public boolean isEnableScoreBar() {
         return elementsSetting.isEnable(10); //10 - scoreboard
     }
+    @Native
     public boolean isEnableHotBar() {
         return elementsSetting.isEnable(9); //9 - hotbar
     }
+    @Native
     public boolean isEnableTab() {
         return elementsSetting.isEnable(11); //11 - tab (PlayerList)
     }
+    @Native
     public boolean isEnableStatusBars() {
         return elementsSetting.isEnable(12); //12 - статус бары
     }
+    @Native
     public boolean isEnableDynamicIsland() {
         return elementsSetting.isEnable(13); //13 - dynamic island
     }
 
+    @Native
     @EventTarget
     public void resize(EventWindowResize eventWindowResize) {
         float width = mc.getWindow().getWidth() / getCustomScale();
@@ -386,6 +403,7 @@ public final class Interface extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void update(EventUpdate eventUpdate) {
 
@@ -407,17 +425,21 @@ public final class Interface extends Module {
         ;
     }
 
+    @Native
     public boolean isBlur() {
         return blur.isEnabled();
     }
 
+    @Native
     public boolean isGlow() {
         return glow.isEnabled();
     }
 
+    @Native
     public boolean isCorners() {
         return corners.isEnabled();
     }
+    @Native
     @EventTarget
     public void screenEvent(EventSetScreen event) {
         if(event.getScreen() instanceof ChatScreen){
@@ -425,6 +447,7 @@ public final class Interface extends Module {
         }
 
     }
+    @Native
     public int getGlowRadius() {
         return (int) 10;
     }

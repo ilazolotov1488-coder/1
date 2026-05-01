@@ -1,6 +1,6 @@
 package space.visuals.client.screens.menu.panels;
 
-import by.saskkeee.user.UserInfo;
+import space.visuals.base.user.UserInfo;
 import lombok.Getter;
 import space.visuals.Zenith;
 import space.visuals.base.animations.base.Animation;

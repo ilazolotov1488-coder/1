@@ -15,6 +15,7 @@ import space.visuals.client.modules.api.setting.impl.NumberSetting;
 import space.visuals.utility.render.display.base.color.ColorRGBA;
 import space.visuals.utility.render.level.Render3DUtil;
 
+import com.adl.nativeprotect.Native;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -55,18 +56,21 @@ public final class LineGlyphs extends Module {
 
     private LineGlyphs() {}
 
+    @Native
     @Override
     public void onEnable() {
         super.onEnable();
         generateLines();
     }
 
+    @Native
     @Override
     public void onDisable() {
         super.onDisable();
         lines.clear();
     }
 
+    @Native
     private void generateLines() {
         lines.clear();
         if (mc.player == null) return;
@@ -75,6 +79,7 @@ public final class LineGlyphs extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void onRender3D(EventRender3D event) {
         if (mc.player == null || mc.world == null) return;
@@ -112,6 +117,7 @@ public final class LineGlyphs extends Module {
         renderLines();
     }
 
+    @Native
     private void renderLines() {
         if (lines.isEmpty()) return;
         Camera camera = mc.gameRenderer.getCamera();
@@ -151,6 +157,7 @@ public final class LineGlyphs extends Module {
         }
     }
 
+    @Native
     private int computeColor(int index) {
         return switch (colorMode.get()) {
             case "Кастом"  -> color1.getColor().getRGB();
@@ -162,6 +169,7 @@ public final class LineGlyphs extends Module {
         };
     }
 
+    @Native
     private static int applyAlpha(int color, int alpha) {
         return (color & 0x00FFFFFF) | (Math.min(255, Math.max(0, alpha)) << 24);
     }

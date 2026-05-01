@@ -2,6 +2,7 @@ package space.visuals.client.modules.impl.render;
 
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import com.adl.nativeprotect.Native;
 import space.visuals.client.modules.api.Category;
 import space.visuals.client.modules.api.Module;
 import space.visuals.client.modules.api.ModuleAnnotation;
@@ -15,10 +16,12 @@ public final class CustomModels extends Module {
 
     private CustomModels() {}
 
+    @Native
     public CustomModelType getSelectedType() {
         return CustomModelType.fromDisplay(this.model.get());
     }
 
+    @Native
     public boolean shouldApplyTo(LivingEntity entity) {
         if (!this.isEnabled() || entity == null) return false;
         if (!(entity instanceof PlayerEntity player)) return false;

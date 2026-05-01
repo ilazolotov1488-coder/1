@@ -21,6 +21,7 @@ import space.visuals.utility.game.player.PlayerIntersectionUtil;
 import space.visuals.utility.game.player.PlayerInventoryUtil;
 import space.visuals.utility.game.player.rotation.Rotation;
 
+import com.adl.nativeprotect.Native;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,16 +40,23 @@ public final class ElytraHelper extends Module {
 
     private int fireworkCooldown = 0;
 
+    @Native
     public boolean isSwapping() { return startElytraSwap; }
 
     private ElytraHelper() {}
 
+    @Native
     private boolean isWPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_W)     == GLFW.GLFW_PRESS; }
+    @Native
     private boolean isAPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_A)     == GLFW.GLFW_PRESS; }
+    @Native
     private boolean isDPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_D)     == GLFW.GLFW_PRESS; }
+    @Native
     private boolean isSPressed()    { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_S)     == GLFW.GLFW_PRESS; }
+    @Native
     private boolean isJumpPressed() { return GLFW.glfwGetKey(mc.getWindow().getHandle(), GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS; }
 
+    @Native
     @EventTarget
     public void onKey(EventKey e) {
         if (e.isKeyDown(elytraSetting.getKeyCode()) && !startElytraSwap) {
@@ -68,6 +76,7 @@ public final class ElytraHelper extends Module {
         }
     }
 
+    @Native
     @EventTarget
     public void onTick(EventUpdate e) {
         if (fireworkCooldown > 0) fireworkCooldown--;
@@ -103,6 +112,7 @@ public final class ElytraHelper extends Module {
         });
     }
 
+    @Native
     @Override
     public void onDisable() {
         startElytraSwap = false;
@@ -111,6 +121,7 @@ public final class ElytraHelper extends Module {
         super.onDisable();
     }
 
+    @Native
     private void useFirework() {
         Slot slot = PlayerInventoryUtil.getSlot(Items.FIREWORK_ROCKET);
         if (slot == null) return;
@@ -143,6 +154,7 @@ public final class ElytraHelper extends Module {
         });
     }
 
+    @Native
     private Slot chestPlate() {
         if (Objects.requireNonNull(mc.player).getEquippedStack(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA))
             return PlayerInventoryUtil.getSlot(List.of(
