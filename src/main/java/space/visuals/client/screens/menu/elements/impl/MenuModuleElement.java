@@ -63,6 +63,9 @@ public class MenuModuleElement extends AbstractMenuElement {
             else if (setting instanceof ItemSelectSetting itemSelectSetting) {
                 settings.add(new MenuItemSetting(itemSelectSetting));
             }
+            else if (setting instanceof ItemSlotSetting itemSlotSetting) {
+                settings.add(new MenuItemSlotSetting(itemSlotSetting));
+            }
             else if (setting instanceof KeySetting keySetting) {
                 settings.add(new MenuKeySetting(keySetting));
             }

@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.visuals.base.events.impl.render.EventHandledScreen;
 import space.visuals.client.modules.impl.combat.SwapPlus;
+import space.visuals.client.screens.menu.settings.impl.ItemSlotPickerManager;
 
 @Mixin(HandledScreen.class)
 public abstract class HandledScreenMixin {
@@ -27,6 +28,12 @@ public abstract class HandledScreenMixin {
 
     @Inject(method = "onMouseClick(Lnet/minecraft/screen/slot/Slot;IILnet/minecraft/screen/slot/SlotActionType;)V", at = @At("HEAD"), cancellable = true)
     private void onSlotClick(Slot slot, int slotId, int button, SlotActionType actionType, CallbackInfo ci) {
+        // ItemSlotPickerManager — выбор предмета для ItemSlotSetting
+        if (ItemSlotPickerManager.INSTANCE.isPicking()) {
+            ItemSlotPickerManager.INSTANCE.onClickSlot(slot, actionType);
+            ci.cancel();
+            return;
+        }
         if (slot != null && SwapPlus.INSTANCE.isPendingPick()) {
             // Отменяем клик на сервер - только сохраняем предмет в колесо клиентски
             SwapPlus.INSTANCE.onClickSlot(slot.id, actionType);
